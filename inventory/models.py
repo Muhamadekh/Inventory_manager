@@ -1,4 +1,4 @@
-from inventory import db, login_manager
+from inventory import db, login_manager, app
 from flask_login import UserMixin
 
 
@@ -20,3 +20,4 @@ class Shop(db.Model):
     shop_name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+

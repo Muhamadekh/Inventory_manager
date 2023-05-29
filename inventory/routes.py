@@ -2,11 +2,12 @@ from flask import Flask, render_template, url_for, flash, redirect
 from inventory import app, bcrypt,db
 from inventory.models import User, Shop
 from inventory.forms import UserRegistrationForm, ShopRegistrationForm, LoginForm
-from flask_login import current_user, login_user
+from flask_login import current_user, login_user, logout_user, login_required
 
 
 @app.route('/')
 def home():
+
     return render_template('home.html')
 
 
@@ -62,6 +63,7 @@ def login():
         return redirect(url_for('home'))
     else:
         form = LoginForm()
+        form.populate_shop_choices()
         print("Hey")
         if form.validate_on_submit():
             user = User.query.filter_by(username=form.username.data).first()
@@ -74,3 +76,10 @@ def login():
             else:
                 flash('Please check your username and password.')
         return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+
+    return redirect(url_for('home'))
