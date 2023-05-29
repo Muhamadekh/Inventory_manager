@@ -45,7 +45,7 @@
 <!--                        <a href="#">-->
 <!--                            <img src="../static/images/icon/logo-white.png" alt="CoolAdmin" />-->
 <!--                        </a>-->
-                        <h2><span style="color: white;">Jinaqow Retailers</span></h2>
+                        <h1><span style="color: white;">JNQ</span></h1>
                     </div>
                     <div class="header__navbar">
                         <ul class="list-unstyled">
@@ -83,10 +83,10 @@
                                     <span class="bot-line"></span>Shops</a>
                                 <ul class="header3-sub-list list-unstyled">
                                     <li>
-                                        <a href="login.html">Add</a>
+                                        <a href="{{ url_for('register_shop') }}">Add</a>
                                     </li>
                                     <li>
-                                        <a href="register.html">View</a>
+                                        <a href="{{ url_for('view_shop') }}">View</a>
                                     </li>
                                 </ul>
                             </li>
@@ -125,6 +125,11 @@
                                         <a href="register.html">View</a>
                                     </li>
                                 </ul>
+                            </li>
+                            <li class="has-sub">
+                                <a href="{{ url_for('login') }}">
+                                    <i class="bot-line"></i>Login
+                                </a>
                             </li>
                         </ul>
                     </div>

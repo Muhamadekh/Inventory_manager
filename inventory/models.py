@@ -1,8 +1,14 @@
-from inventory import db
+from inventory import db, login_manager
+from flask_login import UserMixin
 
 
-class User(db.Model):
-    user_id = db.Column(db.Integer, primary_key=True)
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(50), nullable=False)
     user_role = db.Column(db.String(30), nullable=False)
@@ -10,7 +16,7 @@ class User(db.Model):
 
 
 class Shop(db.Model):
-    shop_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     shop_name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

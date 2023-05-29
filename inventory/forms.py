@@ -12,3 +12,16 @@ class UserRegistrationForm(FlaskForm):
     confirm_password = PasswordField('Confirm password', validators=[DataRequired(), EqualTo('password')])
     user_role = SelectField('User Role', choices=user_role_choices)
     submit = SubmitField('Register')
+
+
+class ShopRegistrationForm(FlaskForm):
+    shop_name = StringField('Username', validators=[DataRequired(), Length(min=4)])
+    location = StringField('Location', validators=[DataRequired()])
+    submit = SubmitField('Register')
+
+
+class LoginForm(FlaskForm):
+    username = StringField('username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    # shop_name = SelectField('Select your shop', validators=[DataRequired()])
+    submit = SubmitField('Sign in')
