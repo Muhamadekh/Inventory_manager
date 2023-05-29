@@ -1,13 +1,12 @@
-from flask import Flask, render_template, url_for, flash, redirect
-from inventory import app, bcrypt,db
+from flask import Flask, render_template, url_for, flash, redirect, session
+from inventory import app, bcrypt, db
 from inventory.models import User, Shop
 from inventory.forms import UserRegistrationForm, ShopRegistrationForm, LoginForm
 from flask_login import current_user, login_user, logout_user, login_required
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
-
     return render_template('home.html')
 
 
@@ -64,13 +63,11 @@ def login():
     else:
         form = LoginForm()
         form.populate_shop_choices()
-        print("Hey")
         if form.validate_on_submit():
+            form.store_selected_shop_id_in_session()
             user = User.query.filter_by(username=form.username.data).first()
-            print(user.username)
             pass_hashed = user.password
             if user and bcrypt.check_password_hash(pass_hashed, form.password.data):
-                print("user exist")
                 login_user(user)
                 return redirect(url_for('home'))
             else:
@@ -81,5 +78,11 @@ def login():
 @login_required
 def logout():
     logout_user()
-
     return redirect(url_for('home'))
+
+
+@app.route('/shop', methods=['GET','POST'])
+def shop():
+    selected_shop_id = session.get('selected_shop_id')
+    user_shop = Shop.query.filter_by(id=selected_shop_id).first()
+    return render_template('shop.html', user_shop=user_shop)

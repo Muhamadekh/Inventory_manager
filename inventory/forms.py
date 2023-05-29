@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Length, EqualTo
 from inventory.models import User, Shop
+from flask import session
 
 
 user_role_choices = ['Admin', 'Staff']
@@ -21,7 +22,6 @@ class ShopRegistrationForm(FlaskForm):
     submit = SubmitField('Register')
 
 
-
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
@@ -31,3 +31,15 @@ class LoginForm(FlaskForm):
     def populate_shop_choices(self):
         # This method will be called from a route to populate the shop choices dynamically
         self.shop_name.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
+
+    def get_selected_shop_id(self):
+        selected_shop_name = self.shop_name.data
+        selected_shop_id = Shop.query.filter_by(shop_name=selected_shop_name).first()
+        if selected_shop_id:
+            return selected_shop_id
+        else:
+            return None
+
+    def store_selected_shop_id_in_session(self):
+        selected_shop_id = self.get_selected_shop_id()
+        session['selected_shop_id'] = selected_shop_id

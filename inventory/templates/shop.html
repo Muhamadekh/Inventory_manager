@@ -15,15 +15,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for shop in shops %}
-                                    <tr class="tr-shadow">
-                                        <td>{{ shop.id }}</td>
-                                        <td>{{ shop.shop_name }}</td>
-                                        <td>{{ shop.location }}</td>
-                                        <td>2018-09-27 02:12</td>
-                                        <td><a href="{{ url_for('shop') }}"><button>Edit</button></a></td>
-                                    </tr>
-                                {% endfor %}
+                                <tr class="tr-shadow">
+                                    <td>{{ user_shop.id }}</td>
+                                    <td>{{ user_shop.shop_name }}</td>
+                                    <td>{{ user_shop.location }}</td>
+                                    <td>2018-09-27 02:12</td>
+                                    <td><button>Edit</button></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
