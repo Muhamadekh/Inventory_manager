@@ -42,102 +42,95 @@
             <div class="section__content section__content--p35">
                 <div class="header3-wrap">
                     <div class="header__logo">
-<!--                        <a href="#">-->
-<!--                            <img src="../static/images/icon/logo-white.png" alt="CoolAdmin" />-->
-<!--                        </a>-->
                         <h1><span style="color: white;">JNQ</span></h1>
                     </div>
-                    <div class="header__navbar">
-                        <ul class="list-unstyled">
-                            <li class="has-sub">
-                                <a href="{{ url_for('home') }}">
-                                    <i class="bot-line"></i>Dashboard
-                                </a>
-                            </li>
-                            <li class="has-sub">
-                                <a href="#">
-                                    <span class="bot-line"></span>Stores</a>
-                                <ul class="header3-sub-list list-unstyled">
-                                    <li>
-                                        <a href="login.html">Add</a>
-                                    </li>
-                                    <li>
-                                        <a href="register.html">View</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="has-sub">
-                                <a href="#">
-                                    <span class="bot-line"></span>Users</a>
-                                <ul class="header3-sub-list list-unstyled">
-                                    <li>
-                                        <a href="{{ url_for('register_user') }}">Register</a>
-                                    </li>
-                                    <li>
-                                        <a href="{{url_for('view_users')}}">View</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="has-sub">
-                                <a href="#">
-                                    <span class="bot-line"></span>Shops</a>
-                                <ul class="header3-sub-list list-unstyled">
-                                    <li>
-                                        <a href="{{ url_for('register_shop') }}">Add</a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ url_for('view_shop') }}">View</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="has-sub">
-                                <a href="#">
-                                    <span class="bot-line"></span>Suppliers</a>
-                                <ul class="header3-sub-list list-unstyled">
-                                    <li>
-                                        <a href="login.html">Register</a>
-                                    </li>
-                                    <li>
-                                        <a href="register.html">View</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="has-sub">
-                                <a href="#">
-                                    <span class="bot-line"></span>Debtors</a>
-                                <ul class="header3-sub-list list-unstyled">
-                                    <li>
-                                        <a href="button.html">Register</a>
-                                    </li>
-                                    <li>
-                                        <a href="badge.html">View</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="has-sub">
-                                <a href="#">
-                                    <span class="bot-line"></span>Accounts</a>
-                                <ul class="header3-sub-list list-unstyled">
-                                    <li>
-                                        <a href="login.html">Add</a>
-                                    </li>
-                                    <li>
-                                        <a href="register.html">View</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="has-sub">
-                                <a href="{{ url_for('login') }}">
-                                    <i class="bot-line"></i>Login
-                                </a>
-                            </li>
-                            <li class="has-sub">
-                                <a href="{{ url_for('logout') }}">
-                                    <i class="bot-line"></i>Logout
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                     {% if current_user.is_authenticated and current_user.user_role == 'Admin' %}
+                        <div class="header__navbar">
+                            <ul class="list-unstyled">
+                                <li class="has-sub">
+                                    <a href="{{ url_for('home') }}">
+                                        <i class="bot-line"></i>Dashboard
+                                    </a>
+                                </li>
+                                <li class="has-sub">
+                                    <a href="#">
+                                        <span class="bot-line"></span>Stores</a>
+                                    <ul class="header3-sub-list list-unstyled">
+                                        <li>
+                                            <a href="login.html">Add</a>
+                                        </li>
+                                        <li>
+                                            <a href="register.html">View</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="has-sub">
+                                    <a href="#">
+                                        <span class="bot-line"></span>Users</a>
+                                    <ul class="header3-sub-list list-unstyled">
+                                        <li>
+                                            <a href="{{ url_for('register_user') }}">Register</a>
+                                        </li>
+                                        <li>
+                                            <a href="{{url_for('view_users')}}">View</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="has-sub">
+                                    <a href="#">
+                                        <span class="bot-line"></span>Shops</a>
+                                    <ul class="header3-sub-list list-unstyled">
+                                        <li>
+                                            <a href="{{ url_for('register_shop') }}">Add</a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('view_shop') }}">View</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="has-sub">
+                                    <a href="#">
+                                        <span class="bot-line"></span>Suppliers</a>
+                                    <ul class="header3-sub-list list-unstyled">
+                                        <li>
+                                            <a href="login.html">Register</a>
+                                        </li>
+                                        <li>
+                                            <a href="register.html">View</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="has-sub">
+                                    <a href="#">
+                                        <span class="bot-line"></span>Debtors</a>
+                                    <ul class="header3-sub-list list-unstyled">
+                                        <li>
+                                            <a href="button.html">Register</a>
+                                        </li>
+                                        <li>
+                                            <a href="badge.html">View</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="has-sub">
+                                    <a href="#">
+                                        <span class="bot-line"></span>Accounts</a>
+                                    <ul class="header3-sub-list list-unstyled">
+                                        <li>
+                                            <a href="login.html">Add</a>
+                                        </li>
+                                        <li>
+                                            <a href="register.html">View</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    {% elif current_user.is_authenticated and current_user.user_role  == 'Staff' %}
+                         <a href="#"><h1 style="color: white">Welcome to Jinaqow Wholesalers & Retailers</h1></a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}"><h1 style="color: white">Welcome to Jinaqow Wholesalers & Retailers</h1></a>
+                    {% endif %}
                     <div class="header__tool">
                         <div class="header-button-item has-noti js-item-menu">
                             <i class="zmdi zmdi-notifications"></i>
@@ -250,10 +243,12 @@
                                                 <i class="zmdi zmdi-money-box"></i>Billing</a>
                                         </div>
                                     </div>
-                                    <div class="account-dropdown__footer">
-                                        <a href="#">
-                                            <i class="zmdi zmdi-power"></i>Logout</a>
-                                    </div>
+                                    {% if current_user.is_authenticated %}
+                                        <div class="account-dropdown__footer">
+                                            <a href="{{ url_for('logout')}}">
+                                                <i class="zmdi zmdi-power"></i>Logout</a>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -465,15 +460,17 @@
             </div>
         </div>
     </div>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class=flashes>
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+    <div class="container" style="margin-top: 3rem; text-align: center;">
+           {% with messages = get_flashed_messages ( with_categories=true ) %}
+             {% if messages %}
+                 {% for category, message in messages %}
+                     <div class="alert alert-{{ category }}">
+                         {{ message }}
+                     </div>
+                 {% endfor %}
+             {% endif %}
+           {% endwith %}
+     </div>
 
     {% block content %}
     {% endblock %}

@@ -33,8 +33,7 @@ class LoginForm(FlaskForm):
         self.shop_name.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
 
     def get_selected_shop_id(self):
-        selected_shop_name = self.shop_name.data
-        selected_shop_id = Shop.query.filter_by(shop_name=selected_shop_name).first()
+        selected_shop_id = int(self.shop_name.data)
         if selected_shop_id:
             return selected_shop_id
         else:
@@ -43,3 +42,4 @@ class LoginForm(FlaskForm):
     def store_selected_shop_id_in_session(self):
         selected_shop_id = self.get_selected_shop_id()
         session['selected_shop_id'] = selected_shop_id
+        print(selected_shop_id)

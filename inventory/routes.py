@@ -66,10 +66,9 @@ def login():
         if form.validate_on_submit():
             form.store_selected_shop_id_in_session()
             user = User.query.filter_by(username=form.username.data).first()
-            pass_hashed = user.password
-            if user and bcrypt.check_password_hash(pass_hashed, form.password.data):
+            if user and bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user)
-                return redirect(url_for('home'))
+                return redirect(url_for('shop'))
             else:
                 flash('Please check your username and password.')
         return render_template('login.html', form=form)
@@ -78,11 +77,12 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('home'))
+    return redirect(url_for('login'))
 
 
 @app.route('/shop', methods=['GET','POST'])
 def shop():
     selected_shop_id = session.get('selected_shop_id')
+    print(selected_shop_id)
     user_shop = Shop.query.filter_by(id=selected_shop_id).first()
     return render_template('shop.html', user_shop=user_shop)
