@@ -126,10 +126,8 @@
                                 </li>
                             </ul>
                         </div>
-                    {% elif current_user.is_authenticated and current_user.user_role  == 'Staff' %}
-                         <a href="#"><h1 style="color: white">Welcome to Jinaqow Wholesalers & Retailers</h1></a>
                     {% else %}
-                        <a href="{{ url_for('login') }}"><h1 style="color: white">Welcome to Jinaqow Wholesalers & Retailers</h1></a>
+                         <a href="{{ url_for('landing_page') }}"><h1 style="color: white">Welcome to Jinaqow Wholesalers & Retailers</h1></a>
                     {% endif %}
                     <div class="header__tool">
                         <div class="header-button-item has-noti js-item-menu">

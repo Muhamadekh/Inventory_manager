@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField
 from wtforms.validators import DataRequired, Length, EqualTo
 from inventory.models import User, Shop
 from flask import session
@@ -43,3 +43,10 @@ class LoginForm(FlaskForm):
         selected_shop_id = self.get_selected_shop_id()
         session['selected_shop_id'] = selected_shop_id
         print(selected_shop_id)
+
+
+class AdminLoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
+    remember = BooleanField('Remember Me')

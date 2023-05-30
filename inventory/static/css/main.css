@@ -14657,3 +14657,23 @@ section {
     width: 40%;
     justify-content: center;
 }
+
+.custom-button{
+    border-radius: 20px;
+    height: 60px;
+    font-size: larger;
+}
+
+#landingPageLegend{
+    margin-bottom: 40px;
+    font-size: x-large;
+    font-family: helvetica, arial;
+}
+
+#ShopPanelText, #StorePanelText, #AdminPanelText{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+}

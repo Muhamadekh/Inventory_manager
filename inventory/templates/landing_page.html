@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+{% block content %}
+     <div class="container text-center">
+          <p class="legend" id="landingPageLegend">Please select your facility to proceed</p>
+          <div class="row justify-content-center">
+            <div class="col-4">
+              <a href="{{ url_for('login')}}" class="btn btn-primary btn-block custom-button" id="ShopPanelText">Shop Panel</a>
+            </div>
+            <div class="col-4">
+              <a href="#" class="btn btn-success btn-block custom-button" id="StorePanelText">Store Panel</a>
+            </div>
+            <div class="col-4">
+              <a href="{{ url_for('admin_login')}}" class="btn btn-danger btn-block custom-button" id="AdminPanelText">Admin Dashboard</a>
+            </div>
+          </div>
+     </div>
+{% endblock %}
