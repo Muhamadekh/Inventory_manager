@@ -14677,3 +14677,50 @@ section {
   text-align: center;
 
 }
+
+/* CSS styles for the shop buttons */
+.button-container {
+  margin-bottom: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.button-container .button {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #f2f2f2;
+  color: black;
+  border: none;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  margin-right: -4px; /* Remove space between buttons */
+  border-radius: 5px; /* Add round edges to buttons */
+}
+
+.button-container .button.active {
+  background-color: blue;
+  color: white;
+}
+
+/* CSS styles for the table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.table th, .table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.table th {
+  background-color: #f2f2f2;
+  text-align: left;
+}
+
+.table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}

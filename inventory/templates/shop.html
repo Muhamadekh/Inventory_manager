@@ -1,33 +1,32 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <section class="p-t-20">
-        <div class="container">
-            <div class="row" id="usersTableRow">
-                <div class="col-md-12">
-                    <div class="table-responsive table-responsive-data2">
-                        <table class="table table-data2">
-                            <thead>
-                                <tr>
-                                    <th>Shop ID</th>
-                                    <th>Shop Name</th>
-                                    <th>Shop Location</th>
-                                    <th>Date Added</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="tr-shadow">
-                                    <td>{{ user_shop.id }}</td>
-                                    <td>{{ user_shop.shop_name }}</td>
-                                    <td>{{ user_shop.location }}</td>
-                                    <td>2018-09-27 02:12</td>
-                                    <td><button>Edit</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- Buttons -->
+    <div class="button-container">
+      <button class="button active">Stock</button>
+      <button class="button">Sales</button>
+      <button class="button">Receive Stock</button>
+    </div>
+
+    <!-- Table with spreadsheet-like design -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Shop ID</th>
+          <th>Shop Name</th>
+          <th>Shop Location</th>
+          <th>Date Added</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ user_shop.id }}</td>
+          <td>{{ user_shop.shop_name }}</td>
+          <td>{{ user_shop.location }}</td>
+          <td>2018-09-27 02:12</td>
+          <td><button>Edit</button></td>
+        </tr>
+      </tbody>
+    </table>
 
 {% endblock content%}

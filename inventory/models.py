@@ -20,4 +20,15 @@ class Shop(db.Model):
     shop_name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    stock = db.relationship('Stock', backref='shop', lazy=True)
+
+
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_price = db.Column(db.Integer, nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
+    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+
 

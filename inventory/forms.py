@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Length, EqualTo
 from inventory.models import User, Shop
 from flask import session
@@ -50,3 +50,10 @@ class AdminLoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
     remember = BooleanField('Remember Me')
+
+
+class ShopSTockForm(FlaskForm):
+    item_name = StringField('Item Name', validators=[DataRequired()])
+    item_price = IntegerField('Price', validators=[DataRequired()])
+    item_quantity = IntegerField('Quantity', validators=[DataRequired()])
+    submit = SubmitField('Add Item')
