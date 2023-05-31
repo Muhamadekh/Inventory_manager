@@ -12,7 +12,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(50), nullable=False)
     user_role = db.Column(db.String(30), nullable=False)
-    shops = db.relationship('Shop', backref='shops', lazy=True)
+    shops = db.relationship('Shop', backref='staff', lazy=True)
 
 
 class Shop(db.Model):
@@ -30,5 +30,6 @@ class Stock(db.Model):
     item_quantity = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+    item_value = db.Column(db.Integer, nullable=False)
 
 

@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <!-- Table-like form for adding new stock -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            <td>{{ form.item_name(class_="form-input") }}</td>
+            <td>{{ form.item_price(class_="form-input") }}</td>
+            <td>{{ form.item_quantity(class_="form-input") }}</td>
+            <td>{{ form.submit(class_="form-submit") }}</td>
+          </form>
+        </tr>
+        </tr>
+      </tbody>
+    </table>
+
+{% endblock %}

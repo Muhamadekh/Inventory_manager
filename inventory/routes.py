@@ -1,7 +1,8 @@
 from flask import Flask, render_template, url_for, flash, redirect, session, request, abort
 from inventory import app, bcrypt, db
-from inventory.models import User, Shop
-from inventory.forms import UserRegistrationForm, ShopRegistrationForm, LoginForm, AdminLoginForm
+from inventory.models import User, Shop, Stock
+from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, AdminLoginForm,
+                             ShopNewSTockForm)
 from flask_login import current_user, login_user, logout_user, login_required
 
 
@@ -21,7 +22,7 @@ def register_user():
         flash("A user with this username exist. Try another name", "warning")
     else:
         if form.validate_on_submit():
-            hashed_password = bcrypt.generate_password_hash(form.password.data)
+            hashed_password = bcrypt.generate_password_hash(form.password.data, rounds=12).decode('utf-8')
             user = User(username=form.username.data, password=hashed_password, user_role=form.user_role.data)
             db.session.add(user)
             print(user.username)
@@ -89,7 +90,8 @@ def shop():
     selected_shop_id = session.get('selected_shop_id')
     print(selected_shop_id)
     user_shop = Shop.query.filter_by(id=selected_shop_id).first()
-    return render_template('shop.html', user_shop=user_shop)
+    products = Stock.query.all()
+    return render_template('shop.html', user_shop=user_shop, products=products)
 
 
 @app.route('/landing_page')
@@ -104,17 +106,36 @@ def admin_login():
     else:
         form = AdminLoginForm()
         user = User.query.filter_by(username=form.username.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
+        if user:
+            if bcrypt.check_password_hash(user.password, form.password.data):
+                print(user.password)
+                login_user(user, remember=form.remember.data)
+            else:
+                flash("Incorrect password", "warning")
             next_page = request.args.get("next")
             if user.user_role == 'Admin':
                 return redirect(url_for(next_page)) if next_page else redirect(url_for('home'))
             else:
-                flash("You do not have admin privileges", "warning")
+                flash("You do not have admin privileges", "info")
                 return redirect(url_for('landing_page'))
-
         else:
-            flash("Please check your details and make sure you have admin access", "info")
+            flash("Please check your account details", "info")
     return render_template('admin_login.html', form=form)
 
 
+@app.route('/add_new_stock', methods=['GET', 'POST'])
+def add_new_stock():
+    shop_id = session.get('selected_shop_id')
+    form = ShopNewSTockForm()
+    if form.validate_on_submit():
+        stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
+                      item_quantity=form.item_quantity.data, shop_id=shop_id)
+        if stock.item_quantity <= 20:
+            stock.stock_status = "Attention Needed"
+        stock.item_value = stock.item_price * stock.item_quantity
+        db.session.add(stock)
+        db.session.commit()
+        return redirect(url_for('shop'))
+    else:
+        flash("Please check the product details.")
+    return render_template('add_stock.html', form=form)

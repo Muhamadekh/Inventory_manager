@@ -2,30 +2,38 @@
 {% block content %}
     <!-- Buttons -->
     <div class="button-container">
-      <button class="button active">Stock</button>
-      <button class="button">Sales</button>
-      <button class="button">Receive Stock</button>
+      <a class="button active">Stock</a>
+      <a class="button">Sales</a>
+      <a href="{{ url_for('add_new_stock')}}" class="button">Add New Stock</a>
     </div>
 
     <!-- Table with spreadsheet-like design -->
     <table class="table">
       <thead>
         <tr>
-          <th>Shop ID</th>
-          <th>Shop Name</th>
-          <th>Shop Location</th>
-          <th>Date Added</th>
-          <th>Actions</th>
+          <th>Item ID</th>
+          <th>Item Name</th>
+          {% if user_shop.staff.user_role=='Admin' %}
+            <th>Item Quantity</th>
+          {% endif %}
+          <th>Item Price</th>
+          <th>Item Status</th>
+          <th>Item Value</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>{{ user_shop.id }}</td>
-          <td>{{ user_shop.shop_name }}</td>
-          <td>{{ user_shop.location }}</td>
-          <td>2018-09-27 02:12</td>
-          <td><button>Edit</button></td>
-        </tr>
+        {% for product in products %}
+          <tr>
+              <td>{{ product.id }}</td>
+              <td>{{ product.item_name }}</td>
+              {% if user_shop.staff.user_role=='Admin' %}
+                <td>{{ product.item_quantity }}</td>
+              {% endif %}
+              <td>{{product.item_price}}</td>
+              <td>{{product.stock_status}}</td>
+              <td><button>Edit</button></td>
+          </tr>
+        {% endfor %}
       </tbody>
     </table>
 

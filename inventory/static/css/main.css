@@ -14694,7 +14694,8 @@ section {
   text-align: center;
   text-decoration: none;
   font-size: 16px;
-  margin-right: -4px; /* Remove space between buttons */
+  font-family: helvetica, arial;
+  margin-right: 4px; /* Remove space between buttons */
   border-radius: 5px; /* Add round edges to buttons */
 }
 

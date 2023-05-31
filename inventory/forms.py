@@ -52,8 +52,9 @@ class AdminLoginForm(FlaskForm):
     remember = BooleanField('Remember Me')
 
 
-class ShopSTockForm(FlaskForm):
+class ShopNewSTockForm(FlaskForm):
     item_name = StringField('Item Name', validators=[DataRequired()])
     item_price = IntegerField('Price', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity', validators=[DataRequired()])
     submit = SubmitField('Add Item')
+
