@@ -10,7 +10,7 @@ def load_user(user_id):
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
     user_role = db.Column(db.String(30), nullable=False)
     shops = db.relationship('Shop', backref='staff', lazy=True)
 
@@ -31,5 +31,4 @@ class Stock(db.Model):
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
     item_value = db.Column(db.Integer, nullable=False)
-
 

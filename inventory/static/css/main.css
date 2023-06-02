@@ -14710,6 +14710,7 @@ section {
   border-collapse: collapse;
   margin-left: 10px;
   margin-right: 10px;
+  margin-bottom: 50px;
 }
 
 .table th, .table td {
@@ -14718,10 +14719,24 @@ section {
 }
 
 .table th {
-  background-color: #f2f2f2;
+  background-color: darkslategrey;
   text-align: left;
+  color: ghostwhite;
 }
 
-.table tr:nth-child(even) {
-  background-color: #f9f9f9;
+/*.table tr:nth-child(even) {*/
+/*  background-color: #f9f9f9;*/
+/*}*/
+
+a .ml-2{
+    font-size: larger;
+    font-family: Verdana;
+    display: inline-block;
+    justify-content: center;
+    margin-bottom: 5px;
+    margin-left: 50px;
+}
+
+.cells-to-hide{
+    display: none;
 }
