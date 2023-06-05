@@ -7,6 +7,7 @@
           <a class="button">Sales</a>
           <a href="{{ url_for('add_new_stock')}}" class="button">Add New Stock</a>
           <a class="ml-4">Date:{{date_today}}</a>
+            <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
         </div>
 
          <!-- Table with spreadsheet-like design -->
@@ -43,7 +44,7 @@
             {% endfor %}
               <tr>
                   <td colspan="4" class="text-right"><strong>Total Stock Value</strong></td>
-                  <td class="text-right"><strong>5800000</strong></td>
+                  <td class="text-right"><strong>{{total_shop_stock_value[shop.id]}}</strong></td>
                   <td colspan="2"></td>
               </tr>
           </tbody>

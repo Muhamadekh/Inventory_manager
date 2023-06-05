@@ -17,39 +17,34 @@ class UserRegistrationForm(FlaskForm):
 
 
 class ShopRegistrationForm(FlaskForm):
-    shop_name = StringField('Username', validators=[DataRequired(), Length(min=4)])
+    shop_name = StringField('Shop Name', validators=[DataRequired(), Length(min=4)])
     location = StringField('Location', validators=[DataRequired()])
+    shopkeeper = SelectField('Select a shopkeeper', choices=[])
     submit = SubmitField('Register')
+
+    def populate_shopkeeper_choices(self):
+        # This method will be called from a route to populate the user choices dynamically
+        self.shopkeeper.choices = [(user.id, user.username) for user in User.query.all()]
+
+    def get_selected_shopkeeper_id(self):
+        selected_shopkeeper_id = self.shopkeeper.data
+        if selected_shopkeeper_id is not None:
+            return int(selected_shopkeeper_id)
+        else:
+            return 0
+
+    def store_selected_shopkeeper_id_in_session(self):
+        selected_shopkeeper_id = self.get_selected_shopkeeper_id()
+        session['selected_shopkeeper_id'] = selected_shopkeeper_id
+        print(selected_shopkeeper_id)
 
 
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
-    shop_name = SelectField('Select your shop', choices=[])
+    # shop_name = SelectField('Select your shop', choices=[])
     submit = SubmitField('Sign in')
 
-    def populate_shop_choices(self):
-        # This method will be called from a route to populate the shop choices dynamically
-        self.shop_name.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
-
-    def get_selected_shop_id(self):
-        selected_shop_id = int(self.shop_name.data)
-        if selected_shop_id:
-            return selected_shop_id
-        else:
-            return None
-
-    def store_selected_shop_id_in_session(self):
-        selected_shop_id = self.get_selected_shop_id()
-        session['selected_shop_id'] = selected_shop_id
-        print(selected_shop_id)
-
-
-class AdminLoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Login')
-    remember = BooleanField('Remember Me')
 
 
 class ShopNewSTockForm(FlaskForm):

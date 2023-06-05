@@ -19,6 +19,7 @@ class Shop(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
+    shopkeeper = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     stock = db.relationship('Stock', backref='shop', lazy=True)
 

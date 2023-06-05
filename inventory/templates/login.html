@@ -39,21 +39,6 @@
                                             {% endif %}
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        {{ form.shop_name.label (class="form-control-label")}}
-                                            {% if form.shop_name.errors %}
-                                                {{ form.shop_name (class="form-control form-control-lg is-invalid")}}
-                                                <ul class="invalid-feedback">
-                                                    {% for error in form.shop_name.errors %}
-                                                        <span>{{ error }}</span>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                {{ form.shop_name (class="form-control form-control-lg")}}
-                                            {% endif %}
-                                    </div>
-                                </div>
                                 <div class="login-checkbox">
                                     <label>
                                         <input type="checkbox" name="remember">Remember Me
