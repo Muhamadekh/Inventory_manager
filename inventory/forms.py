@@ -42,9 +42,7 @@ class ShopRegistrationForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
-    # shop_name = SelectField('Select your shop', choices=[])
     submit = SubmitField('Sign in')
-
 
 
 class ShopNewSTockForm(FlaskForm):

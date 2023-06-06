@@ -55,19 +55,34 @@ def register_shop():
     return render_template('register_shop.html', form=form)
 
 
-@app.route('/view_shops', methods=['GET'])
-def view_shop():
-    shops = Shop.query.all()
+def today_date():
     date_today = datetime.today().strftime('%d-%m-%Y')
-    total_shop_stock_value = {}
+    return date_today
+
+
+@app.route('/view_shops', methods=['GET', 'POST'])
+def view_shops():
+    shops = Shop.query.all()
+    date = today_date()
+    shop_stock_lookup = {}
     for shop in shops:
         stock_value_list = []
         for product in shop.stock:
             stock_value_list.append(product.item_value)
         total_stock_value = sum(stock_value_list)
-        total_shop_stock_value[shop.id] = total_stock_value
-    return render_template('view_shops.html', shops=shops, date_today=date_today,
-                           total_shop_stock_value=total_shop_stock_value)
+        shop_stock_lookup[shop.id] = total_stock_value
+    return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date)
+
+
+@app.route('/view_shops/<int:shop_id>', methods=['GET'])
+def view_shop(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    date = today_date()
+    stock_value_list = []
+    for product in shop.stock:
+        stock_value_list.append(product.item_value)
+    total_stock_value = sum(stock_value_list)
+    return render_template('view_shop.html', shop=shop, total_stock_value=total_stock_value, date=date)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -82,13 +97,12 @@ def login():
                 # and bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user)
                 if user.user_role == 'Admin':
-                    # next_page = request.args.get("next")
                     return redirect(url_for('home'))
                 else:
                     return redirect(url_for('shop'))
             else:
                 flash('Please check your username and password.')
-        return render_template('login.html', form=form)
+    return render_template('login.html', form=form)
 
 
 @app.route('/logout')
@@ -117,12 +131,15 @@ def add_new_stock():
         stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
                       item_quantity=form.item_quantity.data, shop_id=shop_id)
         if stock.item_quantity <= 20:
-            stock.stock_status = "Attention Needed"
+            stock.stock_status = "Running Out"
         stock.item_value = stock.item_price * stock.item_quantity
         print(stock.item_value)
         db.session.add(stock)
         db.session.commit()
-        return redirect(url_for('shop'))
+        if current_user.user_role == 'Admin':
+            return redirect(url_for('view_shop'))
+        else:
+            return redirect(url_for('shop'))
     else:
         flash("Please check the product details.")
     return render_template('add_stock.html', form=form)

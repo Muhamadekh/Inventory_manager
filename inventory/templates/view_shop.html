@@ -1,0 +1,51 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <!-- Buttons -->
+    <div class="button-container">
+      <a class="button active">Stock</a>
+      <a class="button">Sales</a>
+      <a href="{{ url_for('add_new_stock')}}" class="button">Add New Stock</a>
+      <a class="ml-4">Date:{{date}}</a>
+      <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
+    </div>
+
+     <!-- Table with spreadsheet-like design -->
+    <table class="table table-hover table-condensed">
+      <thead>
+        <tr>
+          <th>Item ID</th>
+          <th>Item Name</th>
+          {% if current_user.user_role=='Admin' %}
+            <th>Item Quantity</th>
+          {% endif %}
+          <th>Item Price</th>
+          {% if current_user.user_role=='Admin' %}
+            <th>Item Value</th>
+          {% endif %}
+          <th colspan="2">Item Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in shop.stock %}
+          <tr>
+              <td>{{ product.id }}</td>
+              <td>{{ product.item_name }}</td>
+              {% if current_user.user_role=='Admin' %}
+                <td class="text-right">{{ "{:,}".format(product.item_quantity) }}</td>
+              {% endif %}
+              <td class="text-right">{{ "{:,}".format(product.item_price) }}</td>
+              {% if current_user.user_role=='Admin' %}
+                <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
+              {% endif %}
+              <td class="text-right">{{ product.stock_status }}</td>
+              <td class="text-center"><a href="#">Edit</a></td>
+          </tr>
+        {% endfor %}
+          <tr>
+              <td colspan="4" class="text-right"><strong>Total Stock Value</strong></td>
+              <td class="text-right"><strong>{{total_stock_value}}</strong></td>
+              <td colspan="2"></td>
+          </tr>
+      </tbody>
+    </table>
+{% endblock content%}

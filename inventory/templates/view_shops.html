@@ -1,53 +1,29 @@
 {% extends 'layout.html' %}
 {% block content %}
-    {% for shop in shops %}
-        <!-- Buttons -->
-        <div class="button-container">
-          <a class="button active">Stock</a>
-          <a class="button">Sales</a>
-          <a href="{{ url_for('add_new_stock')}}" class="button">Add New Stock</a>
-          <a class="ml-4">Date:{{date_today}}</a>
-            <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
-        </div>
-
-         <!-- Table with spreadsheet-like design -->
-        <table class="table table-hover table-condensed">
+     <table class="table">
+         <caption style="caption-side: top">Shops Summary Table<span class="ml-4"> Date: {{date}}</span></caption>
           <thead>
             <tr>
-              <th>Item ID</th>
-              <th>Item Name</th>
-              {% if current_user.user_role=='Admin' %}
-                <th>Item Quantity</th>
-              {% endif %}
-              <th>Item Price</th>
-              {% if current_user.user_role=='Admin' %}
-                <th>Item Value</th>
-              {% endif %}
-              <th colspan="2">Item Status</th>
+              <th scope="col">Shop ID</th>
+              <th scope="col">Shop Name</th>
+              <th scope="col">Location</th>
+              <th scope="col">Shopkeeper</th>
+              <th scope="col">Total Stock Value</th>
+              <th scope="col"></th>
             </tr>
           </thead>
           <tbody>
-            {% for product in shop.stock %}
-              <tr>
-                  <td>{{ product.id }}</td>
-                  <td>{{ product.item_name }}</td>
-                  {% if current_user.user_role=='Admin' %}
-                    <td class="text-right">{{ "{:,}".format(product.item_quantity) }}</td>
-                  {% endif %}
-                  <td class="text-right">{{ "{:,}".format(product.item_price) }}</td>
-                  {% if current_user.user_role=='Admin' %}
-                    <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
-                  {% endif %}
-                  <td class="text-right">{{product.stock_status}}</td>
-                  <td class="text-center"><button class="btn btn-info">Edit</button></td>
-              </tr>
-            {% endfor %}
-              <tr>
-                  <td colspan="4" class="text-right"><strong>Total Stock Value</strong></td>
-                  <td class="text-right"><strong>{{total_shop_stock_value[shop.id]}}</strong></td>
-                  <td colspan="2"></td>
-              </tr>
+          {% for shop in shops %}
+            <tr>
+              <td>{{ shop.id }}</td>
+              <td>{{shop.shop_name }}</td>
+              <td>{{shop.location}}</td>
+              <td>{{ shop.staff.username }}</td>
+              <td>{{ shop_stock_lookup[shop.id] }}</td>
+                <td><a href="{{ url_for('view_shop', shop_id=shop.id )}}">View More</a></td>
+
+            </tr>
+          {% endfor %}
           </tbody>
-        </table>
-    {%endfor%}
-{% endblock content%}
+     </table>
+{% endblock %}
