@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Length, EqualTo
-from inventory.models import User, Shop
+from inventory.models import User, Stock
 from flask import session
 
 
@@ -45,9 +45,28 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign in')
 
 
-class ShopNewSTockForm(FlaskForm):
+class ShopNewItemForm(FlaskForm):
     item_name = StringField('Item Name', validators=[DataRequired()])
     item_price = IntegerField('Price', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity', validators=[DataRequired()])
     submit = SubmitField('Add Item')
 
+
+class ShopStockReceivedForm(FlaskForm):
+    item_name = SelectField('Select Item Name', choices=[])
+    item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    submit = SubmitField('Receive Stock')
+
+    def populate_item_name_choices(self):
+        self.item_name.choices = [(item.id, item.item_name) for item in Stock.query.all()]
+
+    def get_selected_item_id(self):
+        selected_item_id = self.item_name.data
+        if selected_item_id is not None:
+            return int(selected_item_id)
+        else:
+            return 0
+
+    def store_selected_item_id(self):
+        selected_item_id = self.get_selected_item_id()
+        session['selected_item_id'] = selected_item_id

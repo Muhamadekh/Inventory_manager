@@ -1,7 +1,8 @@
 from flask import Flask, render_template, url_for, flash, redirect, session, request, abort
 from inventory import app, bcrypt, db
-from inventory.models import User, Shop, Stock
-from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewSTockForm)
+from inventory.models import User, Shop, Stock, StockReceived
+from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
+                             ShopStockReceivedForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime
 
@@ -51,7 +52,7 @@ def register_shop():
             db.session.add(shop)
             db.session.commit()
             flash(f"{shop.shop_name} at {shop.location} was successfully registered.")
-            return redirect(url_for('view_shop'))
+            return redirect(url_for('view_shops'))
     return render_template('register_shop.html', form=form)
 
 
@@ -126,7 +127,7 @@ def shop():
 def add_new_stock():
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     shop_id = shop.id
-    form = ShopNewSTockForm()
+    form = ShopNewItemForm()
     if form.validate_on_submit():
         stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
                       item_quantity=form.item_quantity.data, shop_id=shop_id)
@@ -143,3 +144,24 @@ def add_new_stock():
     else:
         flash("Please check the product details.")
     return render_template('add_stock.html', form=form)
+
+
+@app.route('/stock_received', methods=['GET', 'POST'])
+def stock_received():
+    form = ShopStockReceivedForm()
+    form.populate_item_name_choices()
+    selected_item_id = form.get_selected_item_id()
+    item = Stock.query.filter_by(id=selected_item_id).first()
+    if form.validate_on_submit():
+        item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data)
+        db.session.add(item_received)
+        db.session.commit()
+        if item.item_name == item_received.item_name:
+            item.item_quantity = item.item_quantity + item_received.item_quantity
+            item.item_value = item.item_quantity * item.item_price
+            db.session.commit()
+        if current_user.user_role == 'Admin':
+            return redirect(url_for('view_shop', shop_id=item.shop.id))
+        return redirect(url_for('shop'))
+    return render_template('stock_received.html', form=form)
+

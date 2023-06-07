@@ -33,3 +33,9 @@ class Stock(db.Model):
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
     item_value = db.Column(db.Integer, nullable=False)
 
+
+class StockReceived(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+
