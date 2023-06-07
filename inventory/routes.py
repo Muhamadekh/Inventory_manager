@@ -7,11 +7,16 @@ from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime
 
 
+def today_date():
+    date_today = datetime.today().strftime('%d-%m-%Y')
+    return date_today
+
+
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
-    date_today = datetime.today().strftime('%d-%m-%Y')
-    return render_template('home.html', date_today=date_today)
+    date = today_date()
+    return render_template('home.html', date=date)
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
@@ -56,11 +61,6 @@ def register_shop():
     return render_template('register_shop.html', form=form)
 
 
-def today_date():
-    date_today = datetime.today().strftime('%d-%m-%Y')
-    return date_today
-
-
 @app.route('/view_shops', methods=['GET', 'POST'])
 def view_shops():
     shops = Shop.query.all()
@@ -88,8 +88,10 @@ def view_shop(shop_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
         return redirect(url_for('home'))
+    elif current_user.is_authenticated and current_user.user_role != 'Admin':
+        return redirect(url_for('shop'))
     else:
         form = LoginForm()
         if form.validate_on_submit():

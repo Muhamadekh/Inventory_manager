@@ -14697,12 +14697,13 @@ section {
   font-family: helvetica, arial;
   margin-right: 4px; /* Remove space between buttons */
   border-radius: 5px; /* Add round edges to buttons */
+  background-color: lightgrey;
 }
 
-.button-container .button.active {
-  background-color: blue;
-  color: white;
-}
+/*.button-container .button.active {*/
+/*  background-color: blue;*/
+/*  color: white;*/
+/*}*/
 
 /* CSS styles for the table */
 .table {
@@ -14723,10 +14724,6 @@ section {
   text-align: left;
   color: ghostwhite;
 }
-
-/*.table tr:nth-child(even) {*/
-/*  background-color: #f9f9f9;*/
-/*}*/
 
 a .ml-2{
     font-size: larger;
