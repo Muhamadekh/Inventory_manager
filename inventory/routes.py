@@ -1,8 +1,8 @@
 from flask import Flask, render_template, url_for, flash, redirect, session, request, abort
 from inventory import app, bcrypt, db
-from inventory.models import User, Shop, Stock, StockReceived
+from inventory.models import User, Shop, Stock, StockReceived, StockSold
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
-                             ShopStockReceivedForm)
+                             ShopStockReceivedForm, ShopStockSoldForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime
 
@@ -167,3 +167,25 @@ def stock_received():
         return redirect(url_for('shop'))
     return render_template('stock_received.html', form=form)
 
+
+@app.route('/sales', methods=['GET', 'POST'])
+def stock_sold():
+    form = ShopStockSoldForm()
+    form.populate_item_name_choices()
+    selected_item_id = form.get_selected_item_id()
+    item = Stock.query.filter_by(id=selected_item_id).first()
+    if form.validate_on_submit():
+        item_sold = StockSold(item_name=item.item_name, item_quantity=form.item_quantity.data,
+                              item_discount=form.item_discount.data)
+        selling_price = item_sold.item_price - item_sold.item_discount
+        item_sold.item_value = item_sold.item_quantity * selling_price
+        db.session.add(item_sold)
+        db.session.commit()
+        if item.item_name == item_sold.item_name:
+            item.item_quantity = item.item_quantity - item_sold.item_quantity
+            item.item_value = item.item_quantity * item.item_price
+            db.session.commit()
+        if current_user.user_role == 'Admin':
+            return redirect(url_for('view_shop', shop_id=item.shop.id))
+        return redirect(url_for('shop'))
+    return render_template('stock_sold.html', form=form)

@@ -67,6 +67,19 @@ class ShopStockReceivedForm(FlaskForm):
         else:
             return 0
 
-    def store_selected_item_id(self):
-        selected_item_id = self.get_selected_item_id()
-        session['selected_item_id'] = selected_item_id
+
+class ShopStockSoldForm(FlaskForm):
+    item_name = SelectField('Select Item Name', choices=[])
+    item_quantity = IntegerField('Quantity Sold', validators=[DataRequired()])
+    item_discount = IntegerField('Discount', validators=[DataRequired()])
+    submit = SubmitField('Record Sales')
+
+    def populate_item_name_choices(self):
+        self.item_name.choices = [(item.id, item.item_name) for item in Stock.query.all()]
+
+    def get_selected_item_id(self):
+        selected_item_id = self.item_name.data
+        if selected_item_id is not None:
+            return int(selected_item_id)
+        else:
+            return 0

@@ -45,10 +45,11 @@ class StockReceived(db.Model):
     date_received = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class Sales(db.Model):
+class StockSold(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     item_price = db.Column(db.Integer, nullable=False)
     item_discount = db.Column(db.Integer, nullable=False)
+    item_value = db.Column(db.Integer, nullable=False)
     date_sold = db.Column(db.DateTime, default=datetime.utcnow)

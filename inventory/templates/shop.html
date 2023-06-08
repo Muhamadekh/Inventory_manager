@@ -3,7 +3,7 @@
     <!-- Buttons -->
     <div class="button-container">
       <a class="button active">Stock</a>
-      <a class="button">Sales</a>
+      <a href="{{ url_for('stock_sold')}}" class="button">Sales</a>
       <a href="{{ url_for('stock_received')}}" class="button">Receive Stock</a>
       <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
     </div>
