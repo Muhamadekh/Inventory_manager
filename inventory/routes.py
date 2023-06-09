@@ -189,10 +189,9 @@ def stock_sold():
             db.session.commit()
         return redirect(url_for('stock_sold'))
 
+    date = today_date()
     current_date = datetime.utcnow()
     sales_entries = StockSold.query.filter(StockSold.date_sold<=current_date).order_by(StockSold.date_sold.desc()).all()
-    date = today_date()
-
     return render_template('stock_sold.html', form=form, sales_entries=sales_entries, date=date, shop=shop)
 
 
