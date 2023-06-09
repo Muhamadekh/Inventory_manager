@@ -1,5 +1,19 @@
 {% extends 'layout.html' %}
 {% block content %}
+    <!-- Buttons -->
+    <div class="button-container">
+      <a href="{{ url_for('stock_sold')}}" class="button active">Sales</a>
+      <a href="{{ url_for('stock')}}"class="button">Stock</a>
+      <a href="{{ url_for('stock_received')}}" class="button">Receive Stock</a>
+      <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
+      <a class="ml-4">Date:{{date}}</a>
+      <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
+      <div class="float-right">
+        <a href="#" class="btn btn-info">Shop History</a>
+      </div>
+    </div>
+
+
     <!-- Table-like form for adding new stock -->
     <table class="table">
       <thead>
@@ -14,14 +28,37 @@
         <tr>
           <form method="POST">
             {{ form.hidden_tag() }}
-            <td>{{ form.item_name(class="form-input") }}</td>
-            <td>{{ form.item_quantity(class="form-input") }}</td>
-            <td>{{ form.item_discount(class="form-input") }}</td>
-            <td>{{ form.submit(class="form-submit") }}</td>
+            <td>{{ form.item_name(class="form-control") }}</td>
+            <td>{{ form.item_quantity(class="form-control") }}</td>
+            <td>{{ form.item_discount(class="form-control") }}</td>
+            <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
           </form>
-        </tr>
         </tr>
       </tbody>
     </table>
+    <div class="table" id="SalesTable">
+      <table class="table mt-4">
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            <th>Quantity Sold</th>
+            <th>Discount Given</th>
+            <th>Sales Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in sales_entries %}
+            <tr>
+              <td>{{ entry.item_name }}</td>
+              <td>{{ entry.item_quantity }}</td>
+              <td>{{ entry.item_discount }}</td>
+              <td>{{ entry.item_value }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
 
 {% endblock %}

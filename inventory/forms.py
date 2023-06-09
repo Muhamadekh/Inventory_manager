@@ -83,3 +83,4 @@ class ShopStockSoldForm(FlaskForm):
             return int(selected_item_id)
         else:
             return 0
+

@@ -14,12 +14,11 @@
         <tr>
           <form method="POST">
             {{ form.hidden_tag() }}
-            <td>{{ form.item_name(class_="form-input") }}</td>
-            <td>{{ form.item_price(class_="form-input") }}</td>
-            <td>{{ form.item_quantity(class_="form-input") }}</td>
-            <td>{{ form.submit(class_="form-submit") }}</td>
+            <td>{{ form.item_name(class="form-control") }}</td>
+            <td>{{ form.item_price(class="form-control") }}</td>
+            <td>{{ form.item_quantity(class="form-control") }}</td>
+            <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
           </form>
-        </tr>
         </tr>
       </tbody>
     </table>

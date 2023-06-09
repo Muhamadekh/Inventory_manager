@@ -96,15 +96,15 @@ def login():
         form = LoginForm()
         if form.validate_on_submit():
             user = User.query.filter_by(username=form.username.data).first()
-            if user:
-                # and bcrypt.check_password_hash(user.password, form.password.data):
+            print(user.password, form.password.data)
+            if user and bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user)
                 if user.user_role == 'Admin':
                     return redirect(url_for('home'))
                 else:
-                    return redirect(url_for('shop'))
+                    return redirect(url_for('stock_sold'))
             else:
-                flash('Please check your username and password.')
+                flash('Please check your username and password.', 'danger')
     return render_template('login.html', form=form)
 
 
@@ -115,11 +115,11 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/shop', methods=['GET','POST'])
-def shop():
+@app.route('/stock', methods=['GET','POST'])
+def stock():
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     if shop:
-        return render_template('shop.html', shop=shop)
+        return render_template('stock.html', shop=shop)
     else:
         return "This user has no shop assigned"
 
@@ -128,11 +128,14 @@ def shop():
 @login_required
 def add_new_stock():
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
-    shop_id = shop.id
+    if current_user.user_role == 'Admin':
+        shop_id = [shop.id for shop in Shop.query.all()]
+    else:
+        shop_id = shop.id
     form = ShopNewItemForm()
     if form.validate_on_submit():
         stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
-                      item_quantity=form.item_quantity.data, shop_id=shop_id)
+                      item_quantity=form.item_quantity.data, shop_id=shop.id)
         if stock.item_quantity <= 20:
             stock.stock_status = "Running Out"
         stock.item_value = stock.item_price * stock.item_quantity
@@ -140,11 +143,9 @@ def add_new_stock():
         db.session.add(stock)
         db.session.commit()
         if current_user.user_role == 'Admin':
-            return redirect(url_for('view_shop'))
+            return redirect(url_for('view_shop', shop_id=shop.id))
         else:
-            return redirect(url_for('shop'))
-    else:
-        flash("Please check the product details.")
+            return redirect(url_for('stock_sold'))
     return render_template('add_stock.html', form=form)
 
 
@@ -164,19 +165,20 @@ def stock_received():
             db.session.commit()
         if current_user.user_role == 'Admin':
             return redirect(url_for('view_shop', shop_id=item.shop.id))
-        return redirect(url_for('shop'))
+        return redirect(url_for('stock_sold'))
     return render_template('stock_received.html', form=form)
 
 
-@app.route('/sales', methods=['GET', 'POST'])
+@app.route('/shop', methods=['GET', 'POST'])
 def stock_sold():
+    shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopStockSoldForm()
     form.populate_item_name_choices()
     selected_item_id = form.get_selected_item_id()
     item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
         item_sold = StockSold(item_name=item.item_name, item_quantity=form.item_quantity.data,
-                              item_discount=form.item_discount.data)
+                              item_discount=form.item_discount.data, item_price=item.item_price)
         selling_price = item_sold.item_price - item_sold.item_discount
         item_sold.item_value = item_sold.item_quantity * selling_price
         db.session.add(item_sold)
@@ -185,7 +187,12 @@ def stock_sold():
             item.item_quantity = item.item_quantity - item_sold.item_quantity
             item.item_value = item.item_quantity * item.item_price
             db.session.commit()
-        if current_user.user_role == 'Admin':
-            return redirect(url_for('view_shop', shop_id=item.shop.id))
-        return redirect(url_for('shop'))
-    return render_template('stock_sold.html', form=form)
+        return redirect(url_for('stock_sold'))
+
+    current_date = datetime.utcnow()
+    sales_entries = StockSold.query.filter(StockSold.date_sold<=current_date).order_by(StockSold.date_sold.desc()).all()
+    date = today_date()
+
+    return render_template('stock_sold.html', form=form, sales_entries=sales_entries, date=date, shop=shop)
+
+

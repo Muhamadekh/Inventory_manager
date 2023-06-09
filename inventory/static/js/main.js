@@ -1672,24 +1672,4 @@
 
 })(jQuery);
 
-// JavaScript code to handle button click and active state
-document.addEventListener("DOMContentLoaded", function() {
-  // Get all the buttons
-  var buttons = document.querySelectorAll(".button-container .button");
 
-  // Add event listener to each button
-  buttons.forEach(function(button) {
-    button.addEventListener("click", function() {
-      // Remove active class from all buttons
-      buttons.forEach(function(btn) {
-        btn.classList.remove("active");
-      });
-
-      // Add active class to the clicked button
-      button.classList.add("active");
-    });
-  });
-
-  // Set the default active button
-  buttons[0].classList.add("active");
-});

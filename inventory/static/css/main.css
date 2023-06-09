@@ -14700,10 +14700,10 @@ section {
   background-color: lightgrey;
 }
 
-/*.button-container .button.active {*/
-/*  background-color: blue;*/
-/*  color: white;*/
-/*}*/
+.button-container .button.active {
+  background-color: #0c5460;
+  color: white;
+}
 
 /* CSS styles for the table */
 .table {
@@ -14736,4 +14736,8 @@ a .ml-2{
 
 .cells-to-hide{
     display: none;
+}
+
+#SalesTable{
+    margin-top: 150px;
 }
