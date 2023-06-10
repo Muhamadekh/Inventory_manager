@@ -6,7 +6,7 @@
       <a href="{{ url_for('stock')}}"class="button">Stock</a>
       <a href="{{ url_for('stock_received')}}" class="button">Receive Stock</a>
       <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
-      <a class="ml-4">Date:{{date}}</a>
+      <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
       <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
       <div class="float-right">
         <a href="#" class="btn btn-info">Shop History</a>
@@ -40,11 +40,12 @@
       <div class="table" id="SalesTable">
         <table class="table mt-4">
           <thead>
-          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{Date}}</strong></span></caption>
             <tr>
               <th>Item Name</th>
               <th>Quantity Sold</th>
               <th>Discount Given</th>
+              <th>Time Sold</th>
               <th>Sales Value</th>
             </tr>
           </thead>
@@ -54,6 +55,7 @@
                 <td>{{ entry.item_name }}</td>
                 <td>{{ entry.item_quantity }}</td>
                 <td>{{ entry.item_discount }}</td>
+                <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
                 <td>{{ entry.item_value }}</td>
               </tr>
             {% endfor %}

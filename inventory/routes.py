@@ -193,7 +193,7 @@ def stock_sold():
     sales_dates = []
     sales_lookup = {}
 
-    date = today_date()
+    Date = today_date()
     current_date = datetime.utcnow()
     sales_entries = StockSold.query.filter(StockSold.date_sold<=current_date).order_by(StockSold.date_sold.desc()).all()
     for entry in sales_entries:
@@ -205,6 +205,6 @@ def stock_sold():
         sales = StockSold.query.filter(func.date(StockSold.date_sold) == date).all()
         for sale in sales:
             sales_lookup[date].append(sale)
-    return render_template('stock_sold.html', form=form, sales_lookup=sales_lookup, date=date, shop=shop, sales_dates=sales_dates)
+    return render_template('stock_sold.html', form=form, sales_lookup=sales_lookup, Date=Date, shop=shop, sales_dates=sales_dates)
 
 
