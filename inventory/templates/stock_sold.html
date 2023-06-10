@@ -36,29 +36,31 @@
         </tr>
       </tbody>
     </table>
-    <div class="table" id="SalesTable">
-      <table class="table mt-4">
-        <thead>
-        <caption style="caption-side: top; text-align: center"><span><strong>{{sales_date}}</strong></span></caption>
-          <tr>
-            <th>Item Name</th>
-            <th>Quantity Sold</th>
-            <th>Discount Given</th>
-            <th>Sales Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for entry in sales_entries %}
+    {% for date in sales_dates %}
+      <div class="table" id="SalesTable">
+        <table class="table mt-4">
+          <thead>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
             <tr>
-              <td>{{ entry.item_name }}</td>
-              <td>{{ entry.item_quantity }}</td>
-              <td>{{ entry.item_discount }}</td>
-              <td>{{ entry.item_value }}</td>
+              <th>Item Name</th>
+              <th>Quantity Sold</th>
+              <th>Discount Given</th>
+              <th>Sales Value</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {% for entry in sales_lookup[date] %}
+              <tr>
+                <td>{{ entry.item_name }}</td>
+                <td>{{ entry.item_quantity }}</td>
+                <td>{{ entry.item_discount }}</td>
+                <td>{{ entry.item_value }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
 
 
 {% endblock %}

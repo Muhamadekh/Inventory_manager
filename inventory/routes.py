@@ -5,6 +5,7 @@ from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginFo
                              ShopStockReceivedForm, ShopStockSoldForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime
+from sqlalchemy import func
 
 
 def today_date():
@@ -189,9 +190,21 @@ def stock_sold():
             db.session.commit()
         return redirect(url_for('stock_sold'))
 
+    sales_dates = []
+    sales_lookup = {}
+
     date = today_date()
     current_date = datetime.utcnow()
     sales_entries = StockSold.query.filter(StockSold.date_sold<=current_date).order_by(StockSold.date_sold.desc()).all()
-    return render_template('stock_sold.html', form=form, sales_entries=sales_entries, date=date, shop=shop)
+    for entry in sales_entries:
+        entry_date = entry.date_sold.date()
+        if entry_date not in sales_dates:
+            sales_dates.append(entry_date)
+    for date in sales_dates:
+        sales_lookup[date] = []
+        sales = StockSold.query.filter(func.date(StockSold.date_sold) == date).all()
+        for sale in sales:
+            sales_lookup[date].append(sale)
+    return render_template('stock_sold.html', form=form, sales_lookup=sales_lookup, date=date, shop=shop, sales_dates=sales_dates)
 
 
