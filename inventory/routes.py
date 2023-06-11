@@ -4,8 +4,11 @@ from inventory.models import User, Shop, Stock, StockReceived, StockSold
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm)
 from flask_login import current_user, login_user, logout_user, login_required
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import func
+import csv
+from flask import make_response
+import io
 
 
 def today_date():
@@ -99,7 +102,7 @@ def login():
             user = User.query.filter_by(username=form.username.data).first()
             print(user.password, form.password.data)
             if user and bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user)
+                login_user(user, remember=form.remember.data)
                 if user.user_role == 'Admin':
                     return redirect(url_for('home'))
                 else:
@@ -122,7 +125,7 @@ def stock():
     if shop:
         return render_template('stock.html', shop=shop)
     else:
-        return "This user has no shop assigned"
+        return redirect(url_for('view_shops'))
 
 
 @app.route('/add_new_stock', methods=['GET', 'POST'])
@@ -143,10 +146,8 @@ def add_new_stock():
         print(stock.item_value)
         db.session.add(stock)
         db.session.commit()
-        if current_user.user_role == 'Admin':
-            return redirect(url_for('view_shop', shop_id=shop.id))
-        else:
-            return redirect(url_for('stock_sold'))
+
+        return redirect(url_for('add_new_stock'))
     return render_template('add_stock.html', form=form)
 
 
@@ -164,9 +165,7 @@ def stock_received():
             item.item_quantity = item.item_quantity + item_received.item_quantity
             item.item_value = item.item_quantity * item.item_price
             db.session.commit()
-        if current_user.user_role == 'Admin':
-            return redirect(url_for('view_shop', shop_id=item.shop.id))
-        return redirect(url_for('stock_sold'))
+        return redirect(url_for('stock_received'))
     return render_template('stock_received.html', form=form)
 
 
@@ -178,9 +177,10 @@ def stock_sold():
     selected_item_id = form.get_selected_item_id()
     item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
+        print("Form is valid")
         item_sold = StockSold(item_name=item.item_name, item_quantity=form.item_quantity.data,
-                              item_discount=form.item_discount.data, item_price=item.item_price)
-        selling_price = item_sold.item_price - item_sold.item_discount
+                              item_discount=form.item_discount.data)
+        selling_price = item.item_price - item_sold.item_discount
         item_sold.item_value = item_sold.item_quantity * selling_price
         db.session.add(item_sold)
         db.session.commit()
@@ -194,7 +194,7 @@ def stock_sold():
     sales_lookup = {}
 
     Date = today_date()
-    current_date = datetime.utcnow()
+    current_date = datetime.now()
     sales_entries = StockSold.query.filter(StockSold.date_sold<=current_date).order_by(StockSold.date_sold.desc()).all()
     for entry in sales_entries:
         entry_date = entry.date_sold.date()
@@ -205,6 +205,67 @@ def stock_sold():
         sales = StockSold.query.filter(func.date(StockSold.date_sold) == date).all()
         for sale in sales:
             sales_lookup[date].append(sale)
+
+        # Add the following code to handle the download request
+        if request.args.get('download'):
+            time_range = request.args.get('time_range')  # Get the specified time range from the request arguments
+
+            # Define the start date based on the specified time range
+            if time_range == '7':  # 7 days
+                start_date = datetime.now() - timedelta(days=7)
+            elif time_range == '30':  # 30 days
+                start_date = datetime.now() - timedelta(days=30)
+            elif time_range == '6m':  # 6 months
+                start_date = datetime.now() - timedelta(days=30 * 6)
+            else:
+                # Handle invalid time range here, e.g., redirect to an error page or display an error message
+                flash("Range does not exist", "warning")
+
+            # Get the sales entries within the specified time range
+            sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date).order_by(
+                StockSold.date_sold.desc()).all()
+
+            # Prepare the CSV file data
+            headers = ['Date Sold', 'Item Name', 'Quantity', 'Discount', 'Value']
+            rows = []
+            for entry in sales_entries:
+                row = [
+                    entry.date_sold.strftime('%Y-%m-%d'),
+                    entry.item_name,
+                    entry.item_quantity,
+                    entry.item_discount,
+                    entry.item_value
+                ]
+                rows.append(row)
+
+            # Create a CSV file
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(headers)
+            writer.writerows(rows)
+
+            # Prepare the response with the CSV file
+            response = make_response(output.getvalue())
+            response.headers['Content-Disposition'] = 'attachment; filename=sales_history.csv'
+            response.headers['Content-type'] = 'text/csv'
+            return response
     return render_template('stock_sold.html', form=form, sales_lookup=sales_lookup, Date=Date, shop=shop, sales_dates=sales_dates)
 
 
+@app.route('/history', methods=['GET'])
+def history():
+    start_date = datetime.now() - timedelta(days=3)
+    sales_entries = StockSold.query.filter(StockSold.date_sold>=start_date).order_by(StockSold.date_sold.desc()).all()
+    sales_dates = []
+    sales_lookup = {}
+    for entry in sales_entries:
+        entry_date = entry.date_sold.date()
+        if entry_date not in sales_dates:
+            sales_dates.append(entry_date)
+
+    for date in sales_dates:
+        sales_lookup[date] = []
+        sales = StockSold.query.filter(func.date(StockSold.date_sold) == date).all()
+        for sale in sales:
+            sales_lookup[date].append(sale)
+    return render_template('history.html', sales_dates=sales_dates, sales_lookup=sales_lookup)

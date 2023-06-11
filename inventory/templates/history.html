@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="float-right" style="margin-right: 20px; margin-bottom: 0">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Download Sales Report
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="salesDropdown">
+                    <a class="dropdown-item" href="{{ url_for('stock_sold', download=True, time_range='7') }}">7 days</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_sold', download=True, time_range='30') }}">30 days</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_sold', download=True, time_range='6m') }}">6 months</a>
+                  </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" id="stockReceivedDropdown" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false" style="margin-bottom: 0; margin-left: 2px">
+                    Download Stock Received Report
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="stockReceivedDropdown">
+                    <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='7') }}">7 days</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='30') }}">30 days</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='6m') }}">6 months</a>
+                  </div>
+                </div>
+            </div>
+          </div>
+    </div>
+
+    {% for date in sales_dates %}
+      <div class="table">
+        <table class="table">
+          <thead>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+            <tr>
+              <th>Item Name</th>
+              <th>Quantity Sold</th>
+              <th>Discount Given</th>
+              <th>Time Sold</th>
+              <th>Sales Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in sales_lookup[date] %}
+              <tr>
+                <td>{{ entry.item_name }}</td>
+                <td>{{ entry.item_quantity }}</td>
+                <td>{{ entry.item_discount }}</td>
+                <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
+                <td>{{ entry.item_value }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+{% endblock content %}

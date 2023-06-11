@@ -42,6 +42,7 @@ class ShopRegistrationForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remembe Me')
     submit = SubmitField('Sign in')
 
 

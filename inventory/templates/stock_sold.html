@@ -7,10 +7,9 @@
       <a href="{{ url_for('stock_received')}}" class="button">Receive Stock</a>
       <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
       <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
-      <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
-      <div class="float-right">
-        <a href="#" class="btn btn-info">Shop History</a>
-      </div>
+      {% if current_user.user_role != 'Admin' %}
+        <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
+      {% endif %}
     </div>
 
 
@@ -40,7 +39,7 @@
       <div class="table" id="SalesTable">
         <table class="table mt-4">
           <thead>
-          <caption style="caption-side: top; text-align: center"><span><strong>{{Date}}</strong></span></caption>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
             <tr>
               <th>Item Name</th>
               <th>Quantity Sold</th>
@@ -63,6 +62,4 @@
         </table>
       </div>
     {% endfor %}
-
-
 {% endblock %}
