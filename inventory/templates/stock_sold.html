@@ -44,18 +44,18 @@
               <th>Item Name</th>
               <th>Quantity Sold</th>
               <th>Discount Given</th>
-              <th>Time Sold</th>
               <th>Sales Value</th>
+              <th>Time Sold</th>
             </tr>
           </thead>
           <tbody>
             {% for entry in sales_lookup[date] %}
               <tr>
                 <td>{{ entry.item_name }}</td>
-                <td>{{ entry.item_quantity }}</td>
-                <td>{{ entry.item_discount }}</td>
+                <td>{{ "{:,}".format (entry.item_quantity) }}</td>
+                <td>{{ "{:,}".format( entry.item_discount )}}</td>
+                <td>{{ "{:,}".format (entry.item_value) }}</td>
                 <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
-                <td>{{ entry.item_value }}</td>
               </tr>
             {% endfor %}
           </tbody>

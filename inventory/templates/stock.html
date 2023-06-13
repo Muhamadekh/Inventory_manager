@@ -23,11 +23,11 @@
               <td>{{ product.id }}</td>
               <td>{{ product.item_name }}</td>
               {% if current_user.user_role=='Admin' %}
-                <td>{{ product.item_quantity }}</td>
+                <td>{{ "{:,}".format(product.item_quantity) }}</td>
               {% endif %}
               <td class="text-right">{{product.item_price}}</td>
               {% if current_user.user_role=='Admin' %}
-                <td>{{ product.item_value }}</td>
+                <td>{{ "{:,}".format(product.item_value) }}</td>
               {% endif %}
               <td class="text-right">{{product.stock_status}}</td>
               <td class="text-center"><button class="btn btn-info">Edit</button></td>

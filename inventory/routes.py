@@ -35,7 +35,7 @@ def register_user():
             user = User(username=form.username.data, password=hashed_password, user_role=form.user_role.data)
             db.session.add(user)
             db.session.commit()
-            flash(f"{user.username} was registered successfully")
+            flash(f"{user.username} was registered successfully", "success")
             return redirect(url_for('view_users'))
     return render_template('register_user.html', form=form)
 
@@ -60,7 +60,7 @@ def register_shop():
                         shopkeeper=form.shopkeeper.data)
             db.session.add(shop)
             db.session.commit()
-            flash(f"{shop.shop_name} at {shop.location} was successfully registered.")
+            flash(f"{shop.shop_name} at {shop.location} was successfully registered.", "success")
             return redirect(url_for('view_shops'))
     return render_template('register_shop.html', form=form)
 
@@ -166,6 +166,42 @@ def stock_received():
             item.item_value = item.item_quantity * item.item_price
             db.session.commit()
         return redirect(url_for('stock_received'))
+
+    if request.args.get('download'):
+
+        time_range = request.args.get('time_range')
+
+        if time_range == '30':
+            start_date = datetime.now() - timedelta(days=30)
+        elif time_range == '6m':
+            start_date = datetime.mow() - timedelta(days=30*6)
+        else:
+             flash("Range does not exit", "warning")
+
+        sales_entries = StockReceived.query.filter(StockReceived.date_received>=start_date).order_by\
+           (StockReceived.date_received.desc()).all()
+
+        headers = ['Date Received', 'Item Name', 'Quantity']
+        rows = []
+        for entry in sales_entries:
+            row = [
+                entry.date_received.strftime('%d-%m-%Y'),
+                entry.item_name,
+                entry.item_quantity
+            ]
+        rows.append(row)
+
+        # Create a CSV file
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(headers)
+        writer.writerows(rows)
+
+        # Prepare the response with the CSV file
+        response = make_response(output.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename=stock_received.csv'
+        response.headers['Content-type'] = 'text/csv'
+        return response
     return render_template('stock_received.html', form=form)
 
 
@@ -230,7 +266,7 @@ def stock_sold():
             rows = []
             for entry in sales_entries:
                 row = [
-                    entry.date_sold.strftime('%Y-%m-%d'),
+                    entry.date_sold.strftime('%d-%m-%Y'),
                     entry.item_name,
                     entry.item_quantity,
                     entry.item_discount,

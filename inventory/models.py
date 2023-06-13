@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     user_role = db.Column(db.String(30), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     shops = db.relationship('Shop', backref='staff', lazy=True)
+    stores = db.relationship('Store', backref='staff', lazy=True)
 
 
 class Shop(db.Model):
@@ -25,6 +26,9 @@ class Shop(db.Model):
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     stock = db.relationship('Stock', backref='shop', lazy=True)
+    stock_received = db.relationship('StockReceived', backref='shop', lazy=True)
+    stock_sold = db.relationship('StockSold', backref='shop', lazy=True)
+    stock_in = db.relationship('StockOut', backref='shop', lazy=True)
 
 
 class Stock(db.Model):
@@ -43,6 +47,7 @@ class StockReceived(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     date_received = db.Column(db.DateTime, default=datetime.now())
+    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
 
 
 class StockSold(db.Model):
@@ -52,3 +57,30 @@ class StockSold(db.Model):
     item_discount = db.Column(db.Integer, nullable=False)
     item_value = db.Column(db.Integer, nullable=False)
     date_sold = db.Column(db.DateTime, default=datetime.now())
+    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+
+
+class Store(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    store_name = db.Column(db.String(60), nullable=False, unique=True)
+    location = db.Column(db.String(60), nullable=False)
+    date_registered = db.Column(db.DateTime, default=datetime.now())
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+
+class StockIn(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    date_received = db.Column(db.DateTime, default=datetime.now())
+    supllier = db.Column(db.String(100), nullable=False)
+    store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
+
+
+class StockOut(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    date_sent = db.Column(db.DateTime, default=datetime.now())
+    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+
