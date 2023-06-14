@@ -100,7 +100,6 @@ def login():
         form = LoginForm()
         if form.validate_on_submit():
             user = User.query.filter_by(username=form.username.data).first()
-            print(user.password, form.password.data)
             if user and bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user, remember=form.remember.data)
                 if user.user_role == 'Admin':
@@ -132,10 +131,6 @@ def stock():
 @login_required
 def add_new_stock():
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
-    if current_user.user_role == 'Admin':
-        shop_id = [shop.id for shop in Shop.query.all()]
-    else:
-        shop_id = shop.id
     form = ShopNewItemForm()
     if form.validate_on_submit():
         stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
@@ -143,7 +138,6 @@ def add_new_stock():
         if stock.item_quantity <= 20:
             stock.stock_status = "Running Out"
         stock.item_value = stock.item_price * stock.item_quantity
-        print(stock.item_value)
         db.session.add(stock)
         db.session.commit()
 
@@ -153,12 +147,13 @@ def add_new_stock():
 
 @app.route('/stock_received', methods=['GET', 'POST'])
 def stock_received():
+    shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopStockReceivedForm()
     form.populate_item_name_choices()
     selected_item_id = form.get_selected_item_id()
     item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
-        item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data)
+        item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
         db.session.add(item_received)
         db.session.commit()
         if item.item_name == item_received.item_name:
@@ -207,15 +202,15 @@ def stock_received():
 
 @app.route('/shop', methods=['GET', 'POST'])
 def stock_sold():
+    print(current_user.shops)
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopStockSoldForm()
     form.populate_item_name_choices()
     selected_item_id = form.get_selected_item_id()
     item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
-        print("Form is valid")
         item_sold = StockSold(item_name=item.item_name, item_quantity=form.item_quantity.data,
-                              item_discount=form.item_discount.data)
+                              item_discount=form.item_discount.data, shop_id=shop.id)
         selling_price = item.item_price - item_sold.item_discount
         item_sold.item_value = item_sold.item_quantity * selling_price
         db.session.add(item_sold)
