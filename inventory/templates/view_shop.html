@@ -9,7 +9,22 @@
       <a class="ml-4">Date:{{date}}</a>
       <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
       <div class="float-right">
-        <a href="{{ url_for('history')}}" class="btn btn-info">Reports</a>
+          <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Download Sales Report
+          </button>
+          <div class="dropdown-menu" aria-labelledby="salesDropdown">
+            <a class="dropdown-item" href="{{ url_for('view_shop', shop_id=shop.id, download=True, time_range='7') }}">7 days</a>
+            <a class="dropdown-item" href="{{ url_for('view_shop', shop_id=shop.id, download=True, time_range='30') }}">30 days</a>
+            <a class="dropdown-item" href="{{ url_for('view_shop', shop_id=shop.id, download=True, time_range='6m') }}">6 months</a>
+          </div>
+          <button class="btn btn-primary dropdown-toggle" type="button" id="stockReceivedDropdown" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              Download Stock Received Report
+          </button>
+          <div class="dropdown-menu" aria-labelledby="stockReceivedDropdown">
+            <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='30') }}">30 days</a>
+            <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='6m') }}">6 months</a>
+          </div>
       </div>
     </div>
 

@@ -3,6 +3,7 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, Boolea
 from wtforms.validators import DataRequired, Length, EqualTo
 from inventory.models import User, Stock
 from flask import session
+from flask_login import current_user
 
 
 user_role_choices = ['Admin', 'Staff']
@@ -59,7 +60,11 @@ class ShopStockReceivedForm(FlaskForm):
     submit = SubmitField('Receive Stock')
 
     def populate_item_name_choices(self):
-        self.item_name.choices = [(item.id, item.item_name) for item in Stock.query.all()]
+        shop_stock_list = []
+        for shop in current_user.shops:
+            for stock in shop.stock:
+                shop_stock_list.append(stock)
+        self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]
 
     def get_selected_item_id(self):
         selected_item_id = self.item_name.data
@@ -76,7 +81,11 @@ class ShopStockSoldForm(FlaskForm):
     submit = SubmitField('Record Sales')
 
     def populate_item_name_choices(self):
-        self.item_name.choices = [(item.id, item.item_name) for item in Stock.query.all()]
+        shop_stock_list = []
+        for shop in current_user.shops:
+            for stock in shop.stock:
+                shop_stock_list.append(stock)
+        self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]
 
     def get_selected_item_id(self):
         selected_item_id = self.item_name.data

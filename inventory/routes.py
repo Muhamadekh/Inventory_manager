@@ -19,8 +19,16 @@ def today_date():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
+    shops = Shop.query.all()
+    stock_value_list = []
+    for shop in shops:
+        shop_stock_value_list = []
+        for item in shop.stock:
+            shop_stock_value_list.append(item.item_value)
+        stock_value_list.append(sum(shop_stock_value_list))
+    total_stock_value = sum(stock_value_list)
     date = today_date()
-    return render_template('home.html', date=date)
+    return render_template('home.html', date=date, total_stock_value=total_stock_value)
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
@@ -87,6 +95,52 @@ def view_shop(shop_id):
     for product in shop.stock:
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
+
+    # Request reports download
+    if request.args.get('download'):
+        time_range = request.args.get('time_range')  # Get the specified time range from the request arguments
+
+        # Define the start date based on the specified time range
+        if time_range == '7':  # 7 days
+            start_date = datetime.now() - timedelta(days=7)
+        elif time_range == '30':  # 30 days
+            start_date = datetime.now() - timedelta(days=30)
+        elif time_range == '6m':  # 6 months
+            start_date = datetime.now() - timedelta(days=30 * 6)
+        else:
+            # Handle invalid time range here, e.g., redirect to an error page or display an error message
+            flash("Range does not exist", "warning")
+
+        # Get the sales entries within the specified time range
+        sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date,
+                                               StockSold.shop_id == shop.id
+                                               ).order_by(StockSold.date_sold.desc()).all()
+
+        # Prepare the CSV file data
+        headers = ['Date Sold', 'Item Name', 'Quantity', 'Discount', 'Value']
+        rows = []
+        for entry in sales_entries:
+            row = [
+                entry.date_sold.strftime('%d-%m-%Y'),
+                entry.item_name,
+                entry.item_quantity,
+                entry.item_discount,
+                entry.item_value
+            ]
+            rows.append(row)
+
+        # Create a CSV file
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(headers)
+        writer.writerows(rows)
+
+        # Prepare the response with the CSV file
+        filename = f"{shop.shop_name.replace(' ', '_')}_Sales.csv"
+        response = make_response(output.getvalue())
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        response.headers['Content-type'] = 'text/csv'
+        return response
     return render_template('view_shop.html', shop=shop, total_stock_value=total_stock_value, date=date)
 
 
@@ -140,7 +194,6 @@ def add_new_stock():
         stock.item_value = stock.item_price * stock.item_quantity
         db.session.add(stock)
         db.session.commit()
-
         return redirect(url_for('add_new_stock'))
     return render_template('add_stock.html', form=form)
 
@@ -173,8 +226,9 @@ def stock_received():
         else:
              flash("Range does not exit", "warning")
 
-        sales_entries = StockReceived.query.filter(StockReceived.date_received>=start_date).order_by\
-           (StockReceived.date_received.desc()).all()
+        sales_entries = StockReceived.query.filter(StockReceived.date_received >= start_date,
+                                                   StockSold.shop_id == shop.id
+                                                   ).order_by(StockReceived.date_received.desc()).all()
 
         headers = ['Date Received', 'Item Name', 'Quantity']
         rows = []
@@ -202,7 +256,7 @@ def stock_received():
 
 @app.route('/shop', methods=['GET', 'POST'])
 def stock_sold():
-    print(current_user.shops)
+    print(Shop.stock_received)
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopStockSoldForm()
     form.populate_item_name_choices()
@@ -226,67 +280,26 @@ def stock_sold():
 
     Date = today_date()
     current_date = datetime.now()
-    sales_entries = StockSold.query.filter(StockSold.date_sold<=current_date).order_by(StockSold.date_sold.desc()).all()
+    sales_entries = StockSold.query.filter(StockSold.date_sold <= current_date,
+                                           StockSold.shop_id == shop.id
+                                           ).order_by(StockSold.date_sold.desc()).all()
     for entry in sales_entries:
         entry_date = entry.date_sold.date()
         if entry_date not in sales_dates:
             sales_dates.append(entry_date)
     for date in sales_dates:
         sales_lookup[date] = []
-        sales = StockSold.query.filter(func.date(StockSold.date_sold) == date).all()
+        sales = StockSold.query.filter(func.date(StockSold.date_sold) == date, StockSold.shop_id == shop.id).all()
         for sale in sales:
             sales_lookup[date].append(sale)
-
-        # Add the following code to handle the download request
-        if request.args.get('download'):
-            time_range = request.args.get('time_range')  # Get the specified time range from the request arguments
-
-            # Define the start date based on the specified time range
-            if time_range == '7':  # 7 days
-                start_date = datetime.now() - timedelta(days=7)
-            elif time_range == '30':  # 30 days
-                start_date = datetime.now() - timedelta(days=30)
-            elif time_range == '6m':  # 6 months
-                start_date = datetime.now() - timedelta(days=30 * 6)
-            else:
-                # Handle invalid time range here, e.g., redirect to an error page or display an error message
-                flash("Range does not exist", "warning")
-
-            # Get the sales entries within the specified time range
-            sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date).order_by(
-                StockSold.date_sold.desc()).all()
-
-            # Prepare the CSV file data
-            headers = ['Date Sold', 'Item Name', 'Quantity', 'Discount', 'Value']
-            rows = []
-            for entry in sales_entries:
-                row = [
-                    entry.date_sold.strftime('%d-%m-%Y'),
-                    entry.item_name,
-                    entry.item_quantity,
-                    entry.item_discount,
-                    entry.item_value
-                ]
-                rows.append(row)
-
-            # Create a CSV file
-            output = io.StringIO()
-            writer = csv.writer(output)
-            writer.writerow(headers)
-            writer.writerows(rows)
-
-            # Prepare the response with the CSV file
-            response = make_response(output.getvalue())
-            response.headers['Content-Disposition'] = 'attachment; filename=sales_history.csv'
-            response.headers['Content-type'] = 'text/csv'
-            return response
     return render_template('stock_sold.html', form=form, sales_lookup=sales_lookup, Date=Date, shop=shop, sales_dates=sales_dates)
 
 
 @app.route('/history', methods=['GET'])
 def history():
     start_date = datetime.now() - timedelta(days=3)
-    sales_entries = StockSold.query.filter(StockSold.date_sold>=start_date).order_by(StockSold.date_sold.desc()).all()
+    sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date,
+                                           StockSold.shop_id).order_by(StockSold.date_sold.desc()).all()
     sales_dates = []
     sales_lookup = {}
     for entry in sales_entries:
