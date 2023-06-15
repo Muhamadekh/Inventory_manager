@@ -56,7 +56,7 @@ class StockSold(db.Model):
     item_discount = db.Column(db.Integer, nullable=False)
     item_value = db.Column(db.Integer, nullable=False)
     date_sold = db.Column(db.DateTime, default=datetime.now())
-    payment = db.Column(db.String(80), nullable=False)
+    payment_method = db.Column(db.String(80), nullable=False)
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
 
 
@@ -66,8 +66,8 @@ class Store(db.Model):
     location = db.Column(db.String(60), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    stock = db.relationship('StoreStock', backref='store', lazy=True)
-    stock_in = db.relationship('StoreIn', backref='store', lazy=True)
+    store_stock = db.relationship('StoreStock', backref='store', lazy=True)
+    stock_in = db.relationship('StockIn', backref='store', lazy=True)
     stock_out = db.relationship('StockOut', backref='store', lazy=True)
 
 
@@ -78,7 +78,6 @@ class StockIn(db.Model):
     date_received = db.Column(db.DateTime, default=datetime.now())
     item_cost_price = db.Column(db.Integer, nullable=False)
     item_selling_price = db.Column(db.Integer, nullable=False)
-    item_supplier = db.Column(db.String(100), nullable=False)
     store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
 
 
@@ -88,6 +87,7 @@ class StockOut(db.Model):
     item_quantity = db.Column(db.Integer, nullable=False)
     date_sent = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+    store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
 
 
 class StoreStock(db.Model):
@@ -104,6 +104,17 @@ class StoreStock(db.Model):
 
 class Supplier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    company_name = db.Column(db.String(80), unique=True, nullable=False)
+    company_name = db.Column(db.String(80), nullable=False)
+    item_supplied = db.Column(db.String(80), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
     supply_date = db.Column(db.DateTime, default=datetime.now())
-    date_registered = db.Column(db.DateTime, default=datetime.now())
+
+
+class Debtor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    company_name = db.Column(db.String(80), nullable=False)
+    phone_number = db.Column(db.String(80), nullable=False)
+    item_bought = db.Column(db.String(80), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    purchase_date = db.Column(db.DateTime, default=datetime.now())

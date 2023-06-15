@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Length, EqualTo
-from inventory.models import User, Stock
+from inventory.models import User, Shop
 from flask import session
 from flask_login import current_user
 
@@ -74,10 +74,14 @@ class ShopStockReceivedForm(FlaskForm):
             return 0
 
 
+payment_methods_list = ['Cash', 'Orange Money', 'Credit', 'Bank']
+
+
 class ShopStockSoldForm(FlaskForm):
     item_name = SelectField('Select Item Name', choices=[])
     item_quantity = IntegerField('Quantity Sold', validators=[DataRequired()])
     item_discount = IntegerField('Discount', validators=[DataRequired()])
+    payment_method = SelectField('Payment Method', choices=payment_methods_list)
     submit = SubmitField('Record Sales')
 
     def populate_item_name_choices(self):
@@ -103,6 +107,65 @@ class StoreRegistrationForm(FlaskForm):
 
 class StoreNewItemForm(FlaskForm):
     item_name = StringField('Item Name', validators=[DataRequired()])
-    item_price = IntegerField('Price', validators=[DataRequired()])
+    item_cost_price = IntegerField('Cost Price', validators=[DataRequired()])
+    item_selling_price = IntegerField('Selling Price', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity', validators=[DataRequired()])
     submit = SubmitField('Add Item')
+
+
+class StoreStockInForm(FlaskForm):
+    item_name = SelectField('Select Item', choices=[])
+    item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    submit = SubmitField('Receive Stock')
+
+    def populate_item_name_choices(self):
+        store_stock_list = []
+        for store in current_user.stores:
+            for stock in store.store_stock:
+                store_stock_list.append(stock)
+        self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
+
+    def get_selected_item_id(self):
+        selected_item_id = self.item_name.data
+        if selected_item_id is not None:
+            return int(selected_item_id)
+        else:
+            return 0
+
+
+class StoreStockOutForm(FlaskForm):
+    item_name = SelectField('Select Item', choices=[])
+    item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    shop = SelectField('Select Shop', choices=[])
+    submit = SubmitField('Receive Stock')
+
+    def populate_item_name_choices(self):
+        store_stock_list = []
+        for store in current_user.stores:
+            for stock in store.store_stock:
+                store_stock_list.append(stock)
+        self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
+
+    def populate_shop_choices(self):
+        self.shop.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
+
+    def get_selected_item_id(self):
+        selected_item_id = self.item_name.data
+        if selected_item_id is not None:
+            return int(selected_item_id)
+        else:
+            return 0
+
+    def get_selected_shop_id(self):
+        selected_shop_id = self.shop.data
+        if selected_shop_id is not None:
+            return int(selected_shop_id)
+        else:
+            return 0
+
+
+class DebtorRegistrationForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=4)])
+    company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
+    phone_number = StringField('Phone Number', validators=[DataRequired()])
+    submit = SubmitField('Save')

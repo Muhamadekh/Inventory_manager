@@ -264,7 +264,7 @@ def stock_sold():
     item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
         item_sold = StockSold(item_name=item.item_name, item_quantity=form.item_quantity.data,
-                              item_discount=form.item_discount.data, shop_id=shop.id)
+                              item_discount=form.item_discount.data, payment_method=form.payment_method.data, shop_id=shop.id)
         selling_price = item.item_price - item_sold.item_discount
         item_sold.item_value = item_sold.item_quantity * selling_price
         db.session.add(item_sold)
