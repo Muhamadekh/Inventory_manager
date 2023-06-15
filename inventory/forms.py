@@ -94,3 +94,15 @@ class ShopStockSoldForm(FlaskForm):
         else:
             return 0
 
+
+class StoreRegistrationForm(FlaskForm):
+    store_name = StringField('Store Name', validators=[DataRequired(), Length(min=4)])
+    location = StringField('Location', validators=[DataRequired()])
+    submit = SubmitField('Register')
+
+
+class StoreNewItemForm(FlaskForm):
+    item_name = StringField('Item Name', validators=[DataRequired()])
+    item_price = IntegerField('Price', validators=[DataRequired()])
+    item_quantity = IntegerField('Quantity', validators=[DataRequired()])
+    submit = SubmitField('Add Item')

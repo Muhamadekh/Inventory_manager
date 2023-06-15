@@ -34,7 +34,6 @@ class Shop(db.Model):
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False, unique=True)
-    item_price = db.Column(db.Integer, nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
@@ -57,6 +56,7 @@ class StockSold(db.Model):
     item_discount = db.Column(db.Integer, nullable=False)
     item_value = db.Column(db.Integer, nullable=False)
     date_sold = db.Column(db.DateTime, default=datetime.now())
+    payment = db.Column(db.String(80), nullable=False)
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
 
 
@@ -66,6 +66,9 @@ class Store(db.Model):
     location = db.Column(db.String(60), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    stock = db.relationship('StoreStock', backref='store', lazy=True)
+    stock_in = db.relationship('StoreIn', backref='store', lazy=True)
+    stock_out = db.relationship('StockOut', backref='store', lazy=True)
 
 
 class StockIn(db.Model):
@@ -73,7 +76,9 @@ class StockIn(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     date_received = db.Column(db.DateTime, default=datetime.now())
-    supllier = db.Column(db.String(100), nullable=False)
+    item_cost_price = db.Column(db.Integer, nullable=False)
+    item_selling_price = db.Column(db.Integer, nullable=False)
+    item_supplier = db.Column(db.String(100), nullable=False)
     store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
 
 
@@ -84,3 +89,21 @@ class StockOut(db.Model):
     date_sent = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
 
+
+class StoreStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False, unique=True)
+    item_cost_price = db.Column(db.Integer, nullable=False)
+    item_selling_price = db.Column(db.Integer, nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
+    date_added = db.Column(db.DateTime, default=datetime.now())
+    store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
+    item_value = db.Column(db.Integer, nullable=False)
+
+
+class Supplier(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(80), unique=True, nullable=False)
+    supply_date = db.Column(db.DateTime, default=datetime.now())
+    date_registered = db.Column(db.DateTime, default=datetime.now())
