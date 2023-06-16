@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="container form-group">
+        <form action="" method="POST">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mt-2 mb-4">Add debtor details</legend>
+                <div class="row" id="registerForm">
+                    <div class="form-group">
+                        <div class="col-md-12">
+                            {{ form.name.label (class="form-control-label")}}
+                                {% if form.name.errors %}
+                                    {{ form.name (class="form-control form-control-lg is-invalid")}}
+                                    <ul class="invalid-feedback">
+                                        {% for error in form.name.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    {{ form.name (class="form-control form-control-lg")}}
+                                {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-12">
+                            {{ form.company_name.label (class="form-control-label")}}
+                            {% if form.company_name.errors %}
+                                {{ form.company_name (class="form-control form-control-lg is-invalid")}}
+                                <ul class="invalid-feedback">
+                                    {% for error in form.company_name.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                {{ form.company_name (class="form-control form-control-lg")}}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-12">
+                            {{ form.phone_number.label (class="form-control-label")}}
+                            {% if form.phone_number.errors %}
+                                {{ form.phone_number (class="form-control form-control-lg is-invalid")}}
+                                <ul class="invalid-feedback">
+                                    {% for error in form.phone_number.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                {{ form.phone_number (class="form-control form-control-lg")}}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="col-md-12">
+                            {{ form.submit (class="btn btn-outline-info", style="background-color: #008CBA; color: white;")}}
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+{% endblock %}

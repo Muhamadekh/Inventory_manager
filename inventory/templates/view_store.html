@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <!-- Buttons -->
+    <div class="button-container">
+      <a class="button active">Stock</a>
+      <a href="{{ url_for('stock_out')}}" class="button">Stock Out</a>
+      <a href="{{ url_for('stock_in')}}" class="button">Receive Stock</a>
+      <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
+      <a class="ml-4">Date:{{date}}</a>
+    </div>
+
+     <!-- Table with spreadsheet-like design -->
+    <table class="table table-hover table-condensed">
+      <thead>
+        <tr>
+          <th>Item ID</th>
+          <th>Item Name</th>
+          <th>Item Quantity</th>
+          <th>Cost Price</th>
+          <th>Selling Price</th>
+          <th>Item Value</th>
+          <th>Date Received</th>
+          <th colspan="2">Item Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in store.store_stock %}
+          <tr>
+              <td>{{ product.id }}</td>
+              <td>{{ product.item_name }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item_quantity) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item_cost_price) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item_selling_price) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.date_added) }}</td>
+              <td class="text-right">{{ product.stock_status }}</td>
+              <td class="text-center"><a href="#">Edit</a></td>
+          </tr>
+        {% endfor %}
+          <tr>
+              <td colspan="4" class="text-right"><strong>Total Stock Value</strong></td>
+              <td class="text-right"><strong>{{total_stock_value}}</strong></td>
+              <td colspan="2"></td>
+          </tr>
+      </tbody>
+    </table>
+{% endblock content%}

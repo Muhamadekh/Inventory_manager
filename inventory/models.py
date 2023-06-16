@@ -37,7 +37,7 @@ class Stock(db.Model):
     item_quantity = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
-    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     item_value = db.Column(db.Integer, nullable=False)
 
 
@@ -46,7 +46,7 @@ class StockReceived(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     date_received = db.Column(db.DateTime, default=datetime.now())
-    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
 
 
 class StockSold(db.Model):
@@ -57,7 +57,7 @@ class StockSold(db.Model):
     item_value = db.Column(db.Integer, nullable=False)
     date_sold = db.Column(db.DateTime, default=datetime.now())
     payment_method = db.Column(db.String(80), nullable=False)
-    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
 
 
 class Store(db.Model):
@@ -78,7 +78,7 @@ class StockIn(db.Model):
     date_received = db.Column(db.DateTime, default=datetime.now())
     item_cost_price = db.Column(db.Integer, nullable=False)
     item_selling_price = db.Column(db.Integer, nullable=False)
-    store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
 
 
 class StockOut(db.Model):
@@ -86,8 +86,8 @@ class StockOut(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     date_sent = db.Column(db.DateTime, default=datetime.now())
-    shop_id = db.Column(db.String(100), db.ForeignKey('shop.id'))
-    store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
 
 
 class StoreStock(db.Model):
@@ -98,7 +98,7 @@ class StoreStock(db.Model):
     item_quantity = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
-    store_id = db.Column(db.String(100), db.ForeignKey('store.id'))
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
     item_value = db.Column(db.Integer, nullable=False)
 
 
@@ -118,3 +118,4 @@ class Debtor(db.Model):
     item_bought = db.Column(db.String(80), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     purchase_date = db.Column(db.DateTime, default=datetime.now())
+    item_value = db.Column(db.Integer, nullable=False)

@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+{% block content %}
+     <table class="table">
+         <caption style="caption-side: top">Stores Summary Table<span class="ml-4"> Date: {{date}}</span></caption>
+          <thead>
+            <tr>
+              <th scope="col">Store ID</th>
+              <th scope="col">Store Name</th>
+              <th scope="col">Location</th>
+              <th scope="col">Total Stock Value</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for shop in shops %}
+            <tr>
+              <td>{{ store.id }}</td>
+              <td>{{store.store_name }}</td>
+              <td>{{store.location}}</td>
+              <td>{{ store_stock_lookup[store.id] }}</td>
+              <td><a href="{{ url_for('view_store', store_id=store.id )}}">View More</a></td>
+
+            </tr>
+          {% endfor %}
+          </tbody>
+     </table>
+{% endblock %}

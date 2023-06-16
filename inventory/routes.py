@@ -1,8 +1,8 @@
 from flask import Flask, render_template, url_for, flash, redirect, session, request, abort
 from inventory import app, bcrypt, db
-from inventory.models import User, Shop, Stock, StockReceived, StockSold
+from inventory.models import User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut, StockIn
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
-                             ShopStockReceivedForm, ShopStockSoldForm)
+                             ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -273,6 +273,8 @@ def stock_sold():
             item.item_quantity = item.item_quantity - item_sold.item_quantity
             item.item_value = item.item_quantity * item.item_price
             db.session.commit()
+        if item_sold.payment_method == 'Credit':
+            return redirect(url_for('debtor'))
         return redirect(url_for('stock_sold'))
 
     sales_dates = []
@@ -313,3 +315,63 @@ def history():
         for sale in sales:
             sales_lookup[date].append(sale)
     return render_template('history.html', sales_dates=sales_dates, sales_lookup=sales_lookup)
+
+
+@app.route('/add_debtor', methods=['GET', 'POST'])
+def add_debtor():
+    form = DebtorRegistrationForm()
+    if form.validate_on_submit():
+        debtor = Debtor(name=form.name.data, company_name=form.company_name.data, phone_number=form.phone_number.data)
+        sale_time = datetime.now()
+        item = StockSold.query.filter(StockSold.date_sold <= sale_time).order_by(StockSold.date_sold.desc()).first()
+        debtor.item_bought = item.item_name
+        debtor.item_quantity = item.item_quantity
+        debtor.purchase_date = item.date_sold
+        debtor.item_value = item.item_value
+        db.session.add(debtor)
+        db.session.commit()
+        return redirect(url_for('stock_sold'))
+    return render_template('add_debtor.html')
+
+
+@app.route('/view_debtors', methods=['GET'])
+def view_debtors():
+    debtors = Debtor.query.all()
+    return render_template('view_debtors.html', debtors=debtors)
+
+
+@app.route('/register_store', methods=['GET', 'POST'])
+def register_store():
+    form = StoreRegistrationForm()
+    if form.validate_on_submit():
+        store = Store(store_name=form.store_name.data, location=form.location.data)
+        db.session.add(store)
+        db.session.commit()
+        flash(f"{store.store_name} at {store.location} was successfully registered.", "success")
+        return redirect(url_for('view_stores'))
+    return render_template('register_store.html', form=form)
+
+
+@app.route('/view_stores', methods=['GET', 'POST'])
+def view_stores():
+    stores = Store.query.all()
+    date = today_date()
+    store_stock_lookup = {}
+    for store in stores:
+        stock_value_list = []
+        for product in store.store_stock:
+            stock_value_list.append(product.item_value)
+        total_stock_value = sum(stock_value_list)
+        store_stock_lookup[store.id] = total_stock_value
+    return render_template('view_stores.html', store_stock_lookup=store_stock_lookup, stores=stores, date=date)
+
+
+@app.route('/view_stores/<int:store_id>', methods=['GET'])
+def view_store(store_id):
+    store = Store.query.get_or_404(store_id)
+    date = today_date()
+    stock_value_list = []
+    for product in store.store_stock:
+        stock_value_list.append(product.item_value)
+    total_stock_value = sum(stock_value_list)
+    return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date)
