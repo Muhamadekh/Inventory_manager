@@ -3,13 +3,13 @@
     <div class="float-left">
         <a href="{{ url_for('view_store', store_id=store.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Home</a>
     </div>
+
+
     <!-- Table-like form for adding new stock -->
     <table class="table">
       <thead>
         <tr>
           <th>Item Name</th>
-          <th>Cost Price</th>
-          <th>Selling Price</th>
           <th>Quantity</th>
           <th></th>
         </tr>
@@ -19,13 +19,33 @@
           <form method="POST">
             {{ form.hidden_tag() }}
             <td>{{ form.item_name(class="form-control") }}</td>
-            <td>{{ form.item_cost_price(class="form-control") }}</td>
-            <td>{{ form.item_selling_price(class="form-control") }}</td>
             <td>{{ form.item_quantity(class="form-control") }}</td>
             <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
           </form>
         </tr>
       </tbody>
     </table>
-
+    {% for date in stock_out_dates %}
+      <div class="table" id="SalesTable">
+        <table class="table mt-4">
+          <thead>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+            <tr>
+              <th>Item Name</th>
+              <th>Quantity</th>
+              <th>Time Sent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in stock_out_lookup[date] %}
+              <tr>
+                <td>{{ entry.item_name }}</td>
+                <td>{{ "{:,}".format (entry.item_quantity) }}</td>
+                <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
 {% endblock %}

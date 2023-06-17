@@ -414,3 +414,44 @@ def stock_in(store_id):
             db.session.commit()
         return redirect(url_for('stock_received'))
     return render_template('stock_in.html', form=form)
+
+
+@app.route('/stock_out', methods=['GET', 'POST'])
+def stock_out(store_id):
+    store = Store.query.get_or_404(store_id)
+    form = StoreStockOutForm()
+    form.populate_item_name_choices()
+    form.populate_shop_choices()
+    selected_item_id = form.get_selected_item_id()
+    selected_shop_id = form.get_selected_shop_id()
+    item = StoreStock.query.filter_by(id=selected_item_id).first()
+    shop = Shop.query.filter_by(id=selected_shop_id).first()
+    if form.validate_on_submit():
+        stock_out = StockOut(item_name=item.item_name, item_quantity=form.item_quantity.data,
+                             store_id=store.id, shop_id=shop.id)
+        db.session.add(stock_out)
+        db.session.commit()
+        if item.item_name == stock_out.item_name:
+            item.item_quantity = item.item_quantity - stock_out.item_quantity
+            item.item_value = item.item_quantity * item.item_price
+            db.session.commit()
+        return redirect(url_for('stock_out'))
+
+    stock_out_dates = []
+    stock_out_lookup = {}
+
+    current_date = datetime.now()
+    sales_entries = StockOut.query.filter(StockOut.date_sent <= current_date,
+                                           StockOut.shop_id == shop.id
+                                           ).order_by(StockOut.date_sent.desc()).all()
+    for entry in sales_entries:
+        entry_date = entry.date_sent.date()
+        if entry_date not in stock_out_dates:
+            stock_out_dates.append(entry_date)
+    for date in stock_out_dates:
+        stock_out_lookup[date] = []
+        item_sent = StockOut.query.filter(func.date(StockOut.date_sent) == date, StockOut.shop_id == shop.id).all()
+        for item in item_sent:
+            stock_out_lookup[date].append(item)
+    return render_template('stock_out.html', form=form, stock_out_lookup=stock_out_lookup, shop=shop,
+                           stock_out_dates=stock_out_dates)
