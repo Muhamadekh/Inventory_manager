@@ -5,7 +5,7 @@
       <a class="button active">Stock</a>
       <a href="{{ url_for('stock_out')}}" class="button">Stock Out</a>
       <a href="{{ url_for('stock_in')}}" class="button">Receive Stock</a>
-      <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
+      <a href="{{ url_for('add_store_stock', store_id=store.id)}}" class="button">Add New Item</a>
       <a class="ml-4">Date:{{date}}</a>
     </div>
 

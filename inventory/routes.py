@@ -2,7 +2,8 @@ from flask import Flask, render_template, url_for, flash, redirect, session, req
 from inventory import app, bcrypt, db
 from inventory.models import User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut, StockIn
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
-                             ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm)
+                             ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
+                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -375,3 +376,41 @@ def view_store(store_id):
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
     return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date)
+
+
+@app.route('/add_store_stock', methods=['GET', 'POST'])
+@login_required
+def add_store_stock(store_id):
+    store = Store.query.get_or_404(id=store_id)
+    form = StoreNewItemForm()
+    if form.validate_on_submit():
+        store_stock = StoreStock(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
+                                 item_selling_price=form.item_selling_price.data, item_quantity=form.item_quantity.data,
+                                 store_id=store.id)
+        if store_stock.item_quantity <= 20:
+            store_stock.stock_status = "Running Out"
+        store_stock.item_value = store_stock.item_selling_price * store_stock.item_quantity
+        db.session.add(store_stock)
+        db.session.commit()
+        return redirect(url_for('add_store_stock'))
+    return render_template('add_store_stock.html', form=form)
+
+
+@app.route('/stock_in', methods=['GET', 'POST'])
+def stock_in(store_id):
+    store = Store.query.get_or_404(store_id)
+    form = StoreStockInForm()
+    form.populate_item_name_choices()
+    selected_item_id = form.get_selected_item_id()
+    item = StoreStock.query.filter_by(id=selected_item_id).first()
+    if form.validate_on_submit():
+        item_received = StockIn(item_name=item.item_name, item_quantity=form.item_quantity.data, store_id=store.id,
+                                item_cost_price=item.cost_price, item_selling_price=item.selling_price)
+        db.session.add(item_received)
+        db.session.commit()
+        if item.item_name == item_received.item_name:
+            item.item_quantity = item.item_quantity + item_received.item_quantity
+            item.item_value = item.item_quantity * item.item_price
+            db.session.commit()
+        return redirect(url_for('stock_received'))
+    return render_template('stock_in.html', form=form)
