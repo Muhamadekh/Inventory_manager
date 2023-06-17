@@ -3,10 +3,14 @@
     <!-- Buttons -->
     <div class="button-container">
       <a class="button active">Stock</a>
-      <a href="{{ url_for('stock_out')}}" class="button">Stock Out</a>
-      <a href="{{ url_for('stock_in')}}" class="button">Receive Stock</a>
+      <a href="{{ url_for('stock_out', store_id=store.id)}}" class="button">Stock Out</a>
+      <a href="{{ url_for('stock_in', store_id=store.id)}}" class="button">Receive Stock</a>
       <a href="{{ url_for('add_store_stock', store_id=store.id)}}" class="button">Add New Item</a>
+      <a class="ml-4">Store Name: {{store.store_name}}</a>
       <a class="ml-4">Date:{{date}}</a>
+      <div class="float-right">
+          <a href="{{ url_for('view_stores')}}" class="button">Back</a>
+      </div>
     </div>
 
      <!-- Table with spreadsheet-like design -->
@@ -32,15 +36,15 @@
               <td class="text-right">{{ "{:,}".format(product.item_cost_price) }}</td>
               <td class="text-right">{{ "{:,}".format(product.item_selling_price) }}</td>
               <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
-              <td class="text-right">{{ "{:,}".format(product.date_added) }}</td>
+              <td class="text-right">{{ product.date_added.date() }}</td>
               <td class="text-right">{{ product.stock_status }}</td>
               <td class="text-center"><a href="#">Edit</a></td>
           </tr>
         {% endfor %}
           <tr>
-              <td colspan="4" class="text-right"><strong>Total Stock Value</strong></td>
+              <td colspan="5" class="text-right"><strong>Total Stock Value</strong></td>
               <td class="text-right"><strong>{{total_stock_value}}</strong></td>
-              <td colspan="2"></td>
+              <td colspan="3"></td>
           </tr>
       </tbody>
     </table>

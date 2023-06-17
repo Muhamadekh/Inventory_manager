@@ -35,6 +35,7 @@ class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False, unique=True)
     item_quantity = db.Column(db.Integer, nullable=False)
+    item_price = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
@@ -119,3 +120,5 @@ class Debtor(db.Model):
     item_quantity = db.Column(db.Integer, nullable=False)
     purchase_date = db.Column(db.DateTime, default=datetime.now())
     item_value = db.Column(db.Integer, nullable=False)
+
+

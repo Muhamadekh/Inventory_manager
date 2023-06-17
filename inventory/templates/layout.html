@@ -56,10 +56,10 @@
                                         <span class="bot-line"></span>Stores</a>
                                     <ul class="header3-sub-list list-unstyled">
                                         <li>
-                                            <a href="login.html">Add</a>
+                                            <a href="{{ url_for('register_store')}}">Add</a>
                                         </li>
                                         <li>
-                                            <a href="register.html">View</a>
+                                            <a href="{{ url_for('view_stores')}}">View</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -104,10 +104,10 @@
                                         <span class="bot-line"></span>Debtors</a>
                                     <ul class="header3-sub-list list-unstyled">
                                         <li>
-                                            <a href="button.html">Register</a>
+                                            <a href="{{ url_for('add_debtor')}}">Register</a>
                                         </li>
                                         <li>
-                                            <a href="badge.html">View</a>
+                                            <a href="{{ url_for('view_debtors')}}">View</a>
                                         </li>
                                     </ul>
                                 </li>

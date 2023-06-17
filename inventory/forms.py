@@ -116,12 +116,16 @@ class StoreNewItemForm(FlaskForm):
 class StoreStockInForm(FlaskForm):
     item_name = SelectField('Select Item', choices=[])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    item_cost_price = IntegerField('Cost Price', validators=[DataRequired()])
+    item_selling_price = IntegerField('Selling Price', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
 
     def populate_item_name_choices(self):
         store_stock_list = []
         for store in current_user.stores:
+            print(store.store_name)
             for stock in store.store_stock:
+                print(store.store_stock)
                 store_stock_list.append(stock)
         self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
 
@@ -137,7 +141,7 @@ class StoreStockOutForm(FlaskForm):
     item_name = SelectField('Select Item', choices=[])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     shop = SelectField('Select Shop', choices=[])
-    submit = SubmitField('Receive Stock')
+    submit = SubmitField('Send Stock')
 
     def populate_item_name_choices(self):
         store_stock_list = []
