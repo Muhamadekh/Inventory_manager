@@ -149,20 +149,18 @@ def view_shop(shop_id):
 def login():
     if current_user.is_authenticated and current_user.user_role == 'Admin':
         return redirect(url_for('home'))
-    elif current_user.is_authenticated and current_user.user_role != 'Admin':
-        return redirect(url_for('shop'))
-    else:
-        form = LoginForm()
-        if form.validate_on_submit():
-            user = User.query.filter_by(username=form.username.data).first()
-            if user and bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user, remember=form.remember.data)
-                if user.user_role == 'Admin':
-                    return redirect(url_for('home'))
-                else:
-                    return redirect(url_for('stock_sold'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            login_user(user, remember=form.remember.data)
+            if user.user_role == 'Admin':
+                return redirect(url_for('home'))
             else:
-                flash('Please check your username and password.', 'danger')
+                shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+                return redirect(url_for('stock_sold', shop_id=shop.id))
+        else:
+            flash('Please check your username and password.', 'danger')
     return render_template('login.html', form=form)
 
 
@@ -173,18 +171,9 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/stock', methods=['GET','POST'])
-def stock():
-    shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
-    if shop:
-        return render_template('stock.html', shop=shop)
-    else:
-        return redirect(url_for('view_shops'))
-
-
-@app.route('/add_new_stock', methods=['GET', 'POST'])
+@app.route('/view_shops/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
 @login_required
-def add_new_stock():
+def add_new_stock(shop_id):
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopNewItemForm()
     if form.validate_on_submit():
@@ -195,12 +184,12 @@ def add_new_stock():
         stock.item_value = stock.item_price * stock.item_quantity
         db.session.add(stock)
         db.session.commit()
-        return redirect(url_for('add_new_stock'))
+        return redirect(url_for('add_new_stock', shop_id=shop.id))
     return render_template('add_stock.html', form=form, shop=shop)
 
 
-@app.route('/stock_received', methods=['GET', 'POST'])
-def stock_received():
+@app.route('/view_shops/<int:shop_id>/stock_received', methods=['GET', 'POST'])
+def stock_received(shop_id):
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopStockReceivedForm()
     form.populate_item_name_choices()
@@ -214,7 +203,7 @@ def stock_received():
             item.item_quantity = item.item_quantity + item_received.item_quantity
             item.item_value = item.item_quantity * item.item_price
             db.session.commit()
-        return redirect(url_for('stock_received'))
+        return redirect(url_for('stock_received', shop_id=shop.id))
 
     if request.args.get('download'):
 
@@ -255,8 +244,8 @@ def stock_received():
     return render_template('stock_received.html', form=form)
 
 
-@app.route('/shop', methods=['GET', 'POST'])
-def stock_sold():
+@app.route('/view_shops/<int:shop_id>/shop', methods=['GET', 'POST'])
+def stock_sold(shop_id):
     print(Shop.stock_received)
     shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     form = ShopStockSoldForm()
@@ -276,7 +265,7 @@ def stock_sold():
             db.session.commit()
         if item_sold.payment_method == 'Credit':
             return redirect(url_for('debtor'))
-        return redirect(url_for('stock_sold'))
+        return redirect(url_for('stock_sold', shop_id=shop.id))
 
     sales_dates = []
     sales_lookup = {}
