@@ -8,7 +8,7 @@
       <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
       <a class="ml-4">Date:{{date}}</a>
       <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
-      {% if curren_user.user_role == 'Admin' %}
+      {% if current_user.user_role == 'Admin' %}
           <div class="float-right">
               <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Download Sales Report

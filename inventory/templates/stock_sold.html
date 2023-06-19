@@ -2,10 +2,10 @@
 {% block content %}
     <!-- Buttons -->
     <div class="button-container">
-      <a href="{{ url_for('stock_sold')}}" class="button active">Sales</a>
-      <a href="{{ url_for('stock')}}"class="button">Stock</a>
-      <a href="{{ url_for('stock_received')}}" class="button">Receive Stock</a>
-      <a href="{{ url_for('add_new_stock')}}" class="button">Add New Item</a>
+      <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
+      <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
+      <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
+      <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
       <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
       {% if current_user.user_role != 'Admin' %}
         <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
