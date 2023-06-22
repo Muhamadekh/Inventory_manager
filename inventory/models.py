@@ -33,13 +33,17 @@ class Shop(db.Model):
 
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(100), nullable=False, unique=True)
+    item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     item_price = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     item_value = db.Column(db.Integer, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('item_name', 'shop_id'),
+    )
 
 
 class StockReceived(db.Model):
@@ -91,7 +95,7 @@ class StockOut(db.Model):
 
 class StoreStock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(100), nullable=False, unique=True)
+    item_name = db.Column(db.String(100), nullable=False)
     item_cost_price = db.Column(db.Integer, nullable=False)
     item_selling_price = db.Column(db.Integer, nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
@@ -99,6 +103,10 @@ class StoreStock(db.Model):
     date_added = db.Column(db.DateTime, default=datetime.now())
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
     item_value = db.Column(db.Integer, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('item_name', 'store_id'),
+    )
 
 
 class Supplier(db.Model):

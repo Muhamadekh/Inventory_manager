@@ -226,8 +226,6 @@ def add_new_stock(shop_id):
         except IntegrityError:
             db.session.rollback()
             flash('An error occurred while adding the item.', 'danger')
-        if stock.item_selling_price < stock.item_cost_price:
-            flash('Selling price is less than cost price.', 'warning')
         return redirect(url_for('add_new_stock', shop_id=shop.id))
     return render_template('add_stock.html', form=form, shop=shop)
 
@@ -421,11 +419,15 @@ def add_store_stock(store_id):
         store_stock = StoreStock(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
                                  item_selling_price=form.item_selling_price.data, item_quantity=form.item_quantity.data,
                                  store_id=store.id)
-        if store_stock.item_quantity <= 20:
+        if store_stock.item_quantity <= 500:
             store_stock.stock_status = "Running Out"
         store_stock.item_value = store_stock.item_selling_price * store_stock.item_quantity
-        db.session.add(store_stock)
-        db.session.commit()
+        try:
+            db.session.add(store_stock)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('An error occurred while adding the item.', 'danger')
         if store_stock.item_selling_price < store_stock.item_cost_price:
             flash('Selling price is less than cost price.', 'warning')
         return redirect(url_for('add_store_stock', store_id=store.id))
