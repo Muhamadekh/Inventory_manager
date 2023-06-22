@@ -23,9 +23,10 @@
                   Download Stock Received Report
               </button>
               <div class="dropdown-menu" aria-labelledby="stockReceivedDropdown">
-                <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='30') }}">30 days</a>
-                <a class="dropdown-item" href="{{ url_for('stock_received', download=True, time_range='6m') }}">6 months</a>
+                <a class="dropdown-item" href="{{ url_for('stock_received', shop_id=shop.id, download=True, time_range='30') }}">30 days</a>
+                <a class="dropdown-item" href="{{ url_for('stock_received', shop_id=shop.id, download=True, time_range='6m') }}">6 months</a>
               </div>
+              <a href="{{ url_for('view_shops')}}" class="button">Back</a>
           </div>
       {% endif %}
     </div>

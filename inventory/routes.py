@@ -10,6 +10,8 @@ from sqlalchemy import func
 import csv
 from flask import make_response
 import io
+import itertools
+from sqlalchemy.exc import IntegrityError
 
 
 def today_date():
@@ -20,6 +22,8 @@ def today_date():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
+    current_date = datetime.now().date()
+    # Finding total shops stck value
     shops = Shop.query.all()
     stock_value_list = []
     for shop in shops:
@@ -28,8 +32,40 @@ def home():
             shop_stock_value_list.append(item.item_value)
         stock_value_list.append(sum(shop_stock_value_list))
     total_stock_value = sum(stock_value_list)
-    date = today_date()
-    return render_template('home.html', date=date, total_stock_value=total_stock_value)
+
+    # Finding total store stck value
+    store_stock = []
+    stores = Store.query.all()
+    for store in stores:
+        for item in store.store_stock:
+            store_stock.append(item.item_value)
+    total_store_stock = sum(store_stock)
+
+    # Finding total net sales and discount
+    sales_value_list = []
+    discount_list = []
+    sales = StockSold.query.filter(func.date(StockSold.date_sold == current_date)).all()
+    print(sales)
+    for sale in sales:
+        sales_value_list.append(sale.item_value)
+        discount_list.append(sale.item_discount)
+    total_sales_value = sum(sales_value_list)
+    total_discount = sum(discount_list)
+
+    # Finding total top 5 most sold items
+    top_items_sold = StockSold.query.order_by(StockSold.item_quantity.desc()).all()
+    top_items_sold_lookup = {}
+    for item in top_items_sold:
+        if item not in top_items_sold_lookup:
+            top_items_sold_lookup[item.item_name] = item.item_quantity
+        else:
+            new_quantity = top_items_sold_lookup[item.item_name] + item.item_quantity
+            top_items_sold_lookup[item.item_name] = new_quantity
+    top_5_items_sold = dict(itertools.islice(top_items_sold_lookup.items(), 5))
+    print(top_5_items_sold)
+
+    return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
+                           total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold)
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
@@ -171,10 +207,12 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/view_shops/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
+@app.route('/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
 @login_required
 def add_new_stock(shop_id):
-    shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+    # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+    shop = Shop.query.get_or_404(shop_id)
+
     form = ShopNewItemForm()
     if form.validate_on_submit():
         stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
@@ -182,15 +220,22 @@ def add_new_stock(shop_id):
         if stock.item_quantity <= 20:
             stock.stock_status = "Running Out"
         stock.item_value = stock.item_price * stock.item_quantity
-        db.session.add(stock)
-        db.session.commit()
+        try:
+            db.session.add(stock)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('An error occurred while adding the item.', 'danger')
+        if stock.item_selling_price < stock.item_cost_price:
+            flash('Selling price is less than cost price.', 'warning')
         return redirect(url_for('add_new_stock', shop_id=shop.id))
     return render_template('add_stock.html', form=form, shop=shop)
 
 
-@app.route('/view_shops/<int:shop_id>/stock_received', methods=['GET', 'POST'])
+@app.route('/<int:shop_id>/stock_received', methods=['GET', 'POST'])
 def stock_received(shop_id):
-    shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+    # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+    shop = Shop.query.get_or_404(shop_id)
     form = ShopStockReceivedForm()
     form.populate_item_name_choices()
     selected_item_id = form.get_selected_item_id()
@@ -244,10 +289,10 @@ def stock_received(shop_id):
     return render_template('stock_received.html', form=form)
 
 
-@app.route('/view_shops/<int:shop_id>/shop', methods=['GET', 'POST'])
+@app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
 def stock_sold(shop_id):
-    print(Shop.stock_received)
-    shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+    # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+    shop = Shop.query.get_or_404(shop_id)
     form = ShopStockSoldForm()
     form.populate_item_name_choices()
     selected_item_id = form.get_selected_item_id()
@@ -381,6 +426,8 @@ def add_store_stock(store_id):
         store_stock.item_value = store_stock.item_selling_price * store_stock.item_quantity
         db.session.add(store_stock)
         db.session.commit()
+        if store_stock.item_selling_price < store_stock.item_cost_price:
+            flash('Selling price is less than cost price.', 'warning')
         return redirect(url_for('add_store_stock', store_id=store.id))
     return render_template('add_store_stock.html', form=form, store=store)
 
@@ -394,7 +441,7 @@ def stock_in(store_id):
     item = StoreStock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
         item_received = StockIn(item_name=item.item_name, item_quantity=form.item_quantity.data, store_id=store.id,
-                                item_cost_price=item.cost_price, item_selling_price=item.selling_price)
+                                item_cost_price=item.item_cost_price, item_selling_price=item.item_selling_price)
         db.session.add(item_received)
         db.session.commit()
         if item.item_name == item_received.item_name:
@@ -430,7 +477,8 @@ def stock_out(store_id):
     stock_out_lookup = {}
 
     current_date = datetime.now()
-    sales_entries = StockOut.query.filter(StockOut.date_sent <= current_date,).order_by(StockOut.date_sent.desc()).all()
+    sales_entries = StockOut.query.filter(StockOut.date_sent <= current_date,
+                                          StockOut.store_id == store.id).order_by(StockOut.date_sent.desc()).all()
     for entry in sales_entries:
         entry_date = entry.date_sent.date()
         if entry_date not in stock_out_dates:

@@ -77,8 +77,6 @@ class StockIn(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
     date_received = db.Column(db.DateTime, default=datetime.now())
-    item_cost_price = db.Column(db.Integer, nullable=False)
-    item_selling_price = db.Column(db.Integer, nullable=False)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
 
 
