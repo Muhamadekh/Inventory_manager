@@ -102,37 +102,23 @@
                             <!-- END CHART-->
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <!-- TOP CAMPAIGN-->
+                            <!-- TOP ITEMS SOLD-->
                             <div class="top-campaign">
-                                <h3 class="title-3 m-b-30">top campaigns</h3>
+                                <h3 class="title-3 m-b-30">top items sold</h3>
                                 <div class="table-responsive">
                                     <table class="table table-top-campaign">
                                         <tbody>
-                                            <tr>
-                                                <td>1. Australia</td>
-                                                <td>$70,261.65</td>
-                                            </tr>
-                                            <tr>
-                                                <td>2. United Kingdom</td>
-                                                <td>$46,399.22</td>
-                                            </tr>
-                                            <tr>
-                                                <td>3. Turkey</td>
-                                                <td>$35,364.90</td>
-                                            </tr>
-                                            <tr>
-                                                <td>4. Germany</td>
-                                                <td>$20,366.96</td>
-                                            </tr>
-                                            <tr>
-                                                <td>5. France</td>
-                                                <td>$10,366.96</td>
-                                            </tr>
+                                            {% for key, value in top_5_items_sold.items() %}
+                                                <tr>
+                                                    <td>{{ key }}</td>
+                                                    <td>{{ "{:,}".format(value) }}</td>
+                                                </tr>
+                                            {% endfor %}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                            <!-- END TOP CAMPAIGN-->
+                            <!-- END TOP ITEMS SOLD-->
                         </div>
                         <div class="col-md-6 col-lg-4">
                             <!-- CHART PERCENT-->
@@ -177,7 +163,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for key, value in top_5_items_sold.items() %}
+                                        {% for key, value in total_shop_sales_lookup.items() %}
                                             <tr class="tr-shadow">
                                                 <td><strong>{{ key }}</strong></td>
                                                 <td>

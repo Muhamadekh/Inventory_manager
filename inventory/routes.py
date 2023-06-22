@@ -62,10 +62,22 @@ def home():
             new_quantity = top_items_sold_lookup[item.item_name] + item.item_quantity
             top_items_sold_lookup[item.item_name] = new_quantity
     top_5_items_sold = dict(itertools.islice(top_items_sold_lookup.items(), 5))
-    print(top_5_items_sold)
+
+    # Listing shop based on weekly sales
+    shop_sales_lookup = {}
+    total_shop_sales_lookup = {}
+    time_range = datetime.now() - timedelta(days=7)
+    for shop in shops:
+        weekly_sales = StockSold.query.filter(StockSold.date_sold >= time_range).all()
+        for sale in weekly_sales:
+            shop_sales_lookup[shop.shop_name] = []
+            shop_sales_lookup[shop.shop_name].append(sale.item_quantity)
+    total_shop_sales_lookup[shop.shop_name] = sum(shop_sales_lookup[shop.shop_name])
+    print(total_shop_sales_lookup)
 
     return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
-                           total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold)
+                           total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold,
+                           total_shop_sales_lookup=total_shop_sales_lookup)
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
