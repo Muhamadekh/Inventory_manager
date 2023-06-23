@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, flash, redirect, session, request, abort
+from flask import render_template, url_for, flash, redirect, session, request, abort, jsonify
 from inventory import app, bcrypt, db
 from inventory.models import User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut, StockIn
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
@@ -45,7 +45,6 @@ def home():
     sales_value_list = []
     discount_list = []
     sales = StockSold.query.filter(func.date(StockSold.date_sold == current_date)).all()
-    print(sales)
     for sale in sales:
         sales_value_list.append(sale.item_value)
         discount_list.append(sale.item_discount)
@@ -73,7 +72,6 @@ def home():
             shop_sales_lookup[shop.shop_name] = []
             shop_sales_lookup[shop.shop_name].append(sale.item_quantity)
     total_shop_sales_lookup[shop.shop_name] = sum(shop_sales_lookup[shop.shop_name])
-    print(total_shop_sales_lookup)
 
     return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
                            total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold,
@@ -504,3 +502,20 @@ def stock_out(store_id):
             stock_out_lookup[date].append(item)
     return render_template('stock_out.html', form=form, stock_out_lookup=stock_out_lookup, shop=shop,
                            stock_out_dates=stock_out_dates, store=store)
+
+
+@app.route('/weekly_sales_data')
+def weekly_sales_data():
+    today = datetime.now().date()
+    start_date = today - timedelta(days=6)
+    sales_entries = StockSold.query.filter(
+        StockSold.date_sold >= start_date,
+        StockSold.date_sold <= today
+    ).order_by(StockSold.date_sold.asc()).all()
+
+    data = []
+
+    for entry in sales_entries:
+        data.append(entry.item_value)
+
+    return jsonify(data=data)

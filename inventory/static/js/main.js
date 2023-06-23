@@ -1673,3 +1673,43 @@
 })(jQuery);
 
 
+// Retrieve sales data from the server
+fetch('/weekly_sales_data')
+  .then(response => response.json())
+  .then(data => {
+      // Create a chart using Chart.js
+      const ctx = document.getElementById('widgetChart5').getContext('2d');
+      new Chart(ctx, {
+          type: 'bar', // Use 'bar' for a histogram
+          data: {
+              labels: data.labels,
+              datasets: [{
+                  label: 'Weekly Sales',
+                  data: data.data,
+                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  borderWidth: 1
+              }]
+          },
+          options: {
+              responsive: true,
+              scales: {
+                  x: {
+                      display: true,
+                      title: {
+                          display: true,
+                          text: 'Date'
+                      }
+                  },
+                  y: {
+                      display: true,
+                      title: {
+                          display: true,
+                          text: 'Sales Value'
+                      }
+                  }
+              }
+          }
+      });
+  });
+
