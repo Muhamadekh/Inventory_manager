@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <!-- Table-like form for adding new sale -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Quantity</th>
+          <th>Discount</th>
+          <th>Payment Method</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            <td>{{ form.item_name(class="form-control") }}</td>
+            <td>{{ form.item_quantity(class="form-control") }}</td>
+            <td>{{ form.item_discount(class="form-control") }}</td>
+            <td>{{ form.payment_method(class="form-control") }}</td>
+            <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
+          </form>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Sales Log -->
+    {% for date in sales_dates %}
+      <div class="table" id="SalesTable">
+        <table class="table mt-4">
+          <thead>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+            <tr>
+              <th>Item Name</th>
+              <th>Quantity Sold</th>
+              <th>Discount Given</th>
+              <th>Sales Value</th>
+              <th>Payment Method</th>
+              <th colspan="2">Time Sold</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in sales_lookup[date] %}
+              <tr>
+                <td>{{ entry.item_name }}</td>
+                <td>{{ "{:,}".format (entry.item_quantity) }}</td>
+                <td>{{ "{:,}".format( entry.item_discount )}}</td>
+                <td>{{ "{:,}".format (entry.item_value) }}</td>
+                <td>{{ entry.payment_method }}</td>
+                <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
+                <td>Edit</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+{% endblock %}

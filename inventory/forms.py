@@ -61,7 +61,12 @@ class ShopStockReceivedForm(FlaskForm):
 
     def populate_item_name_choices(self):
         shop_stock_list = []
-        for shop in current_user.shops:
+        if current_user.user_role == 'Admin':
+            for shop in current_user.shops:
+                for stock in shop.stock:
+                    shop_stock_list.append(stock)
+        else:
+            shop = Shop.query.filter_by(id=current_user.id)
             for stock in shop.stock:
                 shop_stock_list.append(stock)
         self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]

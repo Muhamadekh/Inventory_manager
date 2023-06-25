@@ -62,16 +62,18 @@ def home():
             top_items_sold_lookup[item.item_name] = new_quantity
     top_5_items_sold = dict(itertools.islice(top_items_sold_lookup.items(), 5))
 
-    # Listing shop based on weekly sales
+    # Listing shop-based weekly sales
     shop_sales_lookup = {}
     total_shop_sales_lookup = {}
     time_range = datetime.now() - timedelta(days=7)
+
     for shop in shops:
+        shop_sales_lookup[shop.shop_name] = []  # Initialize the list for each shop
         weekly_sales = StockSold.query.filter(StockSold.date_sold >= time_range).all()
         for sale in weekly_sales:
-            shop_sales_lookup[shop.shop_name] = []
-            shop_sales_lookup[shop.shop_name].append(sale.item_quantity)
-    total_shop_sales_lookup[shop.shop_name] = sum(shop_sales_lookup[shop.shop_name])
+            if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
+                shop_sales_lookup[shop.shop_name].append(sale.item_quantity)
+        total_shop_sales_lookup[shop.shop_name] = sum(shop_sales_lookup[shop.shop_name])
 
     return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
                            total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold,
@@ -110,9 +112,10 @@ def register_shop():
     else:
         form.populate_shopkeeper_choices()
         selected_staff_id = form.get_selected_shopkeeper_id()
+        user = User.query.filter_by(id=selected_staff_id).first()
         if form.validate_on_submit():
-            shop = Shop(shop_name=form.shop_name.data, location=form.location.data, user_id=selected_staff_id,
-                        shopkeeper=form.shopkeeper.data)
+            shop = Shop(shop_name=form.shop_name.data, location=form.location.data, user_id=current_user.id,
+                        shopkeeper=user.username)
             db.session.add(shop)
             db.session.commit()
             flash(f"{shop.shop_name} at {shop.location} was successfully registered.", "success")
@@ -294,7 +297,7 @@ def stock_received(shop_id):
         response.headers['Content-Disposition'] = 'attachment; filename=stock_received.csv'
         response.headers['Content-type'] = 'text/csv'
         return response
-    return render_template('stock_received.html', form=form)
+    return render_template('stock_received.html', form=form, shop=shop)
 
 
 @app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
@@ -519,3 +522,40 @@ def weekly_sales_data():
         data.append(entry.item_value)
 
     return jsonify(data=data)
+
+
+@app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
+def edit_shop_stock(stock_id):
+    stock = Stock.query.get_or_404(stock_id)
+    form = ShopNewItemForm()
+    if request.method == 'GET':
+        form.item_name.data = stock.item_name
+        form.item_quantity.data = stock.item_quantity
+        form.item_price.data = stock.item_price
+    if form.validate_on_submit():
+        stock.item_name = form.item_name.data
+        stock.item_quantity = form.item_quantity.data
+        stock.item_price = form.item_price.data
+        db.session.commit()
+        return redirect(url_for('view_shop', shop_id=stock.shop.id))
+    return render_template('edit_shop_stock.html', form=form)
+
+
+@app.route('/<int:stock_sold_id>/edit_shop_sale', methods=['GET', 'POST'])
+def edit_stock_sold(stock_sold_id):
+    stock_sold = StockSold.query.get_or_404(stock_sold_id)
+    form = ShopStockSoldForm()
+    if request.method == 'GET':
+        form.item_name.data = stock_sold.item_name
+        form.item_quantity.data = stock_sold.item_quantity
+        form.item_discount.data = stock_sold.item_discount
+        form.payment_method.data = stock_sold.payment_method
+    if form.validate_on_submit():
+        stock_sold.item_name = form.item_name.data
+        stock_sold.item_quantity = form.item_quantity.data
+        stock_sold.item_discount = form.item_discount.data
+        stock_sold.payment_method = form.payment_method.data
+        db.session.commit()
+        return redirect(url_for('view_shop', shop_id=stock_sold.shop.id))
+    return render_template('edit_shop_sales.html', form=form)
+

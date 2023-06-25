@@ -18,10 +18,9 @@
               <td>{{ shop.id }}</td>
               <td>{{shop.shop_name }}</td>
               <td>{{shop.location}}</td>
-              <td>{{ shop.staff.username }}</td>
+              <td>{{ shop.shopkeeper}}</td>
               <td>{{ shop_stock_lookup[shop.id] }}</td>
-                <td><a href="{{ url_for('view_shop', shop_id=shop.id )}}">View More</a></td>
-
+              <td><a href="{{ url_for('view_shop', shop_id=shop.id )}}">View More</a></td>
             </tr>
           {% endfor %}
           </tbody>

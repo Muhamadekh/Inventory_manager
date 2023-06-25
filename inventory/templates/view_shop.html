@@ -7,7 +7,7 @@
       <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
       <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
       <a class="ml-4">Date:{{date}}</a>
-      <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.staff.username}}</a>
+      <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeeper}}</a>
       {% if current_user.user_role == 'Admin' %}
           <div class="float-right">
               <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -60,7 +60,10 @@
                 <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
               {% endif %}
               <td class="text-right">{{ product.stock_status }}</td>
-              <td class="text-center"><a href="#">Edit</a></td>
+              {% if current_user.user_role=='Admin' %}
+                <td class="text-center"><a href="{{ url_for ('edit_shop_stock', stock_id=product.id) }}">Edit</a></td>
+              {% endif %}
+
           </tr>
         {% endfor %}
           <tr>
