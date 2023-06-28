@@ -1674,17 +1674,18 @@
 
 
 // Retrieve sales data from the server
-fetch('/weekly_sales_data')
+fetch('/monthly_sales_data')
   .then(response => response.json())
   .then(data => {
       // Create a chart using Chart.js
+      console.log(data)
       const ctx = document.getElementById('widgetChart5').getContext('2d');
       new Chart(ctx, {
           type: 'bar', // Use 'bar' for a histogram
           data: {
               labels: data.labels,
               datasets: [{
-                  label: 'Weekly Sales',
+                  label: 'Monthly Sales',
                   data: data.data,
                   backgroundColor: 'rgba(75, 192, 192, 0.2)',
                   borderColor: 'rgba(75, 192, 192, 1)',
@@ -1698,7 +1699,7 @@ fetch('/weekly_sales_data')
                       display: true,
                       title: {
                           display: true,
-                          text: 'Date'
+                          text: 'Month'
                       }
                   },
                   y: {
@@ -1712,4 +1713,3 @@ fetch('/weekly_sales_data')
           }
       });
   });
-

@@ -15,11 +15,13 @@
                 <td>{{ item.item_name }}</td>
                 <form method="POST">
                 {{ form.hidden_tag() }}
+                {{ form.item_id(value=item.id, hidden=True) }}
                 <td>{{ form.quantity(class="form-control") }}</td>
               </form>
               </tr>
             {% endfor %}
           </tbody>
         </table>
+        <button class="btn btn-info" type="submit">Send</button>
     </div>
 {% endblock content %}

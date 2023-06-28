@@ -186,5 +186,5 @@ class DebtorRegistrationForm(FlaskForm):
 
 
 class DailyCountForm(FlaskForm):
+    item_id = IntegerField('Item ID', validators=[DataRequired()])
     quantity = IntegerField('Quantity', validators=[DataRequired()])
-    submit = SubmitField('Send')

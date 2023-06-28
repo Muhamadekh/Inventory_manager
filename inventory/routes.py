@@ -510,21 +510,20 @@ def stock_out(store_id):
                            stock_out_dates=stock_out_dates, store=store)
 
 
-@app.route('/weekly_sales_data')
-def weekly_sales_data():
+@app.route('/monthly_sales_data')
+def monthly_sales_data():
     today = datetime.now().date()
-    start_date = today - timedelta(days=6)
-    sales_entries = StockSold.query.filter(
-        StockSold.date_sold >= start_date,
-        StockSold.date_sold <= today
-    ).order_by(StockSold.date_sold.asc()).all()
-
-    data = []
-
+    start_date = today - timedelta(days=30*12)
+    sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date).all()
+    data = {}
     for entry in sales_entries:
-        data.append(entry.item_value)
-
-    return jsonify(data=data)
+        month = entry.date_sold.strftime("%B")
+        if month in data:
+            data[month] += entry.item_quantity
+        else:
+            data[month] = entry.item_quantity
+    monthly_sales = {"labels": list(data.keys()), "data": list(data.values())}
+    return monthly_sales
 
 
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
@@ -567,6 +566,7 @@ def edit_stock_sold(stock_sold_id):
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     items_list = [item for item in shop.stock]
+    print(request.form)
     form = DailyCountForm()
     if form.validate_on_submit():
         daily_count = DailyCount(quantity=form.quantity.data, shop_id=shop.id, stock_id=item.id)
