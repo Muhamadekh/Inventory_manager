@@ -5,7 +5,7 @@
     <a href="{{ url_for('view_shop', shop_id = shop.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Shop</a>
   {% else %}
     <div class="button-container">
-      <a href="{{ url_for('view_shop', shop_id=shop.id)}}" class="button active">Back to Shop</a>
+      <a href="{{ url_for('view_shops')}}" class="button active">View Shops</a>
       <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
       <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
       <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>

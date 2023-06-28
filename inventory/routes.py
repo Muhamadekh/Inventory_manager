@@ -52,15 +52,16 @@ def home():
     total_discount = sum(discount_list)
 
     # Finding total top 5 most sold items
-    top_items_sold = StockSold.query.order_by(StockSold.item_quantity.desc()).all()
+    top_items_sold = StockSold.query.order_by(StockSold.item_quantity.desc(), StockSold.item_name).all()
     top_items_sold_lookup = {}
     for item in top_items_sold:
-        if item not in top_items_sold_lookup:
+        if item.item_name not in top_items_sold_lookup:
             top_items_sold_lookup[item.item_name] = item.item_quantity
         else:
             new_quantity = top_items_sold_lookup[item.item_name] + item.item_quantity
             top_items_sold_lookup[item.item_name] = new_quantity
-    top_5_items_sold = dict(itertools.islice(top_items_sold_lookup.items(), 5))
+    sorted_top_items_sold_lookup = dict(sorted(top_items_sold_lookup.items(), key=lambda x:x[1], reverse=True))
+    top_5_items_sold = dict(itertools.islice(sorted_top_items_sold_lookup.items(), 5))
 
     # Listing shop-based weekly sales
     shop_sales_lookup = {}
@@ -74,10 +75,11 @@ def home():
             if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
                 shop_sales_lookup[shop.shop_name].append(sale.item_quantity)
         total_shop_sales_lookup[shop.shop_name] = sum(shop_sales_lookup[shop.shop_name])
+        sorted_total_shop_sales_lookup = dict(sorted(total_shop_sales_lookup.items(), key=lambda x:x[1], reverse=True))
 
     return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
                            total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold,
-                           total_shop_sales_lookup=total_shop_sales_lookup)
+                           sorted_total_shop_sales_lookup=sorted_total_shop_sales_lookup)
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
@@ -206,7 +208,7 @@ def login():
             if user.user_role == 'Admin':
                 return redirect(url_for('home'))
             else:
-                shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+                shop = Shop.query.filter_by(shopkeeper=current_user.username).first()
                 return redirect(url_for('stock_sold', shop_id=shop.id))
         else:
             flash('Please check your username and password.', 'danger')
