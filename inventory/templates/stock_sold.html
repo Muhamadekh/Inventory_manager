@@ -12,6 +12,7 @@
       <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
       <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
       <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeeper}}</a>
+      <div class="float-right"><a href="{{ url_for('daily_count', shop_id=shop.id)}}" class="btn btn-outline-info">Send Daily Count</a></div>
     </div>
   {% endif %}
 

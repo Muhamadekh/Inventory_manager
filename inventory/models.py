@@ -29,6 +29,7 @@ class Shop(db.Model):
     stock_received = db.relationship('StockReceived', backref='shop', lazy=True)
     stock_sold = db.relationship('StockSold', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
+    daily_count = db.relationship('DailyCount', backref='shop', lazy=True)
 
 
 class Stock(db.Model):
@@ -40,6 +41,7 @@ class Stock(db.Model):
     date_added = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     item_value = db.Column(db.Integer, nullable=False)
+    daily_count = db.relationship('DailyCount', backref='stock', lazy=True)
 
     __table_args__ = (
         db.UniqueConstraint('item_name', 'shop_id'),
@@ -128,3 +130,8 @@ class Debtor(db.Model):
     item_value = db.Column(db.Integer, nullable=False)
 
 
+class DailyCount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    quantity = db.Column(db.Integer, nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))

@@ -183,3 +183,8 @@ class DebtorRegistrationForm(FlaskForm):
     company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
     submit = SubmitField('Save')
+
+
+class DailyCountForm(FlaskForm):
+    quantity = IntegerField('Quantity', validators=[DataRequired()])
+    submit = SubmitField('Send')

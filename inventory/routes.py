@@ -1,9 +1,10 @@
 from flask import render_template, url_for, flash, redirect, session, request, abort, jsonify
 from inventory import app, bcrypt, db
-from inventory.models import User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut, StockIn
+from inventory.models import (User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut,
+                              StockIn, DailyCount)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
-                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm)
+                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, DailyCountForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -561,3 +562,12 @@ def edit_stock_sold(stock_sold_id):
         return redirect(url_for('view_shop', shop_id=stock_sold.shop.id))
     return render_template('edit_shop_sales.html', form=form)
 
+
+@app.route('/<int:shop_id>/shop/daily_count', methods=['GET', 'POST'])
+def daily_count(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    items_list = [item for item in shop.stock]
+    form = DailyCountForm()
+    if form.validate_on_submit():
+        daily_count = DailyCount(quantity=form.quantity.data, shop_id=shop.id, stock_id=item.id)
+    return render_template('daily_count.html', form=form, items_list=items_list)

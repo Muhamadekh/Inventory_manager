@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="container">
+        <!-- Table-like form for adding new sale -->
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="text-left">Item Name</th>
+              <th class="text-center">Quantity</th>
+            </tr>
+          </thead>
+          <tbody style="width: 100px">
+            {% for item in items_list %}
+              <tr>
+                <td>{{ item.item_name }}</td>
+                <form method="POST">
+                {{ form.hidden_tag() }}
+                <td>{{ form.quantity(class="form-control") }}</td>
+              </form>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+{% endblock content %}
