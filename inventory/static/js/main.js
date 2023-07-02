@@ -1713,3 +1713,37 @@ fetch('/monthly_sales_data')
           }
       });
   });
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Change event handler for the payment method dropdown
+  let paymentMethodDropdown = document.getElementById("payment_method");
+  paymentMethodDropdown.addEventListener("change", function() {
+    let selectedMethod = paymentMethodDropdown.value;
+    console.log(selectedMethod);
+    if (selectedMethod === "Credit") {
+      // Make an AJAX request to fetch the shop_id and sale_id values
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", `/${shop_id}/debtor_registration/${sale_id}`, true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+          let response = JSON.parse(xhr.responseText);
+          console.log(response);
+          let shopId = response.shop_id;
+          let saleId = response.sale_id;
+          let url = `/${shopId}/debtor_registration/${saleId}`;
+          window.location.replace(url);
+    }
+      };
+      xhr.send();
+    }
+  });
+});
+
+
+
+
+
+
+
+
+

@@ -47,8 +47,8 @@ def home():
     discount_list = []
     sales = Sale.query.filter(func.date(Sale.date_sold == current_date)).all()
     for sale in sales:
-        sales_value_list.append(sale.item_value)
-        discount_list.append(sale.item_discount)
+        sales_value_list.append(sale.sales_value)
+        discount_list.append(sale.sales_discount)
     total_sales_value = sum(sales_value_list)
     total_discount = sum(discount_list)
 
@@ -66,18 +66,19 @@ def home():
 
     # Listing shop-based weekly sales
     shop_sales_lookup = {}
-    total_shop_sales_lookup = {}
     time_range = datetime.now() - timedelta(days=7)
 
     for shop in shops:
         shop_sales_lookup[shop.shop_name] = []  # Initialize the list for each shop
-        weekly_sales = StockSold.query.filter(StockSold.date_sold >= time_range).all()
+        weekly_sales = Sale.query.filter(Sale.date_sold >= time_range).all()
         if weekly_sales:
             for sale in weekly_sales:
                 if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
-                    shop_sales_lookup[shop.shop_name].append(sale.item_quantity)
-            total_shop_sales_lookup[shop.shop_name] = sum(shop_sales_lookup[shop.shop_name])
-    sorted_total_shop_sales_lookup = dict(sorted(total_shop_sales_lookup.items(), key=lambda x:x[1], reverse=True))
+                    if shop.shop_name in shop_sales_lookup:
+                        shop_sales_lookup[shop.shop_name] += (sum([item.item_quantity for item in sale.sale_items]))
+                    else:
+                        shop_sales_lookup[shop.shop_name] = sum([item.item_quantity for item in sale.sale_items])
+    sorted_total_shop_sales_lookup = dict(sorted(shop_sales_lookup.items(), key=lambda x:x[1], reverse=True))
 
     return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
                            total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold,
@@ -331,9 +332,7 @@ def stock_sold(shop_id):
     total_amount = 0
     for item in cart_items:
         total_amount += item.item_value
-    print("heyyyyyyyyyy")
     if sales_form.validate_on_submit() and sales_form.submit.data:
-        print("am here")
         discount = sales_form.sale_discount.data if sales_form.sale_discount.data else 0
         sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
                     shop_id=shop.id)
@@ -344,16 +343,20 @@ def stock_sold(shop_id):
         for item in cart_items:
             item.sale_id = sale.id
             db.session.commit()
-        return redirect(url_for('stock_sold', shop_id=shop.id))
+        if sale.payment_method == "Credit":
+            return redirect(url_for('debtor_registration', shop_id=shop.id, sale_id=sale.id))
+        else:
+            return redirect(url_for('stock_sold', shop_id=shop.id))
 
     sales_lookup = {}
-
+    total_discount = {}
     Date = today_date()
     current_date = datetime.now()
-    sales_entries = Sale.query.filter(Sale.date_sold <= current_date,
-                                           Sale.shop_id == shop.id
+    sales_entries = Sale.query.filter(Sale.date_sold <= current_date, Sale.shop_id == shop.id
                                            ).order_by(Sale.date_sold.desc()).all()
     for entry in sales_entries:
+        entry_id = entry.id
+        total_discount[entry_id] = sum([(item.item_discount*item.item_quantity) for item in entry.sale_items]) + entry.sales_discount
         date = entry.date_sold.strftime("%d-%m-%Y")
         if date in sales_lookup:
             sales_lookup[date].append(entry)
@@ -362,7 +365,7 @@ def stock_sold(shop_id):
 
     return render_template('stock_sold.html', selection_form=selection_form, sales_lookup=sales_lookup, Date=Date, shop=shop,
                            sales_form=sales_form, cart_items=cart_items, total_amount=total_amount,
-                           sales_entries=sales_entries)
+                           sales_entries=sales_entries, total_discount=total_discount)
 
 
 @app.route('/history', methods=['GET'])
@@ -385,21 +388,30 @@ def history():
     return render_template('history.html', sales_dates=sales_dates, sales_lookup=sales_lookup)
 
 
-@app.route('/add_debtor', methods=['GET', 'POST'])
-def add_debtor():
+@app.route('/<int:shop_id>/debtor_registration/<int:sale_id>', methods=['GET', 'POST'])
+def debtor_registration(shop_id, sale_id):
     form = DebtorRegistrationForm()
+    sale = Sale.query.get_or_404(sale_id)
+    shop = Shop.query.get_or_404(shop_id)
     if form.validate_on_submit():
-        debtor = Debtor(name=form.name.data, company_name=form.company_name.data, phone_number=form.phone_number.data)
-        sale_time = datetime.now()
-        item = StockSold.query.filter(StockSold.date_sold <= sale_time).order_by(StockSold.date_sold.desc()).first()
-        debtor.item_bought = item.item_name
-        debtor.item_quantity = item.item_quantity
-        debtor.purchase_date = item.date_sold
-        debtor.item_value = item.item_value
+        amount_paid = form.amount_paid.data if form.amount_paid.data else 0
+        debtor = Debtor.query.filter_by(phone_number=form.phone_number.data).first()
+        if debtor:
+            debtor.amount_paid = amount_paid
+            debtor.unpaid_amount = sale.sales_value - debtor.amount_paid
+        else:
+            name = form.name.data
+            company_name = form.company_name.data
+            phone_number = form.phone_number.data
+            amount_paid = amount_paid
+            unpaid_amount = sale.sales_value - amount_paid
+            debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
+                            amount_paid=amount_paid, unpaid_amount=unpaid_amount)
+        sale.debtor_id = debtor.id
         db.session.add(debtor)
         db.session.commit()
-        return redirect(url_for('stock_sold'))
-    return render_template('add_debtor.html')
+        return redirect(url_for('stock_sold', shop_id=shop.id))
+    return render_template('debtor_registration.html', form=form)
 
 
 @app.route('/view_debtors', methods=['GET'])

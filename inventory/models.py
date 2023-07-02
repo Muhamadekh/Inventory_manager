@@ -80,9 +80,10 @@ class Sale(db.Model):
     sales_value = db.Column(db.Integer, nullable=False)
     sales_discount = db.Column(db.Integer, nullable=False)
     payment_method = db.Column(db.String(80), nullable=False)
-    # transaction_id = db.Column(db.String(60), nullable=False)
+    transaction_id = db.Column(db.String(60))
     date_sold = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
+    debtor_id = db.Column(db.Integer, db.ForeignKey('debtor.id'))
     sale_items = db.relationship('StockSold', backref='sale_group', lazy=True)
 
 
@@ -151,11 +152,10 @@ class Debtor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     company_name = db.Column(db.String(80), nullable=False)
-    phone_number = db.Column(db.String(80), nullable=False)
-    item_bought = db.Column(db.String(80), nullable=False)
-    item_quantity = db.Column(db.Integer, nullable=False)
-    purchase_date = db.Column(db.DateTime, default=datetime.now())
-    item_value = db.Column(db.Integer, nullable=False)
+    phone_number = db.Column(db.String(80), nullable=False, unique=True)
+    amount_paid = db.Column(db.Integer, nullable=False)
+    unpaid_amount = db.Column(db.Integer, nullable=False)
+    purchases = db.relationship('Sale', backref='debtor', lazy=True)
 
 
 class DailyCount(db.Model):

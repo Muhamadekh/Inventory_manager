@@ -110,7 +110,8 @@ class ShopStockSoldForm(FlaskForm):
 
 class SaleForm(FlaskForm):
     sale_discount = IntegerField('Sale Discount', validators=[Optional()])
-    payment_method = SelectField('Payment Method', choices=payment_methods_list)
+    payment_method = SelectField('Payment Method', choices=payment_methods_list, default=None)
+    transaction_id = StringField('Transaction ID', validators=[Optional()])
     submit = SubmitField('Record Sale')
 
 
@@ -187,6 +188,7 @@ class DebtorRegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=4)])
     company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
+    amount_paid = IntegerField('Amount Paid', validators=[Optional()])
     submit = SubmitField('Save')
 
 
