@@ -14706,7 +14706,7 @@ section {
 }
 
 /* CSS styles for the table */
-.table {
+#CartTable {
   width: 100%;
   border-collapse: collapse;
   margin-left: 10px;
@@ -14714,12 +14714,12 @@ section {
   margin-bottom: 50px;
 }
 
-.table th, .table td {
+#CartTable th, .table td {
   padding: 8px;
   border: 1px solid #ddd;
 }
 
-.table th {
+#CartTable th {
   background-color: darkslategrey;
   text-align: left;
   color: ghostwhite;

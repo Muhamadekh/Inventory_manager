@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField
-from wtforms.validators import DataRequired, Length, EqualTo
+from wtforms.validators import DataRequired, Length, EqualTo, Optional
 from inventory.models import User, Shop
 from flask import session
 from flask_login import current_user
@@ -85,9 +85,8 @@ payment_methods_list = ['Cash', 'Orange Money', 'Credit', 'Bank']
 class ShopStockSoldForm(FlaskForm):
     item_name = SelectField('Select Item Name', choices=[])
     item_quantity = IntegerField('Quantity Sold', validators=[DataRequired()])
-    item_discount = IntegerField('Discount', validators=[DataRequired()])
-    payment_method = SelectField('Payment Method', choices=payment_methods_list)
-    submit = SubmitField('Record Sales')
+    item_discount = IntegerField('Discount', validators=[Optional()])
+    submit = SubmitField('Add')
 
     def populate_item_name_choices(self):
         shop_stock_list = []
@@ -107,6 +106,12 @@ class ShopStockSoldForm(FlaskForm):
             return int(selected_item_id)
         else:
             return 0
+
+
+class SaleForm(FlaskForm):
+    sale_discount = IntegerField('Sale Discount', validators=[Optional()])
+    payment_method = SelectField('Payment Method', choices=payment_methods_list)
+    submit = SubmitField('Record Sale')
 
 
 class StoreRegistrationForm(FlaskForm):
