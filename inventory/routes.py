@@ -1,10 +1,11 @@
 from flask import render_template, url_for, flash, redirect, session, request, abort, jsonify
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut, Sale,
-                              StockIn, DailyCount)
+                              StockIn, DailyCount, ShopStock)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
-                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, DailyCountForm, SaleForm)
+                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, DailyCountForm, SaleForm,
+                             )
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -29,7 +30,8 @@ def home():
     stock_value_list = []
     for shop in shops:
         shop_stock_value_list = []
-        for item in shop.stock:
+        for shop_stock in shop.stocks:
+            item = shop_stock.stock
             shop_stock_value_list.append(item.item_value)
         stock_value_list.append(sum(shop_stock_value_list))
     total_stock_value = sum(stock_value_list)
@@ -75,7 +77,7 @@ def home():
             for sale in weekly_sales:
                 if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
                     if shop.shop_name in shop_sales_lookup:
-                        shop_sales_lookup[shop.shop_name] += (sum([item.item_quantity for item in sale.sale_items]))
+                        shop_sales_lookup[shop.shop_name].append(sum([item.item_quantity for item in sale.sale_items]))
                     else:
                         shop_sales_lookup[shop.shop_name] = sum([item.item_quantity for item in sale.sale_items])
     sorted_total_shop_sales_lookup = dict(sorted(shop_sales_lookup.items(), key=lambda x:x[1], reverse=True))
@@ -135,7 +137,8 @@ def view_shops():
     shop_stock_lookup = {}
     for shop in shops:
         stock_value_list = []
-        for product in shop.stock:
+        for shop_stock in shop.stocks:
+            product = shop_stock.stock
             stock_value_list.append(product.item_value)
         total_stock_value = sum(stock_value_list)
         shop_stock_lookup[shop.id] = total_stock_value
@@ -147,7 +150,8 @@ def view_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     date = today_date()
     stock_value_list = []
-    for product in shop.stock:
+    for shop_stock in shop.stocks:
+        product = shop_stock.stock
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
 
@@ -235,12 +239,13 @@ def add_new_stock(shop_id):
     if form.validate_on_submit():
         stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
                       item_quantity=form.item_quantity.data)
-        shop.stock.append(stock)
+        shop_stock = ShopStock(shop=shop, stock=stock)
         if stock.item_quantity <= 20:
             stock.stock_status = "Running Out"
         stock.item_value = stock.item_price * stock.item_quantity
         try:
             db.session.add(stock)
+            db.session.add(shop_stock)
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
@@ -254,11 +259,12 @@ def stock_received(shop_id):
     # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     shop = Shop.query.get_or_404(shop_id)
     form = ShopStockReceivedForm()
-    form.populate_item_name_choices()
-    selected_item_id = form.get_selected_item_id()
-    item = Stock.query.filter_by(id=selected_item_id).first()
+    # form.populate_item_name_choices()
+    # selected_item_id = form.get_selected_item_id()
+    # item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
-        item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
+        item = Stock.query.filter_by(item_name=form.item_name.data).first()
+        item_received = StockReceived(item_name=form.item_name.data, item_quantity=form.item_quantity.data, shop_id=shop.id)
         db.session.add(item_received)
         db.session.commit()
         if item.item_name == item_received.item_name:
@@ -306,19 +312,33 @@ def stock_received(shop_id):
     return render_template('stock_received.html', form=form, shop=shop)
 
 
+@app.route('/get_item_name', methods=['GET', 'POST'])
+def get_item_name():
+    item_name = request.json["item_name"]
+    shop_id = request.json["shop_id"]
+    shop = Shop.query.get_or_404(shop_id)
+    for shop_stock in shop.stocks:
+        item = shop_stock.stock
+        response = {
+            "item_name": item.item_name
+        }
+    return jsonify(response)
+
+
 @app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
 def stock_sold(shop_id):
     # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     shop = Shop.query.get_or_404(shop_id)
     selection_form = ShopStockSoldForm()
     sales_form = SaleForm()
-    selection_form.populate_item_name_choices()
-    selected_item_id = selection_form.get_selected_item_id()
-    item = Stock.query.filter_by(id=selected_item_id).first()
+    # selection_form.populate_item_name_choices()
+    # selected_item_id = selection_form.get_selected_item_id()
+    # item = Stock.query.filter_by(id=selected_item_id).first()
 
     if selection_form.validate_on_submit() and selection_form.submit.data:
+        item = Stock.query.filter_by(item_name=selection_form.item_name.data).first()
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0
-        item_sold = StockSold(item_name=item.item_name, item_quantity=selection_form.item_quantity.data,
+        item_sold = StockSold(item_name=selection_form.item_name.data, item_quantity=selection_form.item_quantity.data,
                               item_discount=discount)
         selling_price = item.item_price - discount
         item_sold.item_value = item_sold.item_quantity * selling_price
@@ -334,6 +354,12 @@ def stock_sold(shop_id):
         total_amount += item.item_value
     if sales_form.validate_on_submit() and sales_form.submit.data:
         discount = sales_form.sale_discount.data if sales_form.sale_discount.data else 0
+        print(sales_form.payment_method)
+        if sales_form.payment_method.data == 'Credit':
+            session["payment_method"] = sales_form.payment_method.data
+            session["sales_discount"] = discount
+            session["shop_id"] = shop.id
+            return redirect(url_for("debt_registration"))
         sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
                     shop_id=shop.id)
         sale.sales_value = total_amount - discount
@@ -343,10 +369,7 @@ def stock_sold(shop_id):
         for item in cart_items:
             item.sale_id = sale.id
             db.session.commit()
-        if sale.payment_method == "Credit":
-            return redirect(url_for('debtor_registration', shop_id=shop.id, sale_id=sale.id))
-        else:
-            return redirect(url_for('stock_sold', shop_id=shop.id))
+        return redirect(url_for('stock_sold', shop_id=shop.id))
 
     sales_lookup = {}
     total_discount = {}
@@ -388,30 +411,21 @@ def history():
     return render_template('history.html', sales_dates=sales_dates, sales_lookup=sales_lookup)
 
 
-@app.route('/<int:shop_id>/debtor_registration/<int:sale_id>', methods=['GET', 'POST'])
-def debtor_registration(shop_id, sale_id):
-    form = DebtorRegistrationForm()
-    sale = Sale.query.get_or_404(sale_id)
-    shop = Shop.query.get_or_404(shop_id)
-    if form.validate_on_submit():
-        amount_paid = form.amount_paid.data if form.amount_paid.data else 0
-        debtor = Debtor.query.filter_by(phone_number=form.phone_number.data).first()
-        if debtor:
-            debtor.amount_paid = amount_paid
-            debtor.unpaid_amount = sale.sales_value - debtor.amount_paid
-        else:
-            name = form.name.data
-            company_name = form.company_name.data
-            phone_number = form.phone_number.data
-            amount_paid = amount_paid
-            unpaid_amount = sale.sales_value - amount_paid
-            debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
-                            amount_paid=amount_paid, unpaid_amount=unpaid_amount)
-        sale.debtor_id = debtor.id
-        db.session.add(debtor)
-        db.session.commit()
-        return redirect(url_for('stock_sold', shop_id=shop.id))
-    return render_template('debtor_registration.html', form=form)
+@app.route('/search_debtor', methods=['GET', 'POST'])
+def search_debtor():
+    phone_number = request.json["phone_number"]
+
+    debtor = Debtor.query.filter_by(phone_number=phone_number).first()
+    response = {}
+    if debtor:
+        response = {
+            "id": debtor.id,
+            "name": debtor.name,
+            "company_name": debtor.company_name,
+            "balance": debtor.unpaid_amount,
+            "phone_number": debtor.phone_number,
+        }
+    return jsonify(response)
 
 
 @app.route('/view_debtors', methods=['GET'])
@@ -485,11 +499,12 @@ def add_store_stock(store_id):
 def stock_in(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreStockInForm()
-    form.populate_item_name_choices()
-    selected_item_id = form.get_selected_item_id()
-    item = StoreStock.query.filter_by(id=selected_item_id).first()
+    # form.populate_item_name_choices()
+    # selected_item_id = form.get_selected_item_id()
+    # item = StoreStock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
-        item_received = StockIn(item_name=item.item_name, item_quantity=form.item_quantity.data, store_id=store.id,
+        item = StoreStock.query.filter_by(item_name=form.item_name.data).first()
+        item_received = StockIn(item_name=form.item_name.data, item_quantity=form.item_quantity.data, store_id=store.id,
                                 item_cost_price=item.item_cost_price, item_selling_price=item.item_selling_price)
         db.session.add(item_received)
         db.session.commit()
@@ -505,14 +520,15 @@ def stock_in(store_id):
 def stock_out(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreStockOutForm()
-    form.populate_item_name_choices()
+    # form.populate_item_name_choices()
     form.populate_shop_choices()
-    selected_item_id = form.get_selected_item_id()
+    # selected_item_id = form.get_selected_item_id()
     selected_shop_id = form.get_selected_shop_id()
-    item = StoreStock.query.filter_by(id=selected_item_id).first()
+    # item = StoreStock.query.filter_by(id=selected_item_id).first()
     shop = Shop.query.filter_by(id=selected_shop_id).first()
     if form.validate_on_submit():
-        stock_out = StockOut(item_name=item.item_name, item_quantity=form.item_quantity.data,
+        item = StoreStock.query.filter_by(item_name=form.item.item_name).first()
+        stock_out = StockOut(item_name=form.item.item_name, item_quantity=form.item_quantity.data,
                              store_id=store.id, shop_id=shop.id)
         db.session.add(stock_out)
         db.session.commit()
@@ -603,3 +619,41 @@ def daily_count(shop_id):
         daily_count = DailyCount(quantity=form.quantity.data, shop_id=shop.id, stock_id=item.id)
     return render_template('daily_count.html', form=form, items_list=items_list)
 
+
+@app.route('/debt_registration/', methods=['GET', 'POST'])
+def debt_registration():
+    form = DebtorRegistrationForm()
+    if form.validate_on_submit():
+        total_amount = 0
+        cart_items = StockSold.query.filter_by(sale_id=None)
+        for item in cart_items:
+            total_amount += item.item_value
+        shop_id = session.get("shop_id")
+        discount = session.get("sales_discount")
+        payment_method = session.get("payment_method")
+        sale = Sale(sales_discount=discount, payment_method=payment_method,
+                    shop_id=shop_id)
+        sale.sales_value = total_amount - discount
+        db.session.add(sale)
+        db.session.commit()
+        amount_paid = form.amount_paid.data if form.amount_paid.data else 0
+        debtor = Debtor.query.filter_by(phone_number=form.phone_number.data).first()
+        if debtor:
+            debtor.amount_paid = debtor.amount_paid + amount_paid
+            debtor.unpaid_amount = debtor.unpaid_amount + (sale.sales_value - amount_paid)
+        else:
+            name = form.name.data
+            company_name = form.company_name.data
+            phone_number = form.phone_number.data
+            amount_paid = amount_paid
+            unpaid_amount = sale.sales_value - amount_paid
+            debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
+                            amount_paid=amount_paid, unpaid_amount=unpaid_amount)
+        sale.debtor_id = debtor.id
+        db.session.add(debtor)
+        db.session.commit()
+        for item in cart_items:
+            item.sale_id = sale.id
+            db.session.commit()
+        return redirect(url_for('stock_sold', shop_id=shop_id))
+    return render_template('debt_registration.html', form=form)

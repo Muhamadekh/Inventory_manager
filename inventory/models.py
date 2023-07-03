@@ -18,10 +18,18 @@ class User(db.Model, UserMixin):
     stores = db.relationship('Store', backref='staff', lazy=True)
 
 
-shop_stock = db.Table('shop_stock',
-    db.Column('shop_id', db.Integer, db.ForeignKey('shop.id')),
-    db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
-)
+# shop_stock = db.Table('shop_stock',
+#     db.Column('shop_id', db.Integer, db.ForeignKey('shop.id')),
+#     db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
+# )
+
+class ShopStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column('shop_id', db.Integer, db.ForeignKey('shop.id'))
+    stock_id = db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
+
+    shop = db.relationship('Shop', back_populates='stocks')
+    stock = db.relationship('Stock', back_populates='shops')
 
 
 class Shop(db.Model):
@@ -31,11 +39,11 @@ class Shop(db.Model):
     shopkeeper = db.Column(db.String(100), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    stock = db.relationship('Stock', secondary=shop_stock, backref='shop')
     restock = db.relationship('Restock', backref='shop', lazy=True)
     sale = db.relationship('Sale', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
     daily_count = db.relationship('DailyCount', backref='shop', lazy=True)
+    stocks = db.relationship('ShopStock', back_populates='shop')
 
 
 class Stock(db.Model):
@@ -47,6 +55,7 @@ class Stock(db.Model):
     date_added = db.Column(db.DateTime, default=datetime.now())
     item_value = db.Column(db.Integer, nullable=False)
     daily_count = db.relationship('DailyCount', backref='stock', lazy=True)
+    shops = db.relationship('ShopStock', back_populates='stock')
 
 
 stock_restock = db.Table('stock_restock',

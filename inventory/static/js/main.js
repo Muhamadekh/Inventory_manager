@@ -1714,36 +1714,45 @@ fetch('/monthly_sales_data')
       });
   });
 
-document.addEventListener("DOMContentLoaded", function() {
-  // Change event handler for the payment method dropdown
-  let paymentMethodDropdown = document.getElementById("payment_method");
-  paymentMethodDropdown.addEventListener("change", function() {
-    let selectedMethod = paymentMethodDropdown.value;
-    console.log(selectedMethod);
-    if (selectedMethod === "Credit") {
-      // Make an AJAX request to fetch the shop_id and sale_id values
-      let xhr = new XMLHttpRequest();
-      xhr.open("GET", `/${shop_id}/debtor_registration/${sale_id}`, true);
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-          let response = JSON.parse(xhr.responseText);
-          console.log(response);
-          let shopId = response.shop_id;
-          let saleId = response.sale_id;
-          let url = `/${shopId}/debtor_registration/${saleId}`;
-          window.location.replace(url);
-    }
-      };
-      xhr.send();
+
+const getData = (url,methods,data,handle) => {
+   fetch(url,{
+     method: methods,
+     headers: {
+       'Accept': 'application/json',
+       'Content-Type': 'application/json'
+     },
+     body: JSON.stringify(data)
+   })
+   .then(res=>res.json())
+   .then(res => handle(res));
+  };
+$("#searchDebtor").on("input",(e)=>{
+   let phoneNumber = $("#searchDebtor").val();
+   let registrationDiv = document.getElementById("CreateDebtor");
+   let name = document.getElementById("name");
+   let company_name = document.getElementById("company_name");
+   let phone_number = document.getElementById("phone_number");
+   let balance = document.getElementById("balance");
+   let balanceDiv = document.getElementById("ShowBalance");
+    console.log(phoneNumber)
+    if (phoneNumber.length === 10){
+      getData(`http://${window.location.hostname}:5000/search_debtor`,"POST",{"phone_number" : phoneNumber},(data)=>{
+      console.log(data);
+      if (Object.keys(data).length !== 0){
+        name.value = data["name"];
+        company_name.value = data["company_name"];
+        phone_number.value = data["phone_number"];
+        if (data["balance"] !== 0) {
+          balance.textContent = data["balance"];
+          balanceDiv.style.display = "block";
+        } else {
+          balanceDiv.style.display = "none";
+        }
+      }
+      registrationDiv.style.display = "block";
+      });
     }
   });
-});
-
-
-
-
-
-
-
 
 

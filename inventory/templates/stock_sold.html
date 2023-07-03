@@ -1,135 +1,177 @@
 {% extends 'layout.html' %}
 {% block content %}
     <!-- Buttons -->
-  {% if current_user.user_role == 'Admin' %}
+    {% if current_user.user_role == 'Admin' %}
     <a href="{{ url_for('view_shop', shop_id = shop.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Shop</a>
-  {% else %}
+    {% else %}
     <div class="button-container">
-      <a href="{{ url_for('view_shops')}}" class="button active">View Shops</a>
-      <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
-      <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
-      <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
-      <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
-      <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
-      <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeeper}}</a>
-      <div class="float-right"><a href="{{ url_for('daily_count', shop_id=shop.id)}}" class="btn btn-outline-info">Send Daily Count</a></div>
-    </div>
-  {% endif %}
-
-
-  <!-- Table-like form for selecting new sale items-->
-  <table class="table" id="CartTable">
-    <thead>
-      <tr>
-        <th>Item Name</th>
-        <th>Quantity</th>
-        <th>Discount</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <form method="POST">
-          {{ selection_form.hidden_tag() }}
-          <td>{{ selection_form.item_name(class="form-control") }}</td>
-          <td>{{ selection_form.item_quantity(class="form-control") }}</td>
-          <td>{{ selection_form.item_discount(class="form-control") }}</td>
-          <td>{{ selection_form.submit(class="form-control btn btn-primary") }}</td>
-        </form>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- Table and form for recording the sale of the selected items-->
-    {% if cart_items %}
-    <div class="row">
-      <table class="table col-9 m-auto">
-        <thead>
-          <tr>
-            <th>Item Name</th>
-            <th>Quantity</th>
-            <th>Discount</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in cart_items %}
-          <tr>
-            <td>{{ item.item_name }}</td>
-            <td>{{ item.item_quantity }}</td>
-            <td>{{ item.item_discount }}</td>
-            <td>{{ item.item_value }}</td>
-          </tr>
-          {% endfor %}
-          <tr>
-            <th colspan="3"><span class="float-right">Total</span></th>
-            <td><strong>{{ total_amount }}</strong></td>
-          </tr>
-          <div class="row">
-            <table class="table col-10 m-auto">
-              <thead>
-                <tr>
-                  <th>General Discount</th>
-                  <th>Payment Method</th>
-                  <th>Transaction ID</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <form method="POST">
-                    {{ sales_form.hidden_tag() }}
-                    <td>{{ sales_form.sale_discount(class="form-control") }}</td>
-                    <td>{{ sales_form.payment_method (class="form-control", id="payment_method") }}</td>
-                    <td>{{ sales_form.transaction_id (class="form-control") }}</td>
-                    <td>{{ sales_form.submit(class="form-control btn btn-primary") }}</td>
-                  </form>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </tbody>
-      </table>
+        <a href="{{ url_for('view_shops')}}" class="button active">View Shops</a>
+        <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
+        <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
+        <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
+        <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
+        <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
+        <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeeper}}</a>
+        <div class="float-right"><a href="{{ url_for('daily_count', shop_id=shop.id)}}" class="btn btn-outline-info">Send Daily Count</a></div>
     </div>
     {% endif %}
 
-  <!-- Sales Log -->
-  {% if not sales_lookup %}
-    <div class="text-center mt-4"><h5 class="font-italic">There are no sales for this shop yet.</h5></div>
-  {% else %}
-    {% for date in sales_lookup.keys() %}
-      {% if current_user.user_role != 'Admin'%}
-        <div class="table" id="SalesTable">
-      {% else %}
-        <div class="table">
-      {% endif %}
-          <table class="table mt-4">
+    <!-- Table-like form for selecting new sale items-->
+    <table class="table" id="CartTable">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Discount</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <form method="POST">
+                    {{ selection_form.hidden_tag() }}
+                    <td>{{ selection_form.item_name(class="form-control", id="searchItemName", placeholder="Search Item") }}</td>
+                    <td>{{ selection_form.item_quantity(class="form-control") }}</td>
+                    <td>{{ selection_form.item_discount(class="form-control") }}</td>
+                    <td>{{ selection_form.submit(class="form-control btn btn-primary") }}</td>
+                </form>
+            </tr>
+        </tbody>
+    </table>
+    <!-- Search Results -->
+    <div id="searchResults"></div>
+
+    <!-- Table and form for recording the sale of the selected items-->
+    {% if cart_items %}
+    <div class="row">
+        <table class="table col-9 m-auto">
             <thead>
-            <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
-              <tr>
-                <th>Sale ID</th>
-                <th>Sale Value</th>
-                <th>Sale Discount</th>
-                <th>Payment Method</th>
-                <th colspan="2">Sale Time</th>
-              </tr>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Quantity</th>
+                    <th>Discount</th>
+                    <th>Amount</th>
+                </tr>
             </thead>
             <tbody>
-              {% for entry in sales_lookup[date] %}
+                {% for item in cart_items %}
                 <tr>
-                  <td>{{ entry.id }}</td>
-                  <td>{{ "{:,}".format (entry.sales_value) }}</td>
-                  <td>{{  "{:,}".format (total_discount[entry.id]) }}</td>
-                  <td>{{ entry.payment_method }}</td>
-                  <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
-                  {% if current_user.user_role == 'Admin'%}
-                  <td><a href="{{ url_for('edit_stock_sold', stock_sold_id=entry.id) }}">Edit</a></td>
-                  {% endif %}
+                    <td>{{ item.item_name }}</td>
+                    <td>{{ item.item_quantity }}</td>
+                    <td>{{ item.item_discount }}</td>
+                    <td>{{ item.item_value }}</td>
                 </tr>
-              {% endfor %}
+                {% endfor %}
+                <tr>
+                    <th colspan="3"><span class="float-right">Total</span></th>
+                    <td><strong>{{ total_amount }}</strong></td>
+                </tr>
+                <div class="row">
+                    <table class="table col-10 m-auto">
+                        <thead>
+                            <tr>
+                                <th>General Discount</th>
+                                <th>Payment Method</th>
+                                <th>Transaction ID</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <form method="POST">
+                                    {{ sales_form.hidden_tag() }}
+                                    <td>{{ sales_form.sale_discount(class="form-control") }}</td>
+                                    <td>{{ sales_form.payment_method (class="form-control", id="payment_method") }}</td>
+                                    <td>{{ sales_form.transaction_id (class="form-control") }}</td>
+                                    <td>{{ sales_form.submit(class="form-control btn btn-primary") }}</td>
+                                </form>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </tbody>
-          </table>
-      </div>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Sales Log -->
+    {% if not sales_lookup %}
+    <div class="text-center mt-4"><h5 class="font-italic">There are no sales for this shop yet.</h5></div>
+    {% else %}
+    {% for date in sales_lookup.keys() %}
+    {% if current_user.user_role != 'Admin'%}
+    <div class="table" id="SalesTable">
+        {% else %}
+        <div class="table">
+            {% endif %}
+            <table class="table mt-4">
+                <thead>
+                    <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+                    <tr>
+                        <th>Sale ID</th>
+                        <th>Sale Value</th>
+                        <th>Sale Discount</th>
+                        <th>Payment Method</th>
+                        <th colspan="2">Sale Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in sales_lookup[date] %}
+                    <tr>
+                        <td>{{ entry.id }}</td>
+                        <td>{{ "{:,}".format (entry.sales_value) }}</td>
+                        <td>{{ "{:,}".format (total_discount[entry.id]) }}</td>
+                        <td>{{ entry.payment_method }}</td>
+                        <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
+                        {% if current_user.user_role == 'Admin'%}
+                        <td><a href="{{ url_for('edit_stock_sold', stock_sold_id=entry.id) }}">Edit</a></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {% endfor %}
-  {% endif %}
+    {% endif %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const fetchData = (url, methods, data, handle) => {
+            fetch(url, {
+                method: methods,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(res => handle(res));
+        };
+
+        // Access the shop ID value within the JavaScript code
+        $(document).ready(function () {
+            $("#searchItemName").on("input", (e) => {
+                let item_name = $("#searchItemName").val();
+                let shopId = "{{ shop.id }}";
+                console.log(shopId);
+                console.log(item_name);
+
+                fetchData(`http://${window.location.hostname}:5000/get_item_name`, "POST", {
+                    "item_name": item_name,
+                    "shop_id": shopId
+                }, (data) => {
+                    console.log(data);
+                    // Clear the previous search results
+                    $("#searchResults").empty();
+
+                    // Iterate over the item names in the search results and append them to the container
+                    data.forEach((itemName) => {
+                        $("#searchResults").append(`<p>${itemName}</p>`);
+                    });
+                });
+            });
+        });
+    </script>
 {% endblock %}

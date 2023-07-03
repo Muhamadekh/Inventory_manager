@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, SearchField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional
-from inventory.models import User, Shop
+from inventory.models import User
 from flask import session
 from flask_login import current_user
 
@@ -55,57 +55,57 @@ class ShopNewItemForm(FlaskForm):
 
 
 class ShopStockReceivedForm(FlaskForm):
-    item_name = SelectField('Select Item Name', choices=[])
+    item_name = SearchField('Search Item Name')
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
 
-    def populate_item_name_choices(self):
-        shop_stock_list = []
-        if current_user.user_role == 'Admin':
-            for shop in current_user.shops:
-                for stock in shop.stock:
-                    shop_stock_list.append(stock)
-        else:
-            shop = Shop.query.filter_by(shopkeeper=current_user.username).first()
-            for stock in shop.stock:
-                shop_stock_list.append(stock)
-        self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]
-
-    def get_selected_item_id(self):
-        selected_item_id = self.item_name.data
-        if selected_item_id is not None:
-            return int(selected_item_id)
-        else:
-            return 0
+    # def populate_item_name_choices(self):
+    #     shop_stock_list = []
+    #     if current_user.user_role == 'Admin':
+    #         for shop in current_user.shops:
+    #             for stock in shop.stock:
+    #                 shop_stock_list.append(stock)
+    #     else:
+    #         shop = Shop.query.filter_by(shopkeeper=current_user.username).first()
+    #         for stock in shop.stock:
+    #             shop_stock_list.append(stock)
+    #     self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]
+    #
+    # def get_selected_item_id(self):
+    #     selected_item_id = self.item_name.data
+    #     if selected_item_id is not None:
+    #         return int(selected_item_id)
+    #     else:
+    #         return 0
 
 
 payment_methods_list = ['Cash', 'Orange Money', 'Credit', 'Bank']
 
 
 class ShopStockSoldForm(FlaskForm):
-    item_name = SelectField('Select Item Name', choices=[])
+    item_name = SearchField('Search Item Name')
     item_quantity = IntegerField('Quantity Sold', validators=[DataRequired()])
     item_discount = IntegerField('Discount', validators=[Optional()])
     submit = SubmitField('Add')
 
-    def populate_item_name_choices(self):
-        shop_stock_list = []
-        if current_user.user_role == 'Admin':
-            for shop in current_user.shops:
-                for stock in shop.stock:
-                    shop_stock_list.append(stock)
-        else:
-            shop = Shop.query.filter_by(shopkeeper=current_user.username).first()
-            for stock in shop.stock:
-                shop_stock_list.append(stock)
-        self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]
-
-    def get_selected_item_id(self):
-        selected_item_id = self.item_name.data
-        if selected_item_id is not None:
-            return int(selected_item_id)
-        else:
-            return 0
+    # def populate_item_name_choices(self):
+    #     shop_stock_list = []
+    #     if current_user.user_role == 'Admin':
+    #         for shop in current_user.shops:
+    #             for stock in shop.stock:
+    #                 shop_stock_list.append(stock)
+    #     else:
+    #         shop = Shop.query.filter_by(shopkeeper=current_user.username).first()
+    #         for stock in shop.stock:
+    #             shop_stock_list.append(stock)
+    #     self.item_name.choices = [(item.id, item.item_name) for item in shop_stock_list]
+    #
+    # def get_selected_item_id(self):
+    #     selected_item_id = self.item_name.data
+    #     if selected_item_id is not None:
+    #         return int(selected_item_id)
+    #     else:
+    #         return 0
 
 
 class SaleForm(FlaskForm):
@@ -130,52 +130,52 @@ class StoreNewItemForm(FlaskForm):
 
 
 class StoreStockInForm(FlaskForm):
-    item_name = SelectField('Select Item', choices=[])
+    item_name = SearchField('Search Item Name')
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     item_cost_price = IntegerField('Cost Price', validators=[DataRequired()])
     item_selling_price = IntegerField('Selling Price', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
 
-    def populate_item_name_choices(self):
-        store_stock_list = []
-        for store in current_user.stores:
-            print(store.store_name)
-            for stock in store.store_stock:
-                print(store.store_stock)
-                store_stock_list.append(stock)
-        self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
-
-    def get_selected_item_id(self):
-        selected_item_id = self.item_name.data
-        if selected_item_id is not None:
-            return int(selected_item_id)
-        else:
-            return 0
+    # def populate_item_name_choices(self):
+    #     store_stock_list = []
+    #     for store in current_user.stores:
+    #         print(store.store_name)
+    #         for stock in store.store_stock:
+    #             print(store.store_stock)
+    #             store_stock_list.append(stock)
+    #     self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
+    #
+    # def get_selected_item_id(self):
+    #     selected_item_id = self.item_name.data
+    #     if selected_item_id is not None:
+    #         return int(selected_item_id)
+    #     else:
+    #         return 0
 
 
 class StoreStockOutForm(FlaskForm):
-    item_name = SelectField('Select Item', choices=[])
+    item_name = SearchField('Search Item Name')
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     shop = SelectField('Select Shop', choices=[])
     submit = SubmitField('Send Stock')
 
-    def populate_item_name_choices(self):
-        store_stock_list = []
-        for store in current_user.stores:
-            for stock in store.store_stock:
-                store_stock_list.append(stock)
-        self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
-
-    def populate_shop_choices(self):
-        self.shop.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
-
-    def get_selected_item_id(self):
-        selected_item_id = self.item_name.data
-        if selected_item_id is not None:
-            return int(selected_item_id)
-        else:
-            return 0
-
+    # def populate_item_name_choices(self):
+    #     store_stock_list = []
+    #     for store in current_user.stores:
+    #         for stock in store.store_stock:
+    #             store_stock_list.append(stock)
+    #     self.item_name.choices = [(item.id, item.item_name) for item in store_stock_list]
+    #
+    # def populate_shop_choices(self):
+    #     self.shop.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
+    #
+    # def get_selected_item_id(self):
+    #     selected_item_id = self.item_name.data
+    #     if selected_item_id is not None:
+    #         return int(selected_item_id)
+    #     else:
+    #         return 0
+    #
     def get_selected_shop_id(self):
         selected_shop_id = self.shop.data
         if selected_shop_id is not None:
@@ -195,3 +195,4 @@ class DebtorRegistrationForm(FlaskForm):
 class DailyCountForm(FlaskForm):
     item_id = IntegerField('Item ID', validators=[DataRequired()])
     quantity = IntegerField('Quantity', validators=[DataRequired()])
+
