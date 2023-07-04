@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, session, request, abort, jsonify
 from inventory import app, bcrypt, db
-from inventory.models import (User, Shop, Stock, StockReceived, StockSold, Debtor, Store, StoreStock, StockOut, Sale,
-                              StockIn, DailyCount, ShopStock)
+from inventory.models import (User, Shop, Stock, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
+                              StockIn, DailyCount, ShopStock, StoreItem)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, DailyCountForm, SaleForm,
@@ -253,22 +253,21 @@ def add_new_stock(shop_id):
 
 @app.route('/<int:shop_id>/stock_received', methods=['GET', 'POST'])
 def stock_received(shop_id):
-    # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     shop = Shop.query.get_or_404(shop_id)
     form = ShopStockReceivedForm()
-    # form.populate_item_name_choices()
-    # selected_item_id = form.get_selected_item_id()
-    # item = Stock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
-        item = Stock.query.filter_by(item_name=form.item_name.data).first()
-        item_received = StockReceived(item_name=form.item_name.data, item_quantity=form.item_quantity.data, shop_id=shop.id)
-        db.session.add(item_received)
-        db.session.commit()
-        if item.item_name == item_received.item_name:
-            item.item_quantity = item.item_quantity + item_received.item_quantity
-            item.item_value = item.item_quantity * item.item_price
+        selected_name = form.item_name.data.split(" (")
+        item_name = selected_name[0]
+        item = Stock.query.filter_by(item_name=item_name).first()
+        if item:
+            item_received = StockReceived(item_name=item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
+            db.session.add(item_received)
             db.session.commit()
-        return redirect(url_for('stock_received', shop_id=shop.id))
+            if item.item_name == item_received.item_name:
+                item.item_quantity = item.item_quantity + item_received.item_quantity
+                item.item_value = item.item_quantity * item.item_price
+                db.session.commit()
+            return redirect(url_for('stock_received', shop_id=shop.id))
 
     if request.args.get('download'):
 
@@ -306,7 +305,20 @@ def stock_received(shop_id):
         response.headers['Content-Disposition'] = 'attachment; filename=stock_received.csv'
         response.headers['Content-type'] = 'text/csv'
         return response
-    return render_template('stock_received.html', form=form, shop=shop)
+
+    restock_lookup = {}
+    Date = today_date()
+    current_date = datetime.now()
+    restock_entries = StockReceived.query.filter(StockReceived.date_received <= current_date, StockReceived.shop_id == shop.id
+                                      ).order_by(StockReceived.date_sold.desc()).all()
+    for entry in restock_entries:
+        entry_id = entry.id
+        date = entry.date_received.strftime("%d-%m-%Y")
+        if date in restock_lookup:
+            restock_lookup[date].append(entry)
+        else:
+            restock_lookup[date] = [entry]
+    return render_template('stock_received.html', form=form, shop=shop, restock_lookup=restock_lookup)
 
 
 @app.route('/get_item_name', methods=['GET', 'POST'])
@@ -318,16 +330,11 @@ def get_item_name():
     return jsonify(response)
 
 
-
 @app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
 def stock_sold(shop_id):
-    # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     shop = Shop.query.get_or_404(shop_id)
     selection_form = ShopStockSoldForm()
     sales_form = SaleForm()
-    # selection_form.populate_item_name_choices()
-    # selected_item_id = selection_form.get_selected_item_id()
-    # item = Stock.query.filter_by(id=selected_item_id).first()
 
     if selection_form.validate_on_submit() and selection_form.submit.data:
         selected_name = selection_form.item_name.data.split(" (")
@@ -473,19 +480,19 @@ def add_store_stock(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreNewItemForm()
     if form.validate_on_submit():
-        store_stock = StoreStock(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
+        item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
                                  item_selling_price=form.item_selling_price.data, item_quantity=form.item_quantity.data,
                                  store_id=store.id)
-        if store_stock.item_quantity <= 500:
-            store_stock.stock_status = "Running Out"
-        store_stock.item_value = store_stock.item_selling_price * store_stock.item_quantity
+        if item.item_quantity <= 500:
+            item.stock_status = "Running Out"
+        item.item_value = item.item_selling_price * item.item_quantity
         try:
-            db.session.add(store_stock)
+            db.session.add(item)
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
             flash('An error occurred while adding the item.', 'danger')
-        if store_stock.item_selling_price < store_stock.item_cost_price:
+        if item.item_selling_price < item.item_cost_price:
             flash('Selling price is less than cost price.', 'warning')
         return redirect(url_for('add_store_stock', store_id=store.id))
     return render_template('add_store_stock.html', form=form, store=store)
@@ -495,11 +502,8 @@ def add_store_stock(store_id):
 def stock_in(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreStockInForm()
-    # form.populate_item_name_choices()
-    # selected_item_id = form.get_selected_item_id()
-    # item = StoreStock.query.filter_by(id=selected_item_id).first()
     if form.validate_on_submit():
-        item = StoreStock.query.filter_by(item_name=form.item_name.data).first()
+        item = Item.query.filter_by(item_name=form.item_name.data).first()
         item_received = StockIn(item_name=form.item_name.data, item_quantity=form.item_quantity.data, store_id=store.id,
                                 item_cost_price=item.item_cost_price, item_selling_price=item.item_selling_price)
         db.session.add(item_received)
@@ -516,14 +520,11 @@ def stock_in(store_id):
 def stock_out(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreStockOutForm()
-    # form.populate_item_name_choices()
     form.populate_shop_choices()
-    # selected_item_id = form.get_selected_item_id()
     selected_shop_id = form.get_selected_shop_id()
-    # item = StoreStock.query.filter_by(id=selected_item_id).first()
     shop = Shop.query.filter_by(id=selected_shop_id).first()
     if form.validate_on_submit():
-        item = StoreStock.query.filter_by(item_name=form.item.item_name).first()
+        item = Item.query.filter_by(item_name=form.item.item_name).first()
         stock_out = StockOut(item_name=form.item.item_name, item_quantity=form.item_quantity.data,
                              store_id=store.id, shop_id=shop.id)
         db.session.add(stock_out)
@@ -608,12 +609,14 @@ def edit_stock_sold(stock_sold_id):
 @app.route('/<int:shop_id>/shop/daily_count', methods=['GET', 'POST'])
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
-    items_list = [item for item in shop.stock]
-    print(request.form)
+    items_list = []
+    for item in shop.stocks:
+        items_list.append(item)
+        print(item)
     form = DailyCountForm()
     if form.validate_on_submit():
-        daily_count = DailyCount(quantity=form.quantity.data, shop_id=shop.id, stock_id=item.id)
-    return render_template('daily_count.html', form=form, items_list=items_list)
+        daily_count = DailyCount(quantity=form.quantity.data, shop_id=shop.id, stock_id=form.item_id.data)
+    return render_template('daily_count.html', form=form, shop=shop, items_list=items_list)
 
 
 @app.route('/debt_registration/', methods=['GET', 'POST'])
@@ -653,3 +656,15 @@ def debt_registration():
             db.session.commit()
         return redirect(url_for('stock_sold', shop_id=shop_id))
     return render_template('debt_registration.html', form=form)
+
+
+@app.route('/get_shops_stock', methods=['GET', 'POST'])
+def get_shops_stock():
+    searched_term = request.json["searched_term"]
+    all_stock = Stock.query.all()
+    response = []
+    for item in all_stock:
+        if item.item_quantity > 0 and searched_term.lower() in item.item_name.lower():
+            shop_names = [shop.shop.shop_name for shop in item.shops]
+            response.append({"name": f"{item.item_name} ({item.item_quantity}, {shop_names[:1]})"})
+    return jsonify(response)

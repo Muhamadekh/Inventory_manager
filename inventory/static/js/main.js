@@ -1762,4 +1762,39 @@ $("#searchDebtor").on("input",(e)=>{
   });
 
 
+const grabData = (url, methods, data, handle) => {
+    fetch(url, {
+        method: methods,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+        .then(res => res.json())
+        .then(res => handle(res));
+};
+
+// Access the shop ID value within the JavaScript code
+$(document).ready(function () {
+    $("#searchShops").on("input", (e) => {
+        let searched_term = $("#searchShops").val();
+        console.log(searched_term);
+        grabData(`http://${window.location.hostname}:5000/get_shops_stock`, "POST", {
+            "searched_term": searched_term
+        }, (data) => {
+            console.log(data);
+            // Clear the previous search results
+            $("#searchedStock").empty();
+
+            // Iterate over the items in the search results and append them to the container
+            data.forEach((item) => {
+                let itemHtml = `<p class="search-item">${item.name}</p>`;
+                $("#searchedStock").append(itemHtml);
+            });
+
+        });
+    });
+});
+
 

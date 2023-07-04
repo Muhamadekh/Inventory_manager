@@ -5,7 +5,6 @@
     <a href="{{ url_for('view_shop', shop_id = shop.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Shop</a>
     {% else %}
     <div class="button-container">
-        <a href="{{ url_for('view_shops')}}" class="button active">View Shops</a>
         <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
         <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
         <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
@@ -97,44 +96,43 @@
 
     <!-- Sales Log -->
     {% if not sales_lookup %}
-    <div class="text-center mt-4"><h5 class="font-italic">There are no sales for this shop yet.</h5></div>
+        <div class="text-center mt-4"><h5 class="font-italic">There are no sales for this shop yet.</h5></div>
     {% else %}
-    {% for date in sales_lookup.keys() %}
-    {% if current_user.user_role != 'Admin'%}
-    <div class="table" id="SalesTable">
-        {% else %}
-        <div class="table">
-            {% endif %}
-            <table class="table mt-4">
-                <thead>
-                    <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
-                    <tr>
-                        <th>Sale ID</th>
-                        <th>Sale Value</th>
-                        <th>Sale Discount</th>
-                        <th>Payment Method</th>
-                        <th colspan="2">Sale Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in sales_lookup[date] %}
-                    <tr>
-                        <td>{{ entry.id }}</td>
-                        <td>{{ "{:,}".format (entry.sales_value) }}</td>
-                        <td>{{ "{:,}".format (total_discount[entry.id]) }}</td>
-                        <td>{{ entry.payment_method }}</td>
-                        <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
-                        {% if current_user.user_role == 'Admin'%}
-                        <td><a href="{{ url_for('edit_stock_sold', stock_sold_id=entry.id) }}">Edit</a></td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {% endfor %}
+        {% for date in sales_lookup.keys() %}
+            {% if current_user.user_role != 'Admin'%}
+            <div class="table" id="SalesTable">
+                {% else %}
+                <div class="table">
+                    {% endif %}
+                    <table class="table mt-4">
+                        <thead>
+                            <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+                            <tr>
+                                <th>Sale ID</th>
+                                <th>Sale Value</th>
+                                <th>Sale Discount</th>
+                                <th>Payment Method</th>
+                                <th colspan="2">Sale Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in sales_lookup[date] %}
+                            <tr>
+                                <td>{{ entry.id }}</td>
+                                <td>{{ "{:,}".format (entry.sales_value) }}</td>
+                                <td>{{ "{:,}".format (total_discount[entry.id]) }}</td>
+                                <td>{{ entry.payment_method }}</td>
+                                <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
+                                {% if current_user.user_role == 'Admin'%}
+                                <td><a href="{{ url_for('edit_stock_sold', stock_sold_id=entry.id) }}">Edit</a></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
     {% endif %}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -183,6 +181,4 @@
             });
         });
     </script>
-
-
 {% endblock %}

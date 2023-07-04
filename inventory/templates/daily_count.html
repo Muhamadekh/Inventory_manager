@@ -2,14 +2,14 @@
 {% block content %}
     <div class="container">
         <!-- Table-like form for adding new sale -->
-        <table class="table">
+        <table class="table col-9 m-auto">
           <thead>
             <tr>
               <th class="text-left">Item Name</th>
               <th class="text-center">Quantity</th>
             </tr>
           </thead>
-          <tbody style="width: 100px">
+          <tbody>
             {% for item in items_list %}
               <tr>
                 <td>{{ item.item_name }}</td>

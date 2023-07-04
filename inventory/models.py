@@ -26,8 +26,8 @@ class Shop(db.Model):
     shopkeeper = db.Column(db.String(100), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    restock = db.relationship('Restock', backref='shop', lazy=True)
     sale = db.relationship('Sale', backref='shop', lazy=True)
+    stock_received = db.relationship('StockReceived', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
     daily_count = db.relationship('DailyCount', backref='shop', lazy=True)
     stock_association = db.relationship('ShopStock', back_populates='shop')
@@ -55,30 +55,12 @@ class Stock(db.Model):
     shops = db.relationship('ShopStock', back_populates='stock')
 
 
-stock_restock = db.Table('stock_restock',
-    db.Column('restock_id', db.Integer, db.ForeignKey('restock.id')),
-    db.Column('stock_received_id', db.Integer, db.ForeignKey('stock_received.id'))
-)
-
-
-class Restock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    restock_value = db.Column(db.Integer, nullable=False)
-    date_received = db.Column(db.DateTime, default=datetime.now())
-    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
-    restock_items = db.relationship('StockReceived', secondary=stock_restock, backref='restock_group')
-
-
 class StockReceived(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
-
-
-# stock_sale = db.Table('stock_sale',
-#     db.Column('sale_id', db.Integer, db.ForeignKey('sale.id')),
-#     db.Column('stock_sold_id', db.Integer, db.ForeignKey('stock_sold.id'))
-# )
+    date_received = db.Column(db.DateTime, default=datetime.now())
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
 
 
 class Sale(db.Model):
@@ -108,9 +90,31 @@ class Store(db.Model):
     location = db.Column(db.String(60), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    store_stock = db.relationship('StoreStock', backref='store', lazy=True)
     stock_in = db.relationship('StockIn', backref='store', lazy=True)
     stock_out = db.relationship('StockOut', backref='store', lazy=True)
+    item_association = db.relationship('StoreItem', back_populates='store')
+    items = association_proxy("stock_association", "item")
+
+
+class StoreItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    store_id = db.Column('store_id', db.Integer, db.ForeignKey('store.id'))
+    item_item = db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
+
+    store = db.relationship('Store', back_populates='item_association')
+    item = db.relationship('Item', back_populates='stores')
+
+
+class Item(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_cost_price = db.Column(db.Integer, nullable=False)
+    item_selling_price = db.Column(db.Integer, nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
+    date_added = db.Column(db.DateTime, default=datetime.now())
+    item_value = db.Column(db.Integer, nullable=False)
+    stores = db.relationship('StoreItem', back_populates='item')
 
 
 class StockIn(db.Model):
@@ -128,22 +132,6 @@ class StockOut(db.Model):
     date_sent = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
-
-
-class StoreStock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(100), nullable=False)
-    item_cost_price = db.Column(db.Integer, nullable=False)
-    item_selling_price = db.Column(db.Integer, nullable=False)
-    item_quantity = db.Column(db.Integer, nullable=False)
-    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
-    date_added = db.Column(db.DateTime, default=datetime.now())
-    store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
-    item_value = db.Column(db.Integer, nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint('item_name', 'store_id'),
-    )
 
 
 class Supplier(db.Model):
