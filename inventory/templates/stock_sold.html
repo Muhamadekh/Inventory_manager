@@ -39,7 +39,8 @@
         </tbody>
     </table>
     <!-- Search Results -->
-    <div id="searchResults"></div>
+    <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0"></div>
+
 
     <!-- Table and form for recording the sale of the selected items-->
     {% if cart_items %}
@@ -166,12 +167,22 @@
                     // Clear the previous search results
                     $("#searchResults").empty();
 
-                    // Iterate over the item names in the search results and append them to the container
-                    data.forEach((itemName) => {
-                        $("#searchResults").append(`<p>${itemName}</p>`);
+                    // Iterate over the items in the search results and append them to the container
+                    data.forEach((item) => {
+                        let itemHtml = `<p class="search-item">${item.name}</p>`;
+                        $("#searchResults").append(itemHtml);
+                    });
+
+                    // Add click event listener to search items
+                    $(".search-item").on("click", (e) => {
+                        let selectedItem = $(e.target).text();
+                        $("#searchItemName").val(selectedItem);
+                        $("#searchResults").empty();
                     });
                 });
             });
         });
     </script>
+
+
 {% endblock %}

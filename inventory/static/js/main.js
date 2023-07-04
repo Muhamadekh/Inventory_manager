@@ -1677,42 +1677,48 @@
 fetch('/monthly_sales_data')
   .then(response => response.json())
   .then(data => {
-      // Create a chart using Chart.js
-      console.log(data)
-      const ctx = document.getElementById('widgetChart5').getContext('2d');
-      new Chart(ctx, {
-          type: 'bar', // Use 'bar' for a histogram
-          data: {
-              labels: data.labels,
-              datasets: [{
-                  label: 'Monthly Sales',
-                  data: data.data,
-                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  borderWidth: 1
-              }]
+    // Create a chart using Chart.js
+    console.log(data);
+    const ctx = document.getElementById('widgetChart5').getContext('2d');
+
+    const existingChart = Chart.getChart("widgetChart5");
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    window.chart5 = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: 'Monthly Sales',
+          data: data.data,
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Month'
+            }
           },
-          options: {
-              responsive: true,
-              scales: {
-                  x: {
-                      display: true,
-                      title: {
-                          display: true,
-                          text: 'Month'
-                      }
-                  },
-                  y: {
-                      display: true,
-                      title: {
-                          display: true,
-                          text: 'Sales Value'
-                      }
-                  }
-              }
+          y: {
+            title: {
+              display: true,
+              text: 'Sales Value'
+            },
+            suggestedMin: 0
           }
-      });
+        }
+      }
+    });
   });
+
 
 
 const getData = (url,methods,data,handle) => {
@@ -1754,5 +1760,6 @@ $("#searchDebtor").on("input",(e)=>{
       });
     }
   });
+
 
 

@@ -30,8 +30,7 @@ def home():
     stock_value_list = []
     for shop in shops:
         shop_stock_value_list = []
-        for shop_stock in shop.stocks:
-            item = shop_stock.stock
+        for item in shop.stocks:
             shop_stock_value_list.append(item.item_value)
         stock_value_list.append(sum(shop_stock_value_list))
     total_stock_value = sum(stock_value_list)
@@ -137,8 +136,7 @@ def view_shops():
     shop_stock_lookup = {}
     for shop in shops:
         stock_value_list = []
-        for shop_stock in shop.stocks:
-            product = shop_stock.stock
+        for product in shop.stocks:
             stock_value_list.append(product.item_value)
         total_stock_value = sum(stock_value_list)
         shop_stock_lookup[shop.id] = total_stock_value
@@ -150,8 +148,7 @@ def view_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     date = today_date()
     stock_value_list = []
-    for shop_stock in shop.stocks:
-        product = shop_stock.stock
+    for product in shop.stocks:
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
 
@@ -317,12 +314,9 @@ def get_item_name():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
     shop = Shop.query.get_or_404(shop_id)
-    for shop_stock in shop.stocks:
-        item = shop_stock.stock
-        response = {
-            "item_name": item.item_name
-        }
+    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in shop.stocks if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
+
 
 
 @app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
@@ -336,9 +330,11 @@ def stock_sold(shop_id):
     # item = Stock.query.filter_by(id=selected_item_id).first()
 
     if selection_form.validate_on_submit() and selection_form.submit.data:
-        item = Stock.query.filter_by(item_name=selection_form.item_name.data).first()
+        selected_name = selection_form.item_name.data.split(" (")
+        item_name = selected_name[0]
+        item = Stock.query.filter_by(item_name=item_name).first()
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0
-        item_sold = StockSold(item_name=selection_form.item_name.data, item_quantity=selection_form.item_quantity.data,
+        item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                               item_discount=discount)
         selling_price = item.item_price - discount
         item_sold.item_value = item_sold.item_quantity * selling_price
@@ -557,20 +553,20 @@ def stock_out(store_id):
                            stock_out_dates=stock_out_dates, store=store)
 
 
-# @app.route('/monthly_sales_data')
-# def monthly_sales_data():
-#     today = datetime.now().date()
-#     start_date = today - timedelta(days=30*12)
-#     sales_entries = Sale.query.filter(Sale.date_sold >= start_date).all()
-#     data = {}
-#     # for entry in sales_entries:
-#     #     month = entry.date_sold.strftime("%B")
-#     #     if month in data:
-#     #         data[month] += entry.item_quantity
-#     #     else:
-#     #         data[month] = entry.item_quantity
-#     # monthly_sales = {"labels": list(data.keys()), "data": list(data.values())}
-#     return monthly_sales
+@app.route('/monthly_sales_data')
+def monthly_sales_data():
+    today = datetime.now().date()
+    start_date = today - timedelta(days=30*12)
+    sales_entries = Sale.query.filter(Sale.date_sold >= start_date).all()
+    data = {}
+    for entry in sales_entries:
+        month = entry.date_sold.strftime("%B")
+        if month in data:
+            data[month] += [item.item_quantity for item in entry.sale_items]
+        else:
+            data[month] = [item.item_quantity for item in entry.sale_items]
+    monthly_sales = {"labels": list(data.keys()), "data": list(data.values())}
+    return monthly_sales
 
 
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])

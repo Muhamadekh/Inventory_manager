@@ -1,6 +1,7 @@
 from inventory import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy.ext.associationproxy import association_proxy
 
 
 @login_manager.user_loader
@@ -18,20 +19,6 @@ class User(db.Model, UserMixin):
     stores = db.relationship('Store', backref='staff', lazy=True)
 
 
-# shop_stock = db.Table('shop_stock',
-#     db.Column('shop_id', db.Integer, db.ForeignKey('shop.id')),
-#     db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
-# )
-
-class ShopStock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    shop_id = db.Column('shop_id', db.Integer, db.ForeignKey('shop.id'))
-    stock_id = db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
-
-    shop = db.relationship('Shop', back_populates='stocks')
-    stock = db.relationship('Stock', back_populates='shops')
-
-
 class Shop(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_name = db.Column(db.String(100), nullable=False, unique=True)
@@ -43,7 +30,17 @@ class Shop(db.Model):
     sale = db.relationship('Sale', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
     daily_count = db.relationship('DailyCount', backref='shop', lazy=True)
-    stocks = db.relationship('ShopStock', back_populates='shop')
+    stock_association = db.relationship('ShopStock', back_populates='shop')
+    stocks = association_proxy("stock_association", "stock")
+
+
+class ShopStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column('shop_id', db.Integer, db.ForeignKey('shop.id'))
+    stock_id = db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
+
+    shop = db.relationship('Shop', back_populates='stock_association')
+    stock = db.relationship('Stock', back_populates='shops')
 
 
 class Stock(db.Model):
