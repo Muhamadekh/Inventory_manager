@@ -1,27 +1,63 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <div class="container">
-        <!-- Table-like form for adding new sale -->
-        <table class="table col-9 m-auto">
-          <thead>
-            <tr>
-              <th class="text-left">Item Name</th>
-              <th class="text-center">Quantity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in items_list %}
-              <tr>
-                <td>{{ item.item_name }}</td>
-                <form method="POST">
-                {{ form.hidden_tag() }}
-                {{ form.item_id(value=item.id, hidden=True) }}
-                <td>{{ form.quantity(class="form-control") }}</td>
-              </form>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <button class="btn btn-info" type="submit">Send</button>
+<div class="jumbotron">
+  <div class="row">
+    <table class="table col-9 m-auto">
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Daily Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in all_stock %}
+          <tr>
+            <td>{{ item.item_name }}</td>
+            <td>
+              <input type="number" class="form-control daily-count-input" data-item-id="{{ item.id }}">
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="row mt-2">
+    <div class="col-2 m-auto">
+      <button class="btn btn-primary" id="saveDailyCount">Send Daily Count</button>
     </div>
-{% endblock content %}
+  </div>
+</div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $("#saveDailyCount").on("click", function() {
+        let dailyCountData = [];
+        $(".daily-count-input").each(function() {
+          let itemId = $(this).data("item-id");
+          let count = $(this).val();
+          dailyCountData.push({
+            "item_id": itemId,
+            "count": count
+          });
+        });
+        console.log(dailyCountData);
+        $.ajax({
+          url: "/save_daily_count",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(dailyCountData),
+          success: function(response) {
+            console.log(response);
+            window.location.replace(`http://${window.location.hostname}:5000/` + "{{ shop.id |safe}}" + "/shop")
+            alert("Daily count sent successfully.");
+          },
+          error: function(error) {
+            console.log(error);
+            alert("Failed to send daily count.");
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

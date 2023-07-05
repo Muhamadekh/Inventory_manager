@@ -29,7 +29,6 @@ class Shop(db.Model):
     sale = db.relationship('Sale', backref='shop', lazy=True)
     stock_received = db.relationship('StockReceived', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
-    daily_count = db.relationship('DailyCount', backref='shop', lazy=True)
     stock_association = db.relationship('ShopStock', back_populates='shop')
     stocks = association_proxy("stock_association", "stock")
 
@@ -51,7 +50,7 @@ class Stock(db.Model):
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
     item_value = db.Column(db.Integer, nullable=False)
-    daily_count = db.relationship('DailyCount', backref='stock', lazy=True)
+    daily_count = db.Column(db.Integer, nullable=True)
     shops = db.relationship('ShopStock', back_populates='stock')
 
 
@@ -150,10 +149,3 @@ class Debtor(db.Model):
     amount_paid = db.Column(db.Integer, nullable=False)
     unpaid_amount = db.Column(db.Integer, nullable=False)
     purchases = db.relationship('Sale', backref='debtor', lazy=True)
-
-
-class DailyCount(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    quantity = db.Column(db.Integer, nullable=False)
-    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))

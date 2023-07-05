@@ -9,7 +9,7 @@
       <a class="ml-4">Date:{{date}}</a>
       <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeeper}}</a>
       <input type="search" id="searchShops" class="inline-search ml-4" placeholder="Search all shops" style="border: 1px solid #333; padding: 4px; float: right">
-      <div id="searchedStock" style="text-align: right; font-weight: bold; margin-left: 15px; margin-top: 0; overflow: auto; z-index: 1;"></div>
+      <div id="searchedStock" style="font-weight: bold; position: absolute; z-index: 10; right: 0; background-color: white"></div>
       {% if current_user.user_role == 'Admin' %}
           <div class="float-right">
               <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

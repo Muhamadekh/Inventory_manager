@@ -82,7 +82,7 @@
                                     {{ sales_form.hidden_tag() }}
                                     <td>{{ sales_form.sale_discount(class="form-control") }}</td>
                                     <td>{{ sales_form.payment_method (class="form-control", id="payment_method") }}</td>
-                                    <td>{{ sales_form.transaction_id (class="form-control") }}</td>
+                                    <td>{{ sales_form.transaction_id (class="form-control", id="transaction_id") }}</td>
                                     <td>{{ sales_form.submit(class="form-control btn btn-primary") }}</td>
                                 </form>
                             </tr>
@@ -135,6 +135,8 @@
         {% endfor %}
     {% endif %}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!--    Live Search -->
     <script>
         const fetchData = (url, methods, data, handle) => {
             fetch(url, {
@@ -180,5 +182,18 @@
                 });
             });
         });
+    </script>
+<!-- -->
+    <script>
+        let payment_method = document.getElementById("payment_method");
+        let transaction_id = document.getElementById("transaction_id");
+        payment_method.onchange = function (){
+            let method = payment_method.value;
+            if (method==='Orange Money' || method==='Bank'){
+                transaction_id.required = true;
+            }else{
+                transaction_id.required = false;
+            }
+        }
     </script>
 {% endblock %}

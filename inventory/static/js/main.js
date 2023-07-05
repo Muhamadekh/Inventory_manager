@@ -1796,5 +1796,3 @@ $(document).ready(function () {
         });
     });
 });
-
-

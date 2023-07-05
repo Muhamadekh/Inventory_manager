@@ -1,10 +1,10 @@
 from flask import render_template, url_for, flash, redirect, session, request, abort, jsonify
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, Stock, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
-                              StockIn, DailyCount, ShopStock, StoreItem)
+                              StockIn, ShopStock, StoreItem)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
-                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, DailyCountForm, SaleForm,
+                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
                              )
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
@@ -486,8 +486,10 @@ def add_store_stock(store_id):
         if item.item_quantity <= 500:
             item.stock_status = "Running Out"
         item.item_value = item.item_selling_price * item.item_quantity
+        store_item = StoreItem(store=store, item=item)
         try:
             db.session.add(item)
+            db.session.add(store_item)
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
@@ -563,9 +565,9 @@ def monthly_sales_data():
     for entry in sales_entries:
         month = entry.date_sold.strftime("%B")
         if month in data:
-            data[month] += [item.item_quantity for item in entry.sale_items]
+            data[month] += entry.sales_value
         else:
-            data[month] = [item.item_quantity for item in entry.sale_items]
+            data[month] = entry.sales_value
     monthly_sales = {"labels": list(data.keys()), "data": list(data.values())}
     return monthly_sales
 
@@ -609,14 +611,11 @@ def edit_stock_sold(stock_sold_id):
 @app.route('/<int:shop_id>/shop/daily_count', methods=['GET', 'POST'])
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
-    items_list = []
-    for item in shop.stocks:
-        items_list.append(item)
-        print(item)
-    form = DailyCountForm()
-    if form.validate_on_submit():
-        daily_count = DailyCount(quantity=form.quantity.data, shop_id=shop.id, stock_id=form.item_id.data)
-    return render_template('daily_count.html', form=form, shop=shop, items_list=items_list)
+    session["shop_id"] = shop.id
+    all_stock = [stock for stock in shop.stocks]
+    for stock in all_stock:
+        print(stock.item_name, stock.item_quantity, stock.daily_count)
+    return render_template('daily_count.html', all_stock=all_stock, shop=shop)
 
 
 @app.route('/debt_registration/', methods=['GET', 'POST'])
@@ -668,3 +667,16 @@ def get_shops_stock():
             shop_names = [shop.shop.shop_name for shop in item.shops]
             response.append({"name": f"{item.item_name} ({item.item_quantity}, {shop_names[:1]})"})
     return jsonify(response)
+
+
+@app.route('/save_daily_count', methods=['POST'])
+def save_daily_count():
+    daily_count_data = request.json
+    for item_data in daily_count_data:
+        item_id = item_data["item_id"]
+        count = item_data["count"]
+        stock_item = Stock.query.get_or_404(item_id)
+        stock_item.daily_count = count
+        db.session.commit()
+    shop_id = session.get("shop_id")
+    return jsonify({"shop_id": shop_id})

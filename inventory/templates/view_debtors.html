@@ -8,25 +8,19 @@
                         <table class="table table-data2">
                             <thead>
                                 <tr>
-                                    <th style="color: white">Name</th>
-                                    <th style="color: white">Company Name</th>
-                                    <th style="color: white">Phone Number</th>
-                                    <th style="color: white">Item Lent</th>
-                                    <th style="color: white">Quantity</th>
-                                    <th style="color: white">Value</th>
-                                    <th colspan="2" style="color: white">Lending Date</th>
+                                    <th >Name</th>
+                                    <th>Company Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for debtor in debtors %}
-                                    <tr class="tr-shadow">
+                                    <tr>
                                         <td>{{ debtor.name }}</td>
                                         <td>{{ debtor.company_name }}</td>
                                         <td>{{ debtor.phone_number }}</td>
-                                        <td>{{ debtor.item_bought }}</td>
-                                        <td>{{ "{:,}".format(debtor.item_quantity) }}</td>
-                                        <td>{{ "{:,}".format(debtor.item_value) }}</td>
-                                        <td>{{ debtor.purchase_date.strftime('%d-%m-%Y') }}</td>
+                                        <td>{{ debtor.unpaid_amount }}</td>
                                         <td><button>Edit</button></td>
                                     </tr>
                                 {% endfor %}

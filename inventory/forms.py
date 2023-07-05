@@ -120,10 +120,3 @@ class DebtorRegistrationForm(FlaskForm):
     amount_paid = IntegerField('Amount Paid', validators=[Optional()])
     submit = SubmitField('Save')
 
-
-class DailyCountForm(FlaskForm):
-    name = SearchField('Search Item Name')
-    item_id = IntegerField('Item ID', validators=[DataRequired()])
-    quantity = IntegerField('Quantity', validators=[DataRequired()])
-    submit = SubmitField('Send Report')
-
