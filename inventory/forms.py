@@ -48,8 +48,7 @@ class LoginForm(FlaskForm):
 
 
 class ShopNewItemForm(FlaskForm):
-    item_name = StringField('Item Name', validators=[DataRequired()])
-    item_price = IntegerField('Price', validators=[DataRequired()])
+    item_name = SearchField('Search Item Name')
     item_quantity = IntegerField('Quantity', validators=[DataRequired()])
     submit = SubmitField('Add Item')
 

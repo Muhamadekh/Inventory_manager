@@ -39,8 +39,8 @@ def home():
     store_stock = []
     stores = Store.query.all()
     for store in stores:
-        for item in store.store_stock:
-            store_stock.append(item.item_value)
+        for item in store.items:
+            store_stock.append(item.item_cost_price * item.item_quantity)
     total_store_stock = sum(store_stock)
 
     # Finding total net sales and discount
@@ -50,6 +50,9 @@ def home():
     for sale in sales:
         sales_value_list.append(sale.sales_value)
         discount_list.append(sale.sales_discount)
+        for item in sale.sale_items:
+            if item.item_discount > 0:
+                discount_list.append(item.item_discount)
     total_sales_value = sum(sales_value_list)
     total_discount = sum(discount_list)
 
@@ -226,20 +229,28 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/get_store_items', methods=['GET', 'POST'])
+def get_store_items():
+    item_name = request.json["item_name"]
+    shop_id = request.json["shop_id"]
+    items = Item.query.all()
+    response = [{"name": item.item_name} for item in items if item_name.lower() in item.item_name.lower()]
+    return jsonify(response)
+
 @app.route('/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
 @login_required
 def add_new_stock(shop_id):
     # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
     shop = Shop.query.get_or_404(shop_id)
-
     form = ShopNewItemForm()
     if form.validate_on_submit():
-        stock = Stock(item_name=form.item_name.data, item_price=form.item_price.data,
-                      item_quantity=form.item_quantity.data)
-        shop_stock = ShopStock(shop=shop, stock=stock)
+        item = Item.query.filter(Item.item_name.lower() == form.item_name.lower()).first()
+        stock = Stock(item_name=form.item_name.data, item_cost_price=item.item_cost_price,
+                      item_selling_price=item.item_selling_price, item_quantity=form.item_quantity.data)
+        stock.item_value = stock.item_cost_price * stock.item_quantity
         if stock.item_quantity <= 20:
             stock.stock_status = "Running Out"
-        stock.item_value = stock.item_price * stock.item_quantity
+        shop_stock = ShopStock(shop=shop, stock=stock)
         try:
             db.session.add(stock)
             db.session.add(shop_stock)
@@ -357,7 +368,6 @@ def stock_sold(shop_id):
         total_amount += item.item_value
     if sales_form.validate_on_submit() and sales_form.submit.data:
         discount = sales_form.sale_discount.data if sales_form.sale_discount.data else 0
-        print(sales_form.payment_method)
         if sales_form.payment_method.data == 'Credit':
             session["payment_method"] = sales_form.payment_method.data
             session["sales_discount"] = discount
@@ -454,13 +464,16 @@ def view_stores():
     stores = Store.query.all()
     date = today_date()
     store_stock_lookup = {}
+    total_stock_value = []
     for store in stores:
         stock_value_list = []
-        for product in store.store_stock:
-            stock_value_list.append(product.item_value)
+        for product in store.items:
+            product_value = product.item_cost_price * product.item_quantity
+            stock_value_list.append(product_value)
         total_stock_value = sum(stock_value_list)
         store_stock_lookup[store.id] = total_stock_value
-    return render_template('view_stores.html', store_stock_lookup=store_stock_lookup, stores=stores, date=date)
+    return render_template('view_stores.html', store_stock_lookup=store_stock_lookup, stores=stores, date=date,
+                           total_stock_value=total_stock_value)
 
 
 @app.route('/view_stores/<int:store_id>', methods=['GET'])
@@ -468,8 +481,8 @@ def view_store(store_id):
     store = Store.query.get_or_404(store_id)
     date = today_date()
     stock_value_list = []
-    for product in store.store_stock:
-        stock_value_list.append(product.item_value)
+    for product in store.items:
+        stock_value_list.append(product.item_cost_price * product.item_quantity)
     total_stock_value = sum(stock_value_list)
     return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date)
 
@@ -480,22 +493,22 @@ def add_store_stock(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreNewItemForm()
     if form.validate_on_submit():
-        item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
-                                 item_selling_price=form.item_selling_price.data, item_quantity=form.item_quantity.data,
-                                 store_id=store.id)
-        if item.item_quantity <= 500:
-            item.stock_status = "Running Out"
-        item.item_value = item.item_selling_price * item.item_quantity
-        store_item = StoreItem(store=store, item=item)
-        try:
-            db.session.add(item)
-            db.session.add(store_item)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            flash('An error occurred while adding the item.', 'danger')
-        if item.item_selling_price < item.item_cost_price:
-            flash('Selling price is less than cost price.', 'warning')
+        if form.item_selling_price.data > form.item_cost_price.data:
+            item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
+                        item_selling_price=form.item_selling_price.data, item_quantity=form.item_quantity.data)
+            if item.item_quantity <= 500:
+                item.stock_status = "Running Out"
+            item.item_value = item.item_selling_price * item.item_quantity
+            store_item = StoreItem(store=store, item=item)
+            try:
+                db.session.add(item)
+                db.session.add(store_item)
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash('An error occurred while adding the item.', 'danger')
+        else:
+            flash('Selling price is less than cost price.', 'danger')
         return redirect(url_for('add_store_stock', store_id=store.id))
     return render_template('add_store_stock.html', form=form, store=store)
 
@@ -680,3 +693,24 @@ def save_daily_count():
         db.session.commit()
     shop_id = session.get("shop_id")
     return jsonify({"shop_id": shop_id})
+
+
+@app.route('/shop_sales_data', methods=['GET', 'POST'])
+def shop_sales_data():
+    # Finding total net sales and discount per shop
+    current_date = datetime.now().date()
+    shop_sales_looup = {}
+    # Finding total net sales and discount
+    sales_cost_list = []
+    sales_value_list = []
+    discount_list = []
+    sales = Sale.query.filter(func.date(Sale.date_sold.date() == current_date)).all()
+    for sale in sales:
+        sales_value_list.append(sale.sales_value)
+        discount_list.append(sale.sales_discount)
+        for item in sale.sale_items:
+            if item.item_discount > 0:
+                discount_list.append(item.item_discount)
+            sales_cost_list.append(item.item_price)
+    total_sales_value = sum(sales_value_list)
+    total_discount = sum(discount_list)

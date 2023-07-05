@@ -12,7 +12,6 @@
       <thead>
         <tr>
           <th>Item Name</th>
-          <th>Price</th>
           <th>Quantity</th>
           <th></th>
         </tr>
@@ -21,13 +20,60 @@
         <tr>
           <form method="POST">
             {{ form.hidden_tag() }}
-            <td>{{ form.item_name(class="form-control") }}</td>
-            <td>{{ form.item_price(class="form-control") }}</td>
+            <td>{{ form.item_name(class="form-control", id="searchItemName") }}</td>
             <td>{{ form.item_quantity(class="form-control") }}</td>
             <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
           </form>
         </tr>
       </tbody>
     </table>
+    <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0"></div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const fetchData = (url, methods, data, handle) => {
+            fetch(url, {
+                method: methods,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(res => handle(res));
+        };
+
+        // Access the shop ID value within the JavaScript code
+        $(document).ready(function () {
+            $("#searchItemName").on("input", (e) => {
+                let item_name = $("#searchItemName").val();
+                let shopId = "{{ shop.id }}";
+                console.log(shopId);
+                console.log(item_name);
+
+                fetchData(`http://${window.location.hostname}:5000/get_store_items`, "POST", {
+                    "item_name": item_name,
+                    "shop_id": shopId
+                }, (data) => {
+                    console.log(data);
+                    // Clear the previous search results
+                    $("#searchResults").empty();
+
+                    // Iterate over the items in the search results and append them to the container
+                    data.forEach((item) => {
+                        let itemHtml = `<p class="search-item">${item.name}</p>`;
+                        $("#searchResults").append(itemHtml);
+                    });
+
+                    // Add click event listener to search items
+                    $(".search-item").on("click", (e) => {
+                        let selectedItem = $(e.target).text();
+                        $("#searchItemName").val(selectedItem);
+                        $("#searchResults").empty();
+                    });
+                });
+            });
+        });
+    </script>
 
 {% endblock %}

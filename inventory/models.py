@@ -45,12 +45,14 @@ class ShopStock(db.Model):
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False)
+    item_cost_price = db.Column(db.Integer, nullable=False)
+    item_selling_price = db.Column(db.Integer, nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
-    item_price = db.Column(db.Integer, nullable=False)
+    item_value = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
-    item_value = db.Column(db.Integer, nullable=False)
     daily_count = db.Column(db.Integer, nullable=True)
+    items = db.relationship('Item', backref='stock', lazy=True)
     shops = db.relationship('ShopStock', back_populates='stock')
 
 
@@ -92,7 +94,7 @@ class Store(db.Model):
     stock_in = db.relationship('StockIn', backref='store', lazy=True)
     stock_out = db.relationship('StockOut', backref='store', lazy=True)
     item_association = db.relationship('StoreItem', back_populates='store')
-    items = association_proxy("stock_association", "item")
+    items = association_proxy("item_association", "item")
 
 
 class StoreItem(db.Model):
@@ -110,9 +112,10 @@ class Item(db.Model):
     item_cost_price = db.Column(db.Integer, nullable=False)
     item_selling_price = db.Column(db.Integer, nullable=False)
     item_quantity = db.Column(db.Integer, nullable=False)
+    item_value = db.Column(db.Integer, nullable=False)
     stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
-    item_value = db.Column(db.Integer, nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))
     stores = db.relationship('StoreItem', back_populates='item')
 
 
