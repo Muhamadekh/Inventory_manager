@@ -85,7 +85,7 @@ class StoreStockOutForm(FlaskForm):
     submit = SubmitField('Send Stock')
 
     def populate_shop_choices(self):
-        self.shop.choices = [shop for shop in Shop.query.all()]
+        self.shop.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
 
     def get_selected_shop_id(self):
         selected_shop_id = self.shop.data

@@ -229,8 +229,8 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/get_store_items', methods=['GET', 'POST'])
-def get_store_items():
+@app.route('/get_items', methods=['GET', 'POST'])
+def get_items():
     item_name = request.json["item_name"]
     items = Item.query.all()
     response = [{"name": item.item_name} for item in items if item_name.lower() in item.item_name.lower()]
@@ -268,7 +268,7 @@ def stock_received(shop_id):
     if form.validate_on_submit():
         selected_name = form.item_name.data.split(" (")
         item_name = selected_name[0]
-        item = Stock.query.filter_by(item_name=item_name).first()
+        item = ShopItem.query.filter_by(item_name=item_name).first()
         if item:
             item_received = StockReceived(item_name=item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
             db.session.add(item_received)
@@ -349,7 +349,7 @@ def stock_sold(shop_id):
     if selection_form.validate_on_submit() and selection_form.submit.data:
         selected_name = selection_form.item_name.data.split(" (")
         item_name = selected_name[0]
-        item = Stock.query.filter_by(item_name=item_name).first()
+        item = ShopItem.query.filter_by(item_name=item_name).first()
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0
         item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                               item_discount=discount)
@@ -549,7 +549,7 @@ def stock_in(store_id):
             restock_lookup[date].append(entry)
         else:
             restock_lookup[date] = [entry]
-    print(restock_lookup)
+
     return render_template('stock_in.html', form=form, store=store, restock_lookup=restock_lookup)
 
 
@@ -561,34 +561,30 @@ def stock_out(store_id):
     selected_shop_id = form.get_selected_shop_id()
     shop = Shop.query.filter_by(id=selected_shop_id).first()
     if form.validate_on_submit():
-        item = Item.query.filter_by(item_name=form.item.item_name).first()
-        if item in store.items:
-            stock_out = StockOut(item_name=form.item.item_name, item_quantity=form.item_quantity.data,
-                                 store_id=store.id, shop_id=shop.id)
-            db.session.add(stock_out)
-            db.session.commit()
-            item.item_quantity = item.item_quantity - stock_out.item_quantity
-            item.item_value = item.item_quantity * item.item_selling_price
-            db.session.commit()
+        item = Item.query.filter_by(item_name=form.item_name.data).first()
+        store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
+        stock_out = StockOut(item_name=form.item_name.data, item_quantity=form.item_quantity.data,
+                             store_id=store.id, shop_id=shop.id)
+        store_item.item_quantity = store_item.item_quantity - form.item_quantity.data
+        store_item.item_value = store_item.item_quantity * item.item_cost_price
+        db.session.add(stock_out)
+        db.session.commit()
+        db.session.commit()
         return redirect(url_for('stock_out', store_id=store.id))
 
-    stock_out_dates = []
     stock_out_lookup = {}
 
     current_date = datetime.now()
-    sales_entries = StockOut.query.filter(StockOut.date_sent <= current_date,
+    stockout_entries = StockOut.query.filter(StockOut.date_sent <= current_date,
                                           StockOut.store_id == store.id).order_by(StockOut.date_sent.desc()).all()
-    for entry in sales_entries:
-        entry_date = entry.date_sent.date()
-        if entry_date not in stock_out_dates:
-            stock_out_dates.append(entry_date)
-    for date in stock_out_dates:
-        stock_out_lookup[date] = []
-        item_sent = StockOut.query.filter(func.date(StockOut.date_sent) == date).all()
-        for item in item_sent:
-            stock_out_lookup[date].append(item)
-    return render_template('stock_out.html', form=form, stock_out_lookup=stock_out_lookup, shop=shop,
-                           stock_out_dates=stock_out_dates, store=store)
+    for entry in stockout_entries:
+        date = entry.date_sent.date()
+        if date in stock_out_lookup:
+            stock_out_lookup[date].append(entry)
+        else:
+            stock_out_lookup[date] = [entry]
+
+    return render_template('stock_out.html', form=form, stock_out_lookup=stock_out_lookup, shop=shop, store=store)
 
 
 @app.route('/monthly_sales_data')
@@ -758,3 +754,12 @@ def assign_shopkeeper(shop_id):
 
     return render_template('assign_shopkeeper.html', shop=shop, form=form)
 
+
+@app.route('/get_store_items', methods=['GET', 'POST'])
+def get_store_items():
+    item_name = request.json["item_name"]
+    store_id = request.json["store_id"]
+    items = StoreItem.query.filter_by(store_id=store_id).all()
+    response = [{"name": item.item.item_name} for item in items if
+                item_name.lower() in item.item.item_name.lower() and item.item_quantity > 0]
+    return jsonify(response)

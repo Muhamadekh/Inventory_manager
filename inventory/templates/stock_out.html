@@ -29,7 +29,7 @@
     </table>
     <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0"></div>
 
-    {% for date in stock_out_dates %}
+    {% for date in stock_out_lookup.keys() %}
       <div class="table" id="SalesTable">
         <table class="table mt-4">
           <thead>
@@ -72,10 +72,12 @@
         $(document).ready(function () {
             $("#searchItemName").on("input", (e) => {
                 let item_name = $("#searchItemName").val();
+                let storeId = "{{ store.id}}";
                 console.log(item_name);
 
                 fetchData(`http://${window.location.hostname}:5000/get_store_items`, "POST", {
-                    "item_name": item_name
+                    "item_name": item_name,
+                    "store_id": storeId
                 }, (data) => {
                     console.log(data);
                     // Clear the previous search results
