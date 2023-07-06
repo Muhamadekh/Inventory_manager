@@ -1,11 +1,10 @@
-from flask import render_template, url_for, flash, redirect, session, request, abort, jsonify
+from flask import render_template, url_for, flash, redirect, session, request, jsonify
 from inventory import app, bcrypt, db
-from inventory.models import (User, Shop, Stock, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
-                              StockIn, ShopStock, StoreItem)
+from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
+                              StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
-                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
-                             )
+                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm, ShopKeeperRegistrationForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -30,7 +29,7 @@ def home():
     stock_value_list = []
     for shop in shops:
         shop_stock_value_list = []
-        for item in shop.stocks:
+        for item in shop.items:
             shop_stock_value_list.append(item.item_value)
         stock_value_list.append(sum(shop_stock_value_list))
     total_stock_value = sum(stock_value_list)
@@ -118,32 +117,33 @@ def register_shop():
     shop = Shop.query.filter_by(shop_name=form.shop_name.data).first()
     if shop:
         flash("This already exist. Try another name", "warning")
-    else:
-        form.populate_shopkeeper_choices()
-        selected_staff_id = form.get_selected_shopkeeper_id()
-        user = User.query.filter_by(id=selected_staff_id).first()
-        if form.validate_on_submit():
-            shop = Shop(shop_name=form.shop_name.data, location=form.location.data, user_id=current_user.id,
-                        shopkeeper=user.username)
-            db.session.add(shop)
-            db.session.commit()
-            flash(f"{shop.shop_name} at {shop.location} was successfully registered.", "success")
-            return redirect(url_for('view_shops'))
-    return render_template('register_shop.html', form=form)
+
+    if form.validate_on_submit():
+        shop = Shop(shop_name=form.shop_name.data, location=form.location.data, user_id=current_user.id)
+        db.session.add(shop)
+        db.session.commit()
+        flash(f"{shop.shop_name} at {shop.location} was successfully registered.", "success")
+        return redirect(url_for('view_shops'))
+
+    return render_template('register_shop.html', form=form, shop=shop)
 
 
 @app.route('/view_shops', methods=['GET', 'POST'])
 def view_shops():
     shops = Shop.query.all()
+    users = User.query.all()
     date = today_date()
     shop_stock_lookup = {}
     for shop in shops:
         stock_value_list = []
-        for product in shop.stocks:
+        for product in shop.items:
             stock_value_list.append(product.item_value)
         total_stock_value = sum(stock_value_list)
         shop_stock_lookup[shop.id] = total_stock_value
-    return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date)
+    for user in users:
+        for shopkeeper in user.shopkeepers:
+            print(shopkeeper.user_details.username)
+    return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date, users=users)
 
 
 @app.route('/view_shops/<int:shop_id>', methods=['GET'])
@@ -151,7 +151,7 @@ def view_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     date = today_date()
     stock_value_list = []
-    for product in shop.stocks:
+    for product in shop.items:
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
 
@@ -232,34 +232,33 @@ def logout():
 @app.route('/get_store_items', methods=['GET', 'POST'])
 def get_store_items():
     item_name = request.json["item_name"]
-    shop_id = request.json["shop_id"]
     items = Item.query.all()
     response = [{"name": item.item_name} for item in items if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
 
-@app.route('/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
-@login_required
-def add_new_stock(shop_id):
-    # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
-    shop = Shop.query.get_or_404(shop_id)
-    form = ShopNewItemForm()
-    if form.validate_on_submit():
-        item = Item.query.filter(Item.item_name.lower() == form.item_name.lower()).first()
-        stock = Stock(item_name=form.item_name.data, item_cost_price=item.item_cost_price,
-                      item_selling_price=item.item_selling_price, item_quantity=form.item_quantity.data)
-        stock.item_value = stock.item_cost_price * stock.item_quantity
-        if stock.item_quantity <= 20:
-            stock.stock_status = "Running Out"
-        shop_stock = ShopStock(shop=shop, stock=stock)
-        try:
-            db.session.add(stock)
-            db.session.add(shop_stock)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            flash('An error occurred while adding the item.', 'danger')
-        return redirect(url_for('add_new_stock', shop_id=shop.id))
-    return render_template('add_stock.html', form=form, shop=shop)
+# @app.route('/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
+# @login_required
+# def add_new_stock(shop_id):
+#     # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
+#     shop = Shop.query.get_or_404(shop_id)
+#     form = ShopNewItemForm()
+#     if form.validate_on_submit():
+#         item = Item.query.filter(Item.item_name.lower() == form.item_name.lower()).first()
+#         stock = Stock(item_name=form.item_name.data, item_cost_price=item.item_cost_price,
+#                       item_selling_price=item.item_selling_price, item_quantity=form.item_quantity.data)
+#         stock.item_value = stock.item_cost_price * stock.item_quantity
+#         if stock.item_quantity <= 20:
+#             stock.stock_status = "Running Out"
+#         shop_stock = ShopStock(shop=shop, stock=stock)
+#         try:
+#             db.session.add(stock)
+#             db.session.add(shop_stock)
+#             db.session.commit()
+#         except IntegrityError:
+#             db.session.rollback()
+#             flash('An error occurred while adding the item.', 'danger')
+#         return redirect(url_for('add_new_stock', shop_id=shop.id))
+#     return render_template('add_stock.html', form=form, shop=shop)
 
 
 @app.route('/<int:shop_id>/stock_received', methods=['GET', 'POST'])
@@ -321,7 +320,7 @@ def stock_received(shop_id):
     Date = today_date()
     current_date = datetime.now()
     restock_entries = StockReceived.query.filter(StockReceived.date_received <= current_date, StockReceived.shop_id == shop.id
-                                      ).order_by(StockReceived.date_sold.desc()).all()
+                                      ).order_by(StockReceived.date_received.desc()).all()
     for entry in restock_entries:
         entry_id = entry.id
         date = entry.date_received.strftime("%d-%m-%Y")
@@ -337,7 +336,7 @@ def get_item_name():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
     shop = Shop.query.get_or_404(shop_id)
-    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in shop.stocks if item_name.lower() in item.item_name.lower()]
+    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in shop.items if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
 
 
@@ -466,10 +465,10 @@ def view_stores():
     store_stock_lookup = {}
     total_stock_value = []
     for store in stores:
+        store_items = StoreItem.query.filter_by(store_id=store.id).all()
         stock_value_list = []
-        for product in store.items:
-            product_value = product.item_cost_price * product.item_quantity
-            stock_value_list.append(product_value)
+        for product in store_items:
+            stock_value_list.append(product.item_value)
         total_stock_value = sum(stock_value_list)
         store_stock_lookup[store.id] = total_stock_value
     return render_template('view_stores.html', store_stock_lookup=store_stock_lookup, stores=stores, date=date,
@@ -480,11 +479,13 @@ def view_stores():
 def view_store(store_id):
     store = Store.query.get_or_404(store_id)
     date = today_date()
+    store_items = StoreItem.query.filter_by(store_id=store.id).all()
     stock_value_list = []
-    for product in store.items:
-        stock_value_list.append(product.item_cost_price * product.item_quantity)
+    for product in store_items:
+        stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
-    return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date)
+    return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date,
+                           store_items=store_items)
 
 
 @app.route('/view_stores/<int:store_id>/add_store_stock', methods=['GET', 'POST'])
@@ -495,14 +496,9 @@ def add_store_stock(store_id):
     if form.validate_on_submit():
         if form.item_selling_price.data > form.item_cost_price.data:
             item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
-                        item_selling_price=form.item_selling_price.data, item_quantity=form.item_quantity.data)
-            if item.item_quantity <= 500:
-                item.stock_status = "Running Out"
-            item.item_value = item.item_selling_price * item.item_quantity
-            store_item = StoreItem(store=store, item=item)
+                        item_selling_price=form.item_selling_price.data)
             try:
                 db.session.add(item)
-                db.session.add(store_item)
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
@@ -519,16 +515,42 @@ def stock_in(store_id):
     form = StoreStockInForm()
     if form.validate_on_submit():
         item = Item.query.filter_by(item_name=form.item_name.data).first()
-        item_received = StockIn(item_name=form.item_name.data, item_quantity=form.item_quantity.data, store_id=store.id,
-                                item_cost_price=item.item_cost_price, item_selling_price=item.item_selling_price)
+        item_received = StockIn(item_name=form.item_name.data, item_quantity=form.item_quantity.data, store_id=store.id)
         db.session.add(item_received)
         db.session.commit()
-        if item.item_name == item_received.item_name:
-            item.item_quantity = item.item_quantity + item_received.item_quantity
-            item.item_value = item.item_quantity * item.item_selling_price
+        if item in store.items:
+            print("yes")
+            store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
+            store_item.item_quantity = store_item.item_quantity + item_received.item_quantity
+            store_item.item_value = store_item.item_quantity * item.item_cost_price
+            if store_item.item_quantity < 500:
+                store_item.stock_status = 'Running Out'
+            print("printing", store_item.item_quantity)
+            db.session.commit()
+        else:
+            print("No")
+            store_item = StoreItem(store=store, item=item, item_quantity=form.item_quantity.data)
+            store_item.item_value = form.item_quantity.data * item.item_cost_price
+            db.session.add(store_item)
+            db.session.commit()
+            if store_item.item_quantity < 500:
+                store_item.stock_status = 'Running Out'
             db.session.commit()
         return redirect(url_for('stock_in', store_id=store.id))
-    return render_template('stock_in.html', form=form, store=store)
+
+    restock_lookup = {}
+    current_date = datetime.now()
+    restock_entries = StockIn.query.filter(StockIn.date_received <= current_date,
+                                                 StockIn.store_id == store.id
+                                                 ).order_by(StockIn.date_received.desc()).all()
+    for entry in restock_entries:
+        date = entry.date_received.date()
+        if date in restock_lookup:
+            restock_lookup[date].append(entry)
+        else:
+            restock_lookup[date] = [entry]
+    print(restock_lookup)
+    return render_template('stock_in.html', form=form, store=store, restock_lookup=restock_lookup)
 
 
 @app.route('/view_stores/<int:store_id>/stock_out', methods=['GET', 'POST'])
@@ -540,11 +562,11 @@ def stock_out(store_id):
     shop = Shop.query.filter_by(id=selected_shop_id).first()
     if form.validate_on_submit():
         item = Item.query.filter_by(item_name=form.item.item_name).first()
-        stock_out = StockOut(item_name=form.item.item_name, item_quantity=form.item_quantity.data,
-                             store_id=store.id, shop_id=shop.id)
-        db.session.add(stock_out)
-        db.session.commit()
-        if item.item_name == stock_out.item_name:
+        if item in store.items:
+            stock_out = StockOut(item_name=form.item.item_name, item_quantity=form.item_quantity.data,
+                                 store_id=store.id, shop_id=shop.id)
+            db.session.add(stock_out)
+            db.session.commit()
             item.item_quantity = item.item_quantity - stock_out.item_quantity
             item.item_value = item.item_quantity * item.item_selling_price
             db.session.commit()
@@ -587,7 +609,7 @@ def monthly_sales_data():
 
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
 def edit_shop_stock(stock_id):
-    stock = Stock.query.get_or_404(stock_id)
+    stock = ShopItem.query.get_or_404(stock_id)
     form = ShopNewItemForm()
     if request.method == 'GET':
         form.item_name.data = stock.item_name
@@ -625,9 +647,9 @@ def edit_stock_sold(stock_sold_id):
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     session["shop_id"] = shop.id
-    all_stock = [stock for stock in shop.stocks]
-    for stock in all_stock:
-        print(stock.item_name, stock.item_quantity, stock.daily_count)
+    all_stock = [item for item in shop.items]
+    for item in all_stock:
+        print(item.item_name, item.item_quantity, item.daily_count)
     return render_template('daily_count.html', all_stock=all_stock, shop=shop)
 
 
@@ -673,7 +695,7 @@ def debt_registration():
 @app.route('/get_shops_stock', methods=['GET', 'POST'])
 def get_shops_stock():
     searched_term = request.json["searched_term"]
-    all_stock = Stock.query.all()
+    all_stock = ShopItem.query.all()
     response = []
     for item in all_stock:
         if item.item_quantity > 0 and searched_term.lower() in item.item_name.lower():
@@ -688,7 +710,7 @@ def save_daily_count():
     for item_data in daily_count_data:
         item_id = item_data["item_id"]
         count = item_data["count"]
-        stock_item = Stock.query.get_or_404(item_id)
+        stock_item = ShopItem.query.get_or_404(item_id)
         stock_item.daily_count = count
         db.session.commit()
     shop_id = session.get("shop_id")
@@ -714,3 +736,25 @@ def shop_sales_data():
             sales_cost_list.append(item.item_price)
     total_sales_value = sum(sales_value_list)
     total_discount = sum(discount_list)
+
+
+@app.route('/<int:shop_id>/assign_shopkeeper', methods=['GET', 'POST'])
+def assign_shopkeeper(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    form = ShopKeeperRegistrationForm()
+    form.populate_shopkeeper_choices()
+    selected_staff_id = form.get_selected_shopkeeper_id()
+    user = User.query.filter_by(id=selected_staff_id).first()
+
+    if form.validate_on_submit():
+        shopkeeper = Shopkeeper.query.filter_by(user_id=user.id, shop_id=shop.id).first()
+        if shopkeeper:
+            flash("This staff is already attached to thi shop.", "danger")
+        else:
+            shopkeeper = Shopkeeper(user_id=user.id, shop_id=shop.id)
+            db.session.add(shopkeeper)
+            db.session.commit()
+            return redirect(url_for('view_shops'))
+
+    return render_template('assign_shopkeeper.html', shop=shop, form=form)
+

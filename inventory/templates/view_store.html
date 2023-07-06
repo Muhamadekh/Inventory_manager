@@ -28,14 +28,14 @@
         </tr>
       </thead>
       <tbody>
-        {% for product in store.items %}
+        {% for product in store_items %}
           <tr>
               <td>{{ product.id }}</td>
-              <td>{{ product.item_name }}</td>
+              <td>{{ product.item.item_name }}</td>
               <td class="text-right">{{ "{:,}".format(product.item_quantity) }}</td>
-              <td class="text-right">{{ "{:,}".format(product.item_cost_price) }}</td>
-              <td class="text-right">{{ "{:,}".format(product.item_selling_price) }}</td>
-              <td class="text-right">{{ "{:,}".format(product.item_cost_price * product.item_quantity) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item.item_cost_price) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item.item_selling_price) }}</td>
+              <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
               <td class="text-right">{{ product.date_added.date() }}</td>
               <td class="text-right">{{ product.stock_status }}</td>
               <td class="text-center"><a href="#">Edit</a></td>

@@ -36,21 +36,6 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="form-group">
-                        <div class="col-md-12">
-                            {{ form.shopkeeper.label (class="form-control-label")}}
-                            {% if form.shopkeeper.errors %}
-                                {{ form.shopkeeper (class="form-control form-control-lg is-invalid")}}
-                                <ul class="invalid-feedback">
-                                    {% for error in form.shopkeeper.errors %}
-                                        <span>{{ error }}</span>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                {{ form.shopkeeper (class="form-control form-control-lg")}}
-                            {% endif %}
-                        </div>
-                    </div>
                     <div>
                         <div class="col-md-12">
                             {{ form.submit (class="btn btn-outline-info", style="background-color: #008CBA; color: white;")}}

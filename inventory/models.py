@@ -17,43 +17,35 @@ class User(db.Model, UserMixin):
     date_registered = db.Column(db.DateTime, default=datetime.now())
     shops = db.relationship('Shop', backref='staff', lazy=True)
     stores = db.relationship('Store', backref='staff', lazy=True)
+    shopkeepers = db.relationship('Shopkeeper', backref='user_details', lazy=True)
 
 
 class Shop(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_name = db.Column(db.String(100), nullable=False, unique=True)
     location = db.Column(db.String(100), nullable=False)
-    shopkeeper = db.Column(db.String(100), nullable=False)
     date_registered = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     sale = db.relationship('Sale', backref='shop', lazy=True)
     stock_received = db.relationship('StockReceived', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
-    stock_association = db.relationship('ShopStock', back_populates='shop')
-    stocks = association_proxy("stock_association", "stock")
+    item_association = db.relationship('ShopItem', back_populates='shop')
+    items = association_proxy("item_association", "item")
+    shopkeepers = db.relationship('Shopkeeper', backref='shop_details', lazy=True)
 
 
-class ShopStock(db.Model):
+class ShopItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_id = db.Column('shop_id', db.Integer, db.ForeignKey('shop.id'))
-    stock_id = db.Column('stock_id', db.Integer, db.ForeignKey('stock.id'))
-
-    shop = db.relationship('Shop', back_populates='stock_association')
-    stock = db.relationship('Stock', back_populates='shops')
-
-
-class Stock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(100), nullable=False)
-    item_cost_price = db.Column(db.Integer, nullable=False)
-    item_selling_price = db.Column(db.Integer, nullable=False)
+    item_id = db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
     item_quantity = db.Column(db.Integer, nullable=False)
     item_value = db.Column(db.Integer, nullable=False)
-    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
+    item_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
-    daily_count = db.Column(db.Integer, nullable=True)
-    items = db.relationship('Item', backref='stock', lazy=True)
-    shops = db.relationship('ShopStock', back_populates='stock')
+    daily_count = db.relationship('DailyCount', backref='daily_count_item', lazy=True)
+
+    shop = db.relationship('Shop', back_populates='item_association')
+    item = db.relationship('Item', back_populates='shops')
 
 
 class StockReceived(db.Model):
@@ -100,7 +92,11 @@ class Store(db.Model):
 class StoreItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     store_id = db.Column('store_id', db.Integer, db.ForeignKey('store.id'))
-    item_item = db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
+    item_id = db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
+    item_quantity = db.Column(db.Integer, nullable=False)
+    item_value = db.Column(db.Integer, nullable=False)
+    date_added = db.Column(db.DateTime, default=datetime.now())
+    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
 
     store = db.relationship('Store', back_populates='item_association')
     item = db.relationship('Item', back_populates='stores')
@@ -111,12 +107,9 @@ class Item(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     item_cost_price = db.Column(db.Integer, nullable=False)
     item_selling_price = db.Column(db.Integer, nullable=False)
-    item_quantity = db.Column(db.Integer, nullable=False)
-    item_value = db.Column(db.Integer, nullable=False)
-    stock_status = db.Column(db.String(20), nullable=False, default='In Stock')
     date_added = db.Column(db.DateTime, default=datetime.now())
-    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))
     stores = db.relationship('StoreItem', back_populates='item')
+    shops = db.relationship('ShopItem', back_populates='item')
 
 
 class StockIn(db.Model):
@@ -134,13 +127,15 @@ class StockOut(db.Model):
     date_sent = db.Column(db.DateTime, default=datetime.now())
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
+    is_received = db.Column(db.Boolean, nullable=False, default=False)
 
 
 class Supplier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_name = db.Column(db.String(80), nullable=False)
-    item_supplied = db.Column(db.String(80), nullable=False)
-    item_quantity = db.Column(db.Integer, nullable=False)
+    phone_number = db.Column(db.String(80), nullable=False, unique=True)
+    amount_paid = db.Column(db.Integer, nullable=False)
+    unpaid_amount = db.Column(db.Integer, nullable=False)
     supply_date = db.Column(db.DateTime, default=datetime.now())
 
 
@@ -152,3 +147,14 @@ class Debtor(db.Model):
     amount_paid = db.Column(db.Integer, nullable=False)
     unpaid_amount = db.Column(db.Integer, nullable=False)
     purchases = db.relationship('Sale', backref='debtor', lazy=True)
+
+
+class Shopkeeper(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+
+class DailyCount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))

@@ -16,12 +16,97 @@
         <tr>
           <form method="POST">
             {{ form.hidden_tag() }}
-            <td>{{ form.item_name(class="form-control") }}</td>
+            <td>{{ form.item_name(class="form-control", id="searchItemName", placeholder="Search Item") }}</td>
             <td>{{ form.item_quantity(class="form-control") }}</td>
             <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
           </form>
         </tr>
       </tbody>
     </table>
+    <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0"></div>
+
+    <!-- Restock Log -->
+    {% if not restock_lookup %}
+        <div class="text-center mt-4"><h5 class="font-italic">This shop has not yet received any goods.</h5></div>
+    {% else %}
+        {% for date in restock_lookup.keys() %}
+            {% if current_user.user_role != 'Admin'%}
+            <div class="table" id="SalesTable">
+                {% else %}
+                <div class="table">
+                    {% endif %}
+                    <table class="table mt-4">
+                        <thead>
+                            <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+                            <tr>
+                                <th>Item ID</th>
+                                <th>Item Name</th>
+                                <th>Item Quantity</th>
+                                <th colspan="2">Date Received</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in restock_lookup[date] %}
+                            <tr>
+                                <td>{{ entry.id }}</td>
+                                <td>{{ entry.item_name }}</td>
+                                <td>{{ entry.item_quantity }}</td>
+                                <td>{{ entry.date_received.strftime('%H:%M:%S') }}</td>
+                                {% if current_user.user_role == 'Admin'%}
+                                <td><a href="{{ url_for('edit_stock_sold', stock_sold_id=entry.id) }}">Edit</a></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const fetchData = (url, methods, data, handle) => {
+            fetch(url, {
+                method: methods,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(res => handle(res));
+        };
+
+        // Access the shop ID value within the JavaScript code
+        $(document).ready(function () {
+            $("#searchItemName").on("input", (e) => {
+                let item_name = $("#searchItemName").val();
+                console.log(item_name);
+
+                fetchData(`http://${window.location.hostname}:5000/get_store_items`, "POST", {
+                    "item_name": item_name
+                }, (data) => {
+                    console.log(data);
+                    // Clear the previous search results
+                    $("#searchResults").empty();
+
+                    // Iterate over the items in the search results and append them to the container
+                    data.forEach((item) => {
+                        let itemHtml = `<p class="search-item">${item.name}</p>`;
+                        $("#searchResults").append(itemHtml);
+                    });
+
+                    // Add click event listener to search items
+                    $(".search-item").on("click", (e) => {
+                        let selectedItem = $(e.target).text();
+                        $("#searchItemName").val(selectedItem);
+                        $("#searchResults").empty();
+                    });
+                });
+            });
+        });
+    </script>
 
 {% endblock %}
