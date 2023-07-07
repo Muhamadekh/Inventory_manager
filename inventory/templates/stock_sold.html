@@ -8,7 +8,6 @@
         <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
         <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
         <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
-        <a href="{{ url_for('add_new_stock', shop_id=shop.id)}}" class="button">Add New Item</a>
         <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
         <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeeper}}</a>
         <div class="float-right"><a href="{{ url_for('daily_count', shop_id=shop.id)}}" class="btn btn-outline-info">Send Daily Count</a></div>

@@ -29,7 +29,7 @@ def home():
     stock_value_list = []
     for shop in shops:
         shop_stock_value_list = []
-        for item in shop.items:
+        for item in ShopItem.query.filter_by(shop_id=shop.id).all():
             shop_stock_value_list.append(item.item_value)
         stock_value_list.append(sum(shop_stock_value_list))
     total_stock_value = sum(stock_value_list)
@@ -38,8 +38,8 @@ def home():
     store_stock = []
     stores = Store.query.all()
     for store in stores:
-        for item in store.items:
-            store_stock.append(item.item_cost_price * item.item_quantity)
+        for item in StoreItem.query.filter_by(store_id=store.id).all():
+            store_stock.append(item.item_value)
     total_store_stock = sum(store_stock)
 
     # Finding total net sales and discount
@@ -136,7 +136,7 @@ def view_shops():
     shop_stock_lookup = {}
     for shop in shops:
         stock_value_list = []
-        for product in shop.items:
+        for product in ShopItem.query.filter_by(shop_id=shop.id).all():
             stock_value_list.append(product.item_value)
         total_stock_value = sum(stock_value_list)
         shop_stock_lookup[shop.id] = total_stock_value
@@ -151,7 +151,7 @@ def view_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     date = today_date()
     stock_value_list = []
-    for product in shop.items:
+    for product in ShopItem.query.filter_by(shop_id=shop.id).all():
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
 
@@ -215,11 +215,16 @@ def login():
             if user.user_role == 'Admin':
                 return redirect(url_for('home'))
             else:
-                shop = Shop.query.filter_by(shopkeeper=current_user.username).first()
-                return redirect(url_for('stock_sold', shop_id=shop.id))
+                shopkeeper = Shopkeeper.query.filter_by(user_id=user.id).first()
+                if shopkeeper:
+                    shop = shopkeeper.shop_details
+                    return redirect(url_for('stock_sold', shop_id=shop.id))
+                else:
+                    flash('Shopkeeper not found.', 'danger')
         else:
             flash('Please check your username and password.', 'danger')
     return render_template('login.html', form=form)
+
 
 
 @app.route('/logout')
@@ -266,63 +271,43 @@ def stock_received(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     form = ShopStockReceivedForm()
     if form.validate_on_submit():
+        stock_sent = StockOut.query.filter_by(is_received=False).all()
         selected_name = form.item_name.data.split(" (")
         item_name = selected_name[0]
-        item = ShopItem.query.filter_by(item_name=item_name).first()
-        if item:
-            item_received = StockReceived(item_name=item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
+        item = Item.query.filter_by(item_name=item_name).first()
+        item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
+        item_sent = StockOut.query.filter_by(is_received=False, item_name=item.item_name,
+                                             item_quantity=form.item_quantity.data).first()
+        if item_sent and not item_sent.is_received:
+            item_sent.is_received = True
             db.session.add(item_received)
             db.session.commit()
-            if item.item_name == item_received.item_name:
-                item.item_quantity = item.item_quantity + item_received.item_quantity
-                item.item_value = item.item_quantity * item.item_price
-                db.session.commit()
-            return redirect(url_for('stock_received', shop_id=shop.id))
-
-    if request.args.get('download'):
-
-        time_range = request.args.get('time_range')
-
-        if time_range == '30':
-            start_date = datetime.now() - timedelta(days=30)
-        elif time_range == '6m':
-            start_date = datetime.mow() - timedelta(days=30*6)
         else:
-             flash("Range does not exit", "warning")
+            flash("An error has occurred", "warning")
+        if item in shop.items:
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+            shop_item.item_quantity = shop_item.item_quantity + item_received.item_quantity
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
+            if shop_item.item_quantity < 500:
+                shop_item.stock_status = 'Running Out'
+            db.session.commit()
+        else:
+            shop_item = ShopItem(shop=shop, item=item, item_quantity=form.item_quantity.data)
+            shop_item.item_value = form.item_quantity.data * item.item_cost_price
+            db.session.add(shop_item)
+            db.session.commit()
+            if shop_item.item_quantity < 500:
+                shop_item.stock_status = 'Running Out'
+            db.session.commit()
 
-        sales_entries = StockReceived.query.filter(StockReceived.date_received >= start_date,
-                                                   StockSold.shop_id == shop.id
-                                                   ).order_by(StockReceived.date_received.desc()).all()
-
-        headers = ['Date Received', 'Item Name', 'Quantity']
-        rows = []
-        for entry in sales_entries:
-            row = [
-                entry.date_received.strftime('%d-%m-%Y'),
-                entry.item_name,
-                entry.item_quantity
-            ]
-        rows.append(row)
-
-        # Create a CSV file
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(headers)
-        writer.writerows(rows)
-
-        # Prepare the response with the CSV file
-        response = make_response(output.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename=stock_received.csv'
-        response.headers['Content-type'] = 'text/csv'
-        return response
+        return redirect(url_for('stock_received', shop_id=shop.id))
 
     restock_lookup = {}
-    Date = today_date()
     current_date = datetime.now()
-    restock_entries = StockReceived.query.filter(StockReceived.date_received <= current_date, StockReceived.shop_id == shop.id
-                                      ).order_by(StockReceived.date_received.desc()).all()
+    restock_entries = StockReceived.query.filter(StockReceived.date_received <= current_date,
+                                                 StockReceived.shop_id == shop.id)\
+        .order_by(StockReceived.date_received.desc()).all()
     for entry in restock_entries:
-        entry_id = entry.id
         date = entry.date_received.strftime("%d-%m-%Y")
         if date in restock_lookup:
             restock_lookup[date].append(entry)
@@ -566,16 +551,21 @@ def stock_out(store_id):
     selected_shop_id = form.get_selected_shop_id()
     shop = Shop.query.filter_by(id=selected_shop_id).first()
     if form.validate_on_submit():
-        item = Item.query.filter_by(item_name=form.item_name.data).first()
+        selected_name = form.item_name.data.split(" (")
+        item_name = selected_name[0]
+        item = Item.query.filter_by(item_name=item_name).first()
         store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
-        stock_out = StockOut(item_name=form.item_name.data, item_quantity=form.item_quantity.data,
-                             store_id=store.id, shop_id=shop.id)
-        store_item.item_quantity = store_item.item_quantity - form.item_quantity.data
-        store_item.item_value = store_item.item_quantity * item.item_cost_price
-        db.session.add(stock_out)
-        db.session.commit()
-        db.session.commit()
-        return redirect(url_for('stock_out', store_id=store.id))
+        if store_item and store_item.item_quantity >= form.item_quantity.data:
+            stock_out = StockOut(item_name=form.item_name.data, item_quantity=form.item_quantity.data,
+                                 store_id=store.id, shop_id=shop.id)
+            store_item.item_quantity = store_item.item_quantity - form.item_quantity.data
+            store_item.item_value = store_item.item_quantity * item.item_cost_price
+            db.session.add(stock_out)
+            db.session.commit()
+            db.session.commit()
+            return redirect(url_for('stock_out', store_id=store.id))
+        else:
+            flash("Quantity is more than available.", "warning")
 
     stock_out_lookup = {}
 
@@ -760,11 +750,23 @@ def assign_shopkeeper(shop_id):
     return render_template('assign_shopkeeper.html', shop=shop, form=form)
 
 
+# Getting items in stores
 @app.route('/get_store_items', methods=['GET', 'POST'])
 def get_store_items():
     item_name = request.json["item_name"]
     store_id = request.json["store_id"]
     items = StoreItem.query.filter_by(store_id=store_id).all()
-    response = [{"name": item.item.item_name} for item in items if
+    response = [{"name": f"{item.item.item_name} ({item.item_quantity})"} for item in items if
                 item_name.lower() in item.item.item_name.lower() and item.item_quantity > 0]
+    return jsonify(response)
+
+
+# Getting item in stock sent from a store to a shop (Stockout)
+@app.route('/get_stock_sent_items', methods=['GET', 'POST'])
+def get_stock_sent_items():
+    item_name = request.json["item_name"]
+    shop_id = request.json["shop_id"]
+    shop = Shop.query.get_or_404(shop_id)
+    stock_sent = StockOut.query.filter_by(is_received=False, shop_id=shop.id).all()
+    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
