@@ -3,9 +3,8 @@
     <!-- Buttons -->
     <div class="button-container">
       <a class="button active">Stock</a>
-      <a href="{{ url_for('stock_out', store_id=store.id)}}" class="button">Stock Out</a>
+      <a href="{{ url_for('stock_out', store_id=store.id)}}" class="button">Transfer</a>
       <a href="{{ url_for('stock_in', store_id=store.id)}}" class="button">Receive Stock</a>
-      <a href="{{ url_for('add_store_stock', store_id=store.id)}}" class="button">Add New Item</a>
       <a class="ml-4">Store Name: {{store.store_name}}</a>
       <a class="ml-4">Date:{{date}}</a>
       <div class="float-right">

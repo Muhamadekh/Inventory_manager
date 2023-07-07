@@ -488,10 +488,9 @@ def view_store(store_id):
                            store_items=store_items)
 
 
-@app.route('/view_stores/<int:store_id>/add_store_stock', methods=['GET', 'POST'])
+@app.route('/add_items', methods=['GET', 'POST'])
 @login_required
-def add_store_stock(store_id):
-    store = Store.query.get_or_404(store_id)
+def add_items():
     form = StoreNewItemForm()
     if form.validate_on_submit():
         if form.item_selling_price.data > form.item_cost_price.data:
@@ -505,8 +504,14 @@ def add_store_stock(store_id):
                 flash('An error occurred while adding the item.', 'danger')
         else:
             flash('Selling price is less than cost price.', 'danger')
-        return redirect(url_for('add_store_stock', store_id=store.id))
-    return render_template('add_store_stock.html', form=form, store=store)
+        return redirect(url_for('add_items'))
+    return render_template('add_items.html', form=form)
+
+
+@app.route('/view_items', methods=['GET', 'POST'])
+def view_items():
+    items = Item.query.all()
+    return render_template('view_items.html', items=items)
 
 
 @app.route('/view_stores/<int:store_id>/stock_in', methods=['GET', 'POST'])
