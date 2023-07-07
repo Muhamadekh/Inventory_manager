@@ -2,7 +2,7 @@
 {% block content %}
     <!-- Buttons -->
     <div class="button-container">
-      <a class="button active">Stock</a>
+      <a href="{{ url_for('view_shop', shop_id=shop.id)}}" class="button">Stock</a>
       <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button">Sales</a>
       <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
       <a class="ml-4">Date:{{date}}</a>
@@ -32,27 +32,29 @@
           <th>Item Name</th>
           {% if current_user.user_role=='Admin' %}
             <th>Item Quantity</th>
+            <th>Item Cost Price</th>
           {% endif %}
-          <th>Item Price</th>
+          <th class="text-center">Item Selling Price</th>
           {% if current_user.user_role=='Admin' %}
-            <th>Item Value</th>
+            <th class="text-center">Item Value</th>
           {% endif %}
-          <th colspan="2">Item Status</th>
+          <th colspan="2" class="text-center">Item Status</th>
         </tr>
       </thead>
       <tbody>
-        {% for product in shop.stocks %}
+        {% for product in ShopItem.query.filter_by(shop_id=shop.id).all() %}
           <tr>
               <td>{{ product.id }}</td>
-              <td>{{ product.item_name }}</td>
+              <td>{{ product.item.item_name }}</td>
               {% if current_user.user_role=='Admin' %}
-                <td class="text-right">{{ "{:,}".format(product.item_quantity) }}</td>
+                <td class="text-center">{{ "{:,}".format(product.item_quantity) }}</td>
+                <td class="text-center">{{ "{:,}".format(product.item.item_cost_price) }}</td>
               {% endif %}
-              <td class="text-right">{{ "{:,}".format(product.item_price) }}</td>
+              <td class="text-center">{{ "{:,}".format(product.item.item_selling_price) }}</td>
               {% if current_user.user_role=='Admin' %}
-                <td class="text-right">{{ "{:,}".format(product.item_value) }}</td>
+                <td class="text-center">{{ "{:,}".format(product.item_value) }}</td>
               {% endif %}
-              <td class="text-right">{{ product.stock_status }}</td>
+              <td class="text-center">{{ product.item_status }}</td>
               {% if current_user.user_role=='Admin' %}
                 <td class="text-center"><a href="{{ url_for ('edit_shop_stock', stock_id=product.id) }}">Edit</a></td>
               {% endif %}
@@ -60,8 +62,10 @@
           </tr>
         {% endfor %}
           <tr>
-              <td colspan="4" class="text-right"><strong>Total Stock Value</strong></td>
-              <td class="text-right"><strong>{{total_stock_value}}</strong></td>
+              {% if current_user.user_role=='Admin' %}
+                  <td colspan="5" class="text-right"><strong>Total Stock Value</strong></td>
+                  <td class="text-right"><strong>{{total_stock_value}}</strong></td>
+              {% endif %}
           </tr>
       </tbody>
     </table>

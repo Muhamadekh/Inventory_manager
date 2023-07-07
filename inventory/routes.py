@@ -200,7 +200,7 @@ def view_shop(shop_id):
         response.headers['Content-Disposition'] = f'attachment; filename={filename}'
         response.headers['Content-type'] = 'text/csv'
         return response
-    return render_template('view_shop.html', shop=shop, total_stock_value=total_stock_value, date=date)
+    return render_template('view_shop.html', shop=shop, total_stock_value=total_stock_value, date=date, ShopItem=ShopItem)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -234,6 +234,7 @@ def logout():
     return redirect(url_for('login'))
 
 
+# Get items to be received in a store
 @app.route('/get_items', methods=['GET', 'POST'])
 def get_items():
     item_name = request.json["item_name"]
@@ -289,7 +290,7 @@ def stock_received(shop_id):
             shop_item.item_quantity = shop_item.item_quantity + item_received.item_quantity
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             if shop_item.item_quantity < 500:
-                shop_item.stock_status = 'Running Out'
+                shop_item.item_status = 'Running Out'
             db.session.commit()
         else:
             shop_item = ShopItem(shop=shop, item=item, item_quantity=form.item_quantity.data)
@@ -316,12 +317,13 @@ def stock_received(shop_id):
     return render_template('stock_received.html', form=form, shop=shop, restock_lookup=restock_lookup)
 
 
+# Get items in a shop to be sold
 @app.route('/get_item_name', methods=['GET', 'POST'])
 def get_item_name():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
     shop = Shop.query.get_or_404(shop_id)
-    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in shop.items if item_name.lower() in item.item_name.lower()]
+    response = [{"name": item.item_name} for item in shop.items if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
 
 
@@ -332,20 +334,20 @@ def stock_sold(shop_id):
     sales_form = SaleForm()
 
     if selection_form.validate_on_submit() and selection_form.submit.data:
-        selected_name = selection_form.item_name.data.split(" (")
-        item_name = selected_name[0]
-        item = ShopItem.query.filter_by(item_name=item_name).first()
+        item_name = selection_form.item_name.data
+        item = Item.query.filter_by(item_name=item_name).first()
+        shop_item = ShopItem.query.filter_by(item_id=item.id).first()
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0
-        item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
-                              item_discount=discount)
-        selling_price = item.item_price - discount
-        item_sold.item_value = item_sold.item_quantity * selling_price
-        db.session.add(item_sold)
-        db.session.commit()
-        item.item_quantity = item.item_quantity - item_sold.item_quantity
-        item.item_value = item.item_quantity * item.item_price
-        db.session.commit()
-        return redirect(url_for('stock_sold', shop_id=shop.id))
+        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:
+            item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
+                                  item_discount=discount)
+            item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
+            db.session.add(item_sold)
+            db.session.commit()
+            shop_item.item_quantity = shop_item.item_quantity - item_sold.item_quantity
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
+            db.session.commit()
+            return redirect(url_for('stock_sold', shop_id=shop.id))
     cart_items = StockSold.query.filter_by(sale_id=None).all()
     total_amount = 0
     for item in cart_items:
@@ -377,7 +379,7 @@ def stock_sold(shop_id):
     for entry in sales_entries:
         entry_id = entry.id
         total_discount[entry_id] = sum([(item.item_discount*item.item_quantity) for item in entry.sale_items]) + entry.sales_discount
-        date = entry.date_sold.strftime("%d-%m-%Y")
+        date = entry.date_sold.date()
         if date in sales_lookup:
             sales_lookup[date].append(entry)
         else:
