@@ -72,16 +72,16 @@ def home():
     time_range = datetime.now() - timedelta(days=7)
 
     for shop in shops:
-        shop_sales_lookup[shop.shop_name] = []  # Initialize the list for each shop
+        shop_sales_lookup[shop.shop_name] = 0  # Initialize the list for each shop
         weekly_sales = Sale.query.filter(Sale.date_sold >= time_range).all()
         if weekly_sales:
             for sale in weekly_sales:
                 if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
                     if shop.shop_name in shop_sales_lookup:
-                        shop_sales_lookup[shop.shop_name].append(sum([item.item_quantity for item in sale.sale_items]))
+                        shop_sales_lookup[shop.shop_name] += sum(item.item_quantity for item in sale.sale_items)
                     else:
-                        shop_sales_lookup[shop.shop_name] = sum([item.item_quantity for item in sale.sale_items])
-    sorted_total_shop_sales_lookup = dict(sorted(shop_sales_lookup.items(), key=lambda x:x[1], reverse=True))
+                        shop_sales_lookup[shop.shop_name] = sum(item.item_quantity for item in sale.sale_items)
+    sorted_total_shop_sales_lookup = dict(sorted(shop_sales_lookup.items(), key=lambda x: x[1], reverse=True))
 
     return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value, total_store_stock=total_store_stock,
                            total_sales_value=total_sales_value, total_discount=total_discount, top_5_items_sold=top_5_items_sold,
@@ -640,9 +640,7 @@ def edit_stock_sold(stock_sold_id):
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     session["shop_id"] = shop.id
-    all_stock = [item for item in shop.items]
-    for item in all_stock:
-        print(item.item_name, item.item_quantity, item.daily_count)
+    all_stock = [item for item in ShopItem.query.filter_by(shop_id=shop.id).all()]
     return render_template('daily_count.html', all_stock=all_stock, shop=shop)
 
 
@@ -697,14 +695,16 @@ def get_shops_stock():
     return jsonify(response)
 
 
+# Saving daily count of all items in the shop as submitted by the shopkeeper
 @app.route('/save_daily_count', methods=['POST'])
 def save_daily_count():
     daily_count_data = request.json
     for item_data in daily_count_data:
         item_id = item_data["item_id"]
         count = item_data["count"]
-        stock_item = ShopItem.query.get_or_404(item_id)
-        stock_item.daily_count = count
+        shop_item = ShopItem.query.get_or_404(item_id)
+        daily_count = DailyCount(count=count, shop_item_id=shop_item.id)
+        db.session.add(daily_count)
         db.session.commit()
     shop_id = session.get("shop_id")
     return jsonify({"shop_id": shop_id})
@@ -731,6 +731,7 @@ def shop_sales_data():
     total_discount = sum(discount_list)
 
 
+# Assign shopkeeper to a shop
 @app.route('/<int:shop_id>/assign_shopkeeper', methods=['GET', 'POST'])
 def assign_shopkeeper(shop_id):
     shop = Shop.query.get_or_404(shop_id)
@@ -772,3 +773,12 @@ def get_stock_sent_items():
     stock_sent = StockOut.query.filter_by(is_received=False, shop_id=shop.id).all()
     response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
+
+
+# Remove unwanted item s from cart items list
+@app.route('/<int:shop_id>/remove_cart_item/<int:item_id>', methods=['GET', 'POST'])
+def remove_cart_item(shop_id, item_id):
+    item = StockSold.query.filter_by(sale_id=None, id=item_id).first()
+    db.session.delete(item)
+    db.session.commit()
+    return redirect(url_for('stock_sold', shop_id=shop_id))

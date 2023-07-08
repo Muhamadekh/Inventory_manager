@@ -158,3 +158,5 @@ class Shopkeeper(db.Model):
 class DailyCount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
+    count = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.now())
