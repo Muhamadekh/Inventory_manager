@@ -1,10 +1,12 @@
 from flask import render_template, url_for, flash, redirect, session, request, jsonify
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
-                              StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount)
+                              StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, PaymentMovement,
+                              AccountBalanceLog)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
-                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm, ShopKeeperRegistrationForm)
+                             StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm, ShopKeeperRegistrationForm,
+                             AccountRegistrationForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -242,30 +244,6 @@ def get_items():
     response = [{"name": item.item_name} for item in items if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
 
-# @app.route('/<int:shop_id>/add_new_stock', methods=['GET', 'POST'])
-# @login_required
-# def add_new_stock(shop_id):
-#     # shop = Shop.query.filter_by(shopkeeper=current_user.id).first()
-#     shop = Shop.query.get_or_404(shop_id)
-#     form = ShopNewItemForm()
-#     if form.validate_on_submit():
-#         item = Item.query.filter(Item.item_name.lower() == form.item_name.lower()).first()
-#         stock = Stock(item_name=form.item_name.data, item_cost_price=item.item_cost_price,
-#                       item_selling_price=item.item_selling_price, item_quantity=form.item_quantity.data)
-#         stock.item_value = stock.item_cost_price * stock.item_quantity
-#         if stock.item_quantity <= 20:
-#             stock.stock_status = "Running Out"
-#         shop_stock = ShopStock(shop=shop, stock=stock)
-#         try:
-#             db.session.add(stock)
-#             db.session.add(shop_stock)
-#             db.session.commit()
-#         except IntegrityError:
-#             db.session.rollback()
-#             flash('An error occurred while adding the item.', 'danger')
-#         return redirect(url_for('add_new_stock', shop_id=shop.id))
-#     return render_template('add_stock.html', form=form, shop=shop)
-
 
 @app.route('/<int:shop_id>/stock_received', methods=['GET', 'POST'])
 def stock_received(shop_id):
@@ -362,7 +340,20 @@ def stock_sold(shop_id):
         sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
                     shop_id=shop.id)
         sale.sales_value = total_amount - discount
+        if sale.payment_method == 'Cash':
+            cash_account = Account.query.filter_by(account_name='Cash').first()
+            cash_account.balance += sale.sales_value
+            balance_log = AccountBalanceLog(account_id=cash_account.id, balance=cash_account.balance)
+        elif sale.payment_method == 'Bank':
+            bank_account = Account.query.filter_by(account_name='Bank').first()
+            bank_account.balance += sale.sales_value
+            balance_log = AccountBalanceLog(account_id=bank_account.id, balance=bank_account.balance)
+        else:
+            mobile_account = Account.query.filter_by(account_name='Orange Money').first()
+            mobile_account.balance += sale.sales_value
+            balance_log = AccountBalanceLog(account_id=mobile_account.id, balance=mobile_account.balance)
         db.session.add(sale)
+        db.session.add(balance_log)
         db.session.commit()
         print("hello")
         for item in cart_items:
@@ -558,7 +549,7 @@ def stock_out(store_id):
         item = Item.query.filter_by(item_name=item_name).first()
         store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
         if store_item and store_item.item_quantity >= form.item_quantity.data:
-            stock_out = StockOut(item_name=form.item_name.data, item_quantity=form.item_quantity.data,
+            stock_out = StockOut(item_name=item_name, item_quantity=form.item_quantity.data,
                                  store_id=store.id, shop_id=shop.id)
             store_item.item_quantity = store_item.item_quantity - form.item_quantity.data
             store_item.item_value = store_item.item_quantity * item.item_cost_price
@@ -673,8 +664,13 @@ def debt_registration():
             unpaid_amount = sale.sales_value - amount_paid
             debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
                             amount_paid=amount_paid, unpaid_amount=unpaid_amount)
+
+        credit_account = Account.query.filter_by(account_name='Credit').first()
+        credit_account.balance += debtor.unpaid_amount
+        balance_log = AccountBalanceLog(account_id=credit_account.id, balance=credit_account.balance)
         sale.debtor_id = debtor.id
         db.session.add(debtor)
+        db.session.add(balance_log)
         db.session.commit()
         for item in cart_items:
             item.sale_id = sale.id
@@ -772,6 +768,7 @@ def get_stock_sent_items():
     shop = Shop.query.get_or_404(shop_id)
     stock_sent = StockOut.query.filter_by(is_received=False, shop_id=shop.id).all()
     response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if item_name.lower() in item.item_name.lower()]
+    print(response[0])
     return jsonify(response)
 
 
@@ -782,3 +779,80 @@ def remove_cart_item(shop_id, item_id):
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('stock_sold', shop_id=shop_id))
+
+
+# Register accounts
+@app.route('/add_account', methods=['GET', 'POST'])
+def add_account():
+    form = AccountRegistrationForm()
+    if form.validate_on_submit():
+        account = Account(account_name=form.account_name.data)
+        db.session.add(account)
+        db.session.commit()
+        flash(f"{account.account_name} was successfully registered.", "success")
+        return redirect(url_for('view_accounts'))
+    return render_template('add_account.html', form=form)
+
+
+@app.route('/view_accounts', methods=['GET', 'POST'])
+def view_accounts():
+    date = today_date()
+    accounts = Account.query.all()
+
+    # Account Daily Balance Log
+    account_balance_lookup = {}
+    for account in accounts:
+        balance_logs = AccountBalanceLog.query.filter_by(account_id=account.id).order_by(
+            AccountBalanceLog.date.desc()).all()
+        if balance_logs:
+            last_balance_log = balance_logs[0]
+            balance_date = last_balance_log.date.date()
+            account_balance_lookup[balance_date] = last_balance_log.balance
+    print(account_balance_lookup)
+
+    # Retrieve all account movements
+    account_movement_lookup = {}
+    account_movements = PaymentMovement.query.all()
+    for movement in account_movements:
+        date = movement.timestamp.date()
+        if date in account_movement_lookup:
+            account_movement_lookup[date].append(movement)
+        else:
+            account_movement_lookup[date] = [movement]
+    return render_template('view_accounts.html', accounts=accounts, date=date, account_movement_lookup=account_movement_lookup)
+
+
+# Transfer money between account
+@app.route('/account_transfer', methods=['GET', 'POST'])
+def account_transfer():
+    accounts = Account.query.all()
+    if request.method == 'POST':
+        amount = float(request.form['amount'])
+        transfer_from_id = int(request.form['transfer_from'])
+        transfer_to_id = int(request.form['transfer_to'])
+
+        transfer_from = Account.query.get_or_404(transfer_from_id)
+        transfer_to = Account.query.get_or_404(transfer_to_id)
+
+        if transfer_from.balance >= amount:
+            # Deduct amount from transfer_from account
+            transfer_from.balance -= amount
+            balance_log = AccountBalanceLog(account_id=transfer_from.id, balance=transfer_from.balance)
+            db.session.add(balance_log)
+            db.session.commit()
+            # Add amount to transfer_to account
+            transfer_to.balance += amount
+            balance_log = AccountBalanceLog(account_id=transfer_to.id, balance=transfer_to.balance)
+            db.session.add(balance_log)
+            db.session.commit()
+            # Create a payment movement record
+            payment_movement = PaymentMovement(amount=amount, transfer_from_id=transfer_from_id,
+                                               transfer_to_id=transfer_to_id)
+            db.session.add(payment_movement)
+            db.session.commit()
+
+            return redirect(url_for('view_accounts'))
+        else:
+            flash('Insufficient funds in the transfer_from account.', 'error')
+
+    return render_template('account_transfer.html', accounts=accounts)

@@ -24,7 +24,7 @@ class ShopRegistrationForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    username = StringField('username', validators=[DataRequired()])
+    username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remembe Me')
     submit = SubmitField('Sign in')
@@ -122,3 +122,8 @@ class ShopKeeperRegistrationForm(FlaskForm):
         selected_shopkeeper_id = self.get_selected_shopkeeper_id()
         session['selected_shopkeeper_id'] = selected_shopkeeper_id
         print(selected_shopkeeper_id)
+
+
+class AccountRegistrationForm(FlaskForm):
+    account_name = StringField('Account Name', validators=[DataRequired(), Length(min=4)])
+    submit = SubmitField('Add')

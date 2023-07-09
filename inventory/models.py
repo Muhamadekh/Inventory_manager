@@ -160,3 +160,30 @@ class DailyCount(db.Model):
     shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     count = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, default=datetime.now())
+
+
+class Account(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account_name = db.Column(db.String(50), unique=True, nullable=False)
+    balance = db.Column(db.Float, default=0.0)
+    movements_from = db.relationship('PaymentMovement', foreign_keys='PaymentMovement.transfer_from_id',
+                                     backref='transfer_from', lazy=True)
+    movements_to = db.relationship('PaymentMovement', foreign_keys='PaymentMovement.transfer_to_id',
+                                   backref='transfer_to', lazy=True)
+    balance_logs = db.relationship('AccountBalanceLog', backref='account', lazy=True)
+
+
+class PaymentMovement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Float, nullable=False)
+    transfer_from_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    transfer_to_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
+
+class AccountBalanceLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    balance = db.Column(db.Float, nullable=False)
+

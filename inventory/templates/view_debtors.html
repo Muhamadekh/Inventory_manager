@@ -20,7 +20,7 @@
                                         <td>{{ debtor.name }}</td>
                                         <td>{{ debtor.company_name }}</td>
                                         <td>{{ debtor.phone_number }}</td>
-                                        <td>{{ debtor.unpaid_amount }}</td>
+                                        <td>{{ "{:,}".format(debtor.unpaid_amount) }}</td>
                                         <td><button>Edit</button></td>
                                     </tr>
                                 {% endfor %}
