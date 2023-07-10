@@ -184,6 +184,6 @@ class PaymentMovement(db.Model):
 class AccountBalanceLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
-    date = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now())
     balance = db.Column(db.Float, nullable=False)
 

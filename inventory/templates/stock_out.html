@@ -37,6 +37,7 @@
             <tr>
               <th>Item Name</th>
               <th>Quantity</th>
+              <th>Shop Name</th>
               <th>Time Sent</th>
             </tr>
           </thead>
@@ -45,6 +46,7 @@
               <tr>
                 <td>{{ entry.item_name }}</td>
                 <td>{{ "{:,}".format (entry.item_quantity) }}</td>
+                <td>{{ entry.shop.shop_name }}</td>
                 <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
               </tr>
             {% endfor %}

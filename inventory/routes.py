@@ -340,20 +340,13 @@ def stock_sold(shop_id):
         sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
                     shop_id=shop.id)
         sale.sales_value = total_amount - discount
-        if sale.payment_method == 'Cash':
-            cash_account = Account.query.filter_by(account_name='Cash').first()
-            cash_account.balance += sale.sales_value
-            balance_log = AccountBalanceLog(account_id=cash_account.id, balance=cash_account.balance)
-        elif sale.payment_method == 'Bank':
-            bank_account = Account.query.filter_by(account_name='Bank').first()
-            bank_account.balance += sale.sales_value
-            balance_log = AccountBalanceLog(account_id=bank_account.id, balance=bank_account.balance)
-        else:
-            mobile_account = Account.query.filter_by(account_name='Orange Money').first()
-            mobile_account.balance += sale.sales_value
-            balance_log = AccountBalanceLog(account_id=mobile_account.id, balance=mobile_account.balance)
+        for account in Account.query.all():
+            if sale.payment_method.lower() == account.account_name.lower():
+                account.balance += sale.sales_value
+                balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+                balance_log.balance = account.balance
+                db.session.add(balance_log)
         db.session.add(sale)
-        db.session.add(balance_log)
         db.session.commit()
         print("hello")
         for item in cart_items:
@@ -665,12 +658,14 @@ def debt_registration():
             debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
                             amount_paid=amount_paid, unpaid_amount=unpaid_amount)
 
-        credit_account = Account.query.filter_by(account_name='Credit').first()
-        credit_account.balance += debtor.unpaid_amount
-        balance_log = AccountBalanceLog(account_id=credit_account.id, balance=credit_account.balance)
+        for account in Account.query.all():
+            if sale.payment_method.lower() == account.account_name.lower():
+                account.balance = account.balance + sale.sales_value - debtor.amount_paid + debtor.unpaid_amount
+                balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+                balance_log.balance = account.balance
+                db.session.add(balance_log)
         sale.debtor_id = debtor.id
         db.session.add(debtor)
-        db.session.add(balance_log)
         db.session.commit()
         for item in cart_items:
             item.sale_id = sale.id
@@ -799,27 +794,27 @@ def view_accounts():
     date = today_date()
     accounts = Account.query.all()
 
-    # Account Daily Balance Log
-    account_balance_lookup = {}
+    # Account The Last Daily Balance Log for every account
+    balance_log_lookup = {}
+    date_list = []
     for account in accounts:
-        balance_logs = AccountBalanceLog.query.filter_by(account_id=account.id).order_by(
-            AccountBalanceLog.date.desc()).all()
+        account_name = account.account_name
+        balance_logs = AccountBalanceLog.query.filter(AccountBalanceLog.account_id == account.id).order_by(
+            AccountBalanceLog.timestamp.desc()).all()
         if balance_logs:
             last_balance_log = balance_logs[0]
-            balance_date = last_balance_log.date.date()
-            account_balance_lookup[balance_date] = last_balance_log.balance
-    print(account_balance_lookup)
+            for balance_log in balance_logs:
+                date = balance_log.timestamp.date()
+                if date not in date_list:
+                    date_list.append(date)
+                if account.account_name in balance_log_lookup:
+                    balance_log_lookup[account_name].append(last_balance_log.balance)
+                else:
+                    balance_log_lookup[account_name] = [last_balance_log.balance]
+    print(balance_log_lookup)
 
-    # Retrieve all account movements
-    account_movement_lookup = {}
-    account_movements = PaymentMovement.query.all()
-    for movement in account_movements:
-        date = movement.timestamp.date()
-        if date in account_movement_lookup:
-            account_movement_lookup[date].append(movement)
-        else:
-            account_movement_lookup[date] = [movement]
-    return render_template('view_accounts.html', accounts=accounts, date=date, account_movement_lookup=account_movement_lookup)
+    return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup,
+                           date_list=date_list)
 
 
 # Transfer money between account
@@ -855,4 +850,15 @@ def account_transfer():
         else:
             flash('Insufficient funds in the transfer_from account.', 'error')
 
-    return render_template('account_transfer.html', accounts=accounts)
+    # Retrieve all account movements
+    account_movement_lookup = {}
+    account_movements = PaymentMovement.query.all()
+    for movement in account_movements:
+        date = movement.timestamp.date()
+        if date in account_movement_lookup:
+            account_movement_lookup[date].append(movement)
+        else:
+            account_movement_lookup[date] = [movement]
+
+    return render_template('account_transfer.html', accounts=accounts, account_movement_lookup=account_movement_lookup)
+

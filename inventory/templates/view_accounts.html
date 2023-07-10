@@ -6,6 +6,7 @@
         <button class="btn btn-primary mr-2">Make Payments</button>
         <a href="{{ url_for('account_transfer') }}"><button class="btn btn-primary mr-2">Transfer</button></a>
     </div>
+    <!--  Table to display the accounts  -->
     <table class="table">
         <caption style="caption-side: top">Accounts Summary<span class="ml-4"> Date: {{date}}</span></caption>
         <thead>
@@ -27,25 +28,22 @@
             {% endfor %}
         </tbody>
     </table>
+
     <table class="table mt-5">
-        {% for key in account_movement_lookup.keys() %}
-        <caption style="caption-side: top"><span class="d-flex justify-content-center font-weight-bold">{{ key }}</span></caption>
+        {% for date in date_list %}
+        <caption style="caption-side: top"><span class="d-flex justify-content-center font-weight-bold">{{ date }}</span></caption>
         <thead>
             <tr>
-                <th scope="col">Transfer From </th>
-                <th scope="col">Transfer To</th>
-                <th scope="col">Amount</th>
-                <th scope="col">Time</th>
+                <th scope="col">Account Name </th>
+                <th scope="col">Balance</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            {% for entry in account_movement_lookup[date] %}
+            {% for key, value in balance_log_lookup.items() %}
             <tr>
-                <td>{{ entry.transfer_from.account_name }}</td>
-                <td>{{ entry.transfer_to.account_name   }}</td>
-                <td>{{ "{:,}".format(entry.amount) }}</td>
-                <td>{{ entry.timestamp.strftime("%H:%M:%S") }}</td>
+                <td>{{ key }}</td>
+                <td>{{ "{:,}".format(value[0]) }}</td>
                 <td><a href="#">Edit</a></td>
             </tr>
             {% endfor %}

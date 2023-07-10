@@ -36,4 +36,33 @@
         </div>
     </form>
 </div>
+
+<!-- Track funds movement between accounts -->
+<div class="mb-4 mr-4 ml-4">
+    <table class="table mt-5">
+        {% for date, entries in account_movement_lookup.items() %}
+        <caption style="caption-side: top"><span class="d-flex justify-content-center font-weight-bold">{{ date }}</span></caption>
+        <thead>
+            <tr>
+                <th scope="col">Transfer From</th>
+                <th scope="col">Transfer To</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Time</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.transfer_from.account_name }}</td>
+                <td>{{ entry.transfer_to.account_name }}</td>
+                <td>{{ "{:,.2f}".format(entry.amount) }}</td>
+                <td>{{ entry.timestamp.strftime("%H:%M:%S") }}</td>
+                <td><a href="#">Edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}
