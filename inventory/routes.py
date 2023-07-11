@@ -332,7 +332,7 @@ def stock_sold(shop_id):
         total_amount += item.item_value
     if sales_form.validate_on_submit() and sales_form.submit.data:
         discount = sales_form.sale_discount.data if sales_form.sale_discount.data else 0
-        if sales_form.payment_method.data == 'Credit':
+        if sales_form.credit_option.data is True:
             session["payment_method"] = sales_form.payment_method.data
             session["sales_discount"] = discount
             session["shop_id"] = shop.id
@@ -340,6 +340,8 @@ def stock_sold(shop_id):
         sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
                     shop_id=shop.id)
         sale.sales_value = total_amount - discount
+        sale.amount_paid = sale.sales_value
+        sale.transaction_id = sales_form.transaction_id.data if sales_form.transaction_id.data else None
         for account in Account.query.all():
             if sale.payment_method.lower() == account.account_name.lower():
                 account.balance += sale.sales_value
@@ -580,7 +582,7 @@ def monthly_sales_data():
             data[month] += entry.sales_value
         else:
             data[month] = entry.sales_value
-    monthly_sales = {"labels": list(data.keys()), "data": list(data.values())}
+    monthly_sales = sorted({"labels": list(data.keys()), "data": list(data.values())})
     return monthly_sales
 
 
@@ -665,6 +667,8 @@ def debt_registration():
                 balance_log.balance = account.balance
                 db.session.add(balance_log)
         sale.debtor_id = debtor.id
+        sale.amount_paid = amount_paid
+        sale.credit_option = True
         db.session.add(debtor)
         db.session.commit()
         for item in cart_items:
@@ -680,9 +684,10 @@ def get_shops_stock():
     all_stock = ShopItem.query.all()
     response = []
     for item in all_stock:
-        if item.item_quantity > 0 and searched_term.lower() in item.item_name.lower():
-            shop_names = [shop.shop.shop_name for shop in item.shops]
-            response.append({"name": f"{item.item_name} ({item.item_quantity}, {shop_names[:1]})"})
+        print(item.item_quantity, item.item.item_name)
+        if item.item_quantity > 0 and searched_term.lower() in item.item.item_name.lower():
+            shop_names = [shop.shop.shop_name for shop in item.item.shops]
+            response.append({"name": f"{item.item.item_name} ({shop_names[:1]})"})
     return jsonify(response)
 
 

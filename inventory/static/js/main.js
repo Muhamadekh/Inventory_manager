@@ -1775,7 +1775,7 @@ const grabData = (url, methods, data, handle) => {
         .then(res => handle(res));
 };
 
-// Access the shop ID value within the JavaScript code
+// Search all stocks in all shops and populate ad div with the results
 $(document).ready(function () {
     $("#searchShops").on("input", (e) => {
         let searched_term = $("#searchShops").val();

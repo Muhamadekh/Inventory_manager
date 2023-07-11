@@ -74,6 +74,7 @@
                                 <th>General Discount</th>
                                 <th>Payment Method</th>
                                 <th>Transaction ID</th>
+                                <th>Credit Option</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -84,6 +85,7 @@
                                     <td>{{ sales_form.sale_discount(class="form-control") }}</td>
                                     <td>{{ sales_form.payment_method (class="form-control", id="payment_method") }}</td>
                                     <td>{{ sales_form.transaction_id (class="form-control", id="transaction_id") }}</td>
+                                    <td>{{ sales_form.credit_option (class=" form-control", id="credit_option") }}</td>
                                     <td>{{ sales_form.submit(class="form-control btn btn-primary") }}</td>
                                 </form>
                             </tr>
@@ -109,20 +111,24 @@
                         <thead>
                             <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
                             <tr>
-                                <th>Sale ID</th>
-                                <th>Sale Value</th>
-                                <th>Sale Discount</th>
-                                <th>Payment Method</th>
+                                <th class="text-center">Sale Value</th>
+                                <th class="text-center">Sale Discount</th>
+                                <th class="text-center">Credit Option </th>
+                                <th class="text-center">Payment Method</th>
                                 <th colspan="2">Sale Time</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for entry in sales_lookup[date] %}
                             <tr>
-                                <td>{{ entry.id }}</td>
-                                <td>{{ "{:,}".format (entry.sales_value) }}</td>
-                                <td>{{ "{:,}".format (total_discount[entry.id]) }}</td>
-                                <td>{{ entry.payment_method }}</td>
+                                <td class="text-center">{{ "{:,}".format (entry.sales_value) }}</td>
+                                <td class="text-center">{{ "{:,}".format (total_discount[entry.id]) }}</td>
+                                {% if entry.credit_option %}
+                                    <td class="text-center">{{ entry.sales_value - entry.amount_paid }}</td>
+                                {% else %}
+                                    <td class="text-center">0.0</td>
+                                {% endif %}
+                                <td class="text-center">{{ entry.payment_method }}</td>
                                 <td>{{ entry.date_sold.strftime('%H:%M:%S') }}</td>
                                 {% if current_user.user_role == 'Admin'%}
                                 <td><a href="{{ url_for('edit_stock_sold', stock_sold_id=entry.id) }}">Edit</a></td>

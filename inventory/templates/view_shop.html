@@ -12,7 +12,7 @@
           <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeepers[0].user_details.username }}</a>
       {% endif %}
       <input type="search" id="searchShops" class="inline-search ml-4 border border-dark" placeholder="Search all shops">
-      <div id="searchedStock" style="font-weight: bold; position: absolute; z-index: 10; right: 0; background-color: white"></div>
+      <div id="searchedStock" class="font-weight-bold bg-light align-content-center"></div>
       {% if current_user.user_role == 'Admin' %}
           <div class="float-right">
               <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -74,3 +74,4 @@
       </tbody>
     </table>
 {% endblock content%}
+

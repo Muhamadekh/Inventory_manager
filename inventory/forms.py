@@ -42,7 +42,7 @@ class ShopStockReceivedForm(FlaskForm):
     submit = SubmitField('Receive Stock')
 
 
-payment_methods_list = ['Cash', 'Orange Money', 'Credit', 'Bank']
+payment_methods_list = ['Cash', 'Orange Money', 'Bank']
 
 
 class ShopStockSoldForm(FlaskForm):
@@ -56,6 +56,7 @@ class SaleForm(FlaskForm):
     sale_discount = IntegerField('Sale Discount', validators=[Optional()])
     payment_method = SelectField('Payment Method', choices=payment_methods_list, default=None)
     transaction_id = StringField('Transaction ID', validators=[Optional()])
+    credit_option = BooleanField('Credit Option')
     submit = SubmitField('Record Sale')
 
 
