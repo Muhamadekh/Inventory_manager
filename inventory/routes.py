@@ -573,16 +573,24 @@ def stock_out(store_id):
 @app.route('/monthly_sales_data')
 def monthly_sales_data():
     today = datetime.now().date()
-    start_date = today - timedelta(days=30*12)
+    start_date = today - timedelta(days=31 * 6 + 30 * 5 + 29)
     sales_entries = Sale.query.filter(Sale.date_sold >= start_date).all()
     data = {}
+
     for entry in sales_entries:
-        month = entry.date_sold.strftime("%B")
+        month = entry.date_sold.month
+        month_name = datetime(2000, month, 1).strftime('%B')
+
         if month in data:
             data[month] += entry.sales_value
         else:
             data[month] = entry.sales_value
-    monthly_sales = sorted({"labels": list(data.keys()), "data": list(data.values())})
+
+    sorted_data = sorted(data.items(), key=lambda x: x[0])
+    sorted_months = [datetime(2000, month, 1).strftime('%B') for month, _ in sorted_data]
+    sorted_values = [value for _, value in sorted_data]
+
+    monthly_sales = {"labels": sorted_months, "data": sorted_values}
     return monthly_sales
 
 
@@ -706,23 +714,37 @@ def save_daily_count():
 
 @app.route('/shop_sales_data', methods=['GET', 'POST'])
 def shop_sales_data():
-    # Finding total net sales and discount per shop
+    shops = Shop.query.all()
+    # Finding net profit, discount, total amount paid via each method per shop
     current_date = datetime.now().date()
-    shop_sales_looup = {}
-    # Finding total net sales and discount
-    sales_cost_list = []
-    sales_value_list = []
-    discount_list = []
-    sales = Sale.query.filter(func.date(Sale.date_sold.date() == current_date)).all()
-    for sale in sales:
-        sales_value_list.append(sale.sales_value)
-        discount_list.append(sale.sales_discount)
-        for item in sale.sale_items:
-            if item.item_discount > 0:
-                discount_list.append(item.item_discount)
-            sales_cost_list.append(item.item_price)
-    total_sales_value = sum(sales_value_list)
-    total_discount = sum(discount_list)
+
+    payment_methods_lookup = {}
+    sales_cost_lookup = {}
+    discount_lookup = {}
+    for shop in shops:
+        sales = Sale.query.filter(Sale.date_sold.date() == current_date, Sale.shop_id == shop.id).all()
+        for sale in sales:
+            stock_sold = StockSold.query.filter_by(sale_id=sale.id).all()
+            for item in stock_sold:
+                product = Item.query.filter_by(item_name=item.item_name).first()
+                cost_price = product.item_cost_price
+                item_cost = item.item_quantity * cost_price
+                if shop.shop_name in sales_cost_lookup:
+                    sales_cost_lookup[shop.shop_name].append(item_cost)
+                else:
+                    sales_cost_lookup[shop.shop_name] = [item_cost]
+                if shop.shop_name in discount_lookup:
+                    discount_lookup[shop.shop_name].append(item.item_discount * item.item_quantity)
+                else:
+                    discount_lookup[shop.shop_name] = [item.item_discount * item.item_quantity]
+            if shop.shop_name in discount_lookup:
+                discount_lookup[shop.shop_name].append(sale.sales_discount)
+            else:
+                discount_lookup[shop.shop_name] = [sale.sales_discount]
+            if sale.payment_method in payment_methods_lookup[shop.shop_name]:
+                payment_methods_lookup[shop.shop_name][sale.payment_method].append(sale.amount_paid)
+            else:
+                payment_methods_lookup[shop.shop_name][sale.payment_method] = [sale.amount_paid]
 
 
 # Assign shopkeeper to a shop
