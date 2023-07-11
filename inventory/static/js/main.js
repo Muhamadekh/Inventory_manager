@@ -1796,3 +1796,22 @@ $(document).ready(function () {
         });
     });
 });
+
+
+$("#searchPayee").on("input",(e)=>{
+   let phoneNumber = $("#searchPayee").val();
+   let registrationDiv = document.getElementById("CreatePayee");
+   let name = document.getElementById("name");
+   let phone_number = document.getElementById("phone_number");
+    console.log(phoneNumber)
+    if (phoneNumber.length === 10){
+      getData(`http://${window.location.hostname}:5000/search_payee`,"POST",{"phone_number" : phoneNumber},(data)=>{
+      console.log(data);
+      if (Object.keys(data).length !== 0){
+        name.value = data["name"];
+        phone_number.value = data["phone_number"];
+      }
+      registrationDiv.style.display = "block";
+      });
+    }
+  });

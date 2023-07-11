@@ -168,14 +168,14 @@ class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_name = db.Column(db.String(50), unique=True, nullable=False)
     balance = db.Column(db.Float, default=0.0)
-    movements_from = db.relationship('PaymentMovement', foreign_keys='PaymentMovement.transfer_from_id',
+    movements_from = db.relationship('AccountMovement', foreign_keys='AccountMovement.transfer_from_id',
                                      backref='transfer_from', lazy=True)
-    movements_to = db.relationship('PaymentMovement', foreign_keys='PaymentMovement.transfer_to_id',
+    movements_to = db.relationship('AccountMovement', foreign_keys='AccountMovement.transfer_to_id',
                                    backref='transfer_to', lazy=True)
     balance_logs = db.relationship('AccountBalanceLog', backref='account', lazy=True)
 
 
-class PaymentMovement(db.Model):
+class AccountMovement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
     transfer_from_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
@@ -189,3 +189,10 @@ class AccountBalanceLog(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
     balance = db.Column(db.Float, nullable=False)
 
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    phone_number = db.Column(db.String(50))
+    amount = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)

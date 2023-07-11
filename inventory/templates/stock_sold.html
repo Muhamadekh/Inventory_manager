@@ -60,7 +60,7 @@
                     <td>{{ item.item_quantity }}</td>
                     <td>{{ item.item_discount }}</td>
                     <td>{{ item.item_value }}</td>
-                    <td><a href="{{ url_for('remove_cart_item', shop_id=shop.id, item_id=item.id) }}">Remove</a></td>
+                    <td class="text-center"><a href="{{ url_for('remove_cart_item', shop_id=shop.id, item_id=item.id) }}">Remove</a></td>
                 </tr>
                 {% endfor %}
                 <tr>

@@ -1,12 +1,12 @@
 from flask import render_template, url_for, flash, redirect, session, request, jsonify
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
-                              StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, PaymentMovement,
-                              AccountBalanceLog)
+                              StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, AccountMovement,
+                              AccountBalanceLog, Payment)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm, ShopKeeperRegistrationForm,
-                             AccountRegistrationForm)
+                             AccountRegistrationForm, PaymentForm, UpdateDebtorForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -344,9 +344,8 @@ def stock_sold(shop_id):
         sale.transaction_id = sales_form.transaction_id.data if sales_form.transaction_id.data else None
         for account in Account.query.all():
             if sale.payment_method.lower() == account.account_name.lower():
-                account.balance += sale.sales_value
+                account.balance += sale.amount_paid
                 balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
-                balance_log.balance = account.balance
                 db.session.add(balance_log)
         db.session.add(sale)
         db.session.commit()
@@ -396,6 +395,7 @@ def history():
     return render_template('history.html', sales_dates=sales_dates, sales_lookup=sales_lookup)
 
 
+# Search debtor
 @app.route('/search_debtor', methods=['GET', 'POST'])
 def search_debtor():
     phone_number = request.json["phone_number"]
@@ -659,17 +659,15 @@ def debt_registration():
             unpaid_amount = sale.sales_value - amount_paid
             debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
                             amount_paid=amount_paid, unpaid_amount=unpaid_amount)
-
-        for account in Account.query.all():
-            if sale.payment_method.lower() == account.account_name.lower():
-                account.balance = account.balance + sale.sales_value - debtor.amount_paid + debtor.unpaid_amount
-                balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
-                balance_log.balance = account.balance
-                db.session.add(balance_log)
         sale.debtor_id = debtor.id
         sale.amount_paid = amount_paid
         sale.credit_option = True
         db.session.add(debtor)
+        for account in Account.query.all():
+            if sale.payment_method.lower() == account.account_name.lower():
+                account.balance = account.balance + sale.amount_paid
+                balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+                db.session.add(balance_log)
         db.session.commit()
         for item in cart_items:
             item.sale_id = sale.id
@@ -801,25 +799,27 @@ def view_accounts():
 
     # Account The Last Daily Balance Log for every account
     balance_log_lookup = {}
-    date_list = []
+
     for account in accounts:
         account_name = account.account_name
         balance_logs = AccountBalanceLog.query.filter(AccountBalanceLog.account_id == account.id).order_by(
             AccountBalanceLog.timestamp.desc()).all()
+
         if balance_logs:
-            last_balance_log = balance_logs[0]
             for balance_log in balance_logs:
                 date = balance_log.timestamp.date()
-                if date not in date_list:
-                    date_list.append(date)
-                if account.account_name in balance_log_lookup:
-                    balance_log_lookup[account_name].append(last_balance_log.balance)
+
+                if date in balance_log_lookup:
+                    if account_name in balance_log_lookup[date]:
+                        balance_log_lookup[date][account_name].append(balance_log.balance)
+                    else:
+                        balance_log_lookup[date][account_name] = [balance_log.balance]
                 else:
-                    balance_log_lookup[account_name] = [last_balance_log.balance]
+                    balance_log_lookup[date] = {account_name: [balance_log.balance]}
+
     print(balance_log_lookup)
 
-    return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup,
-                           date_list=date_list)
+    return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup)
 
 
 # Transfer money between account
@@ -845,8 +845,8 @@ def account_transfer():
             balance_log = AccountBalanceLog(account_id=transfer_to.id, balance=transfer_to.balance)
             db.session.add(balance_log)
             db.session.commit()
-            # Create a payment movement record
-            payment_movement = PaymentMovement(amount=amount, transfer_from_id=transfer_from_id,
+            # Create an account movement record
+            payment_movement = AccountMovement(amount=amount, transfer_from_id=transfer_from_id,
                                                transfer_to_id=transfer_to_id)
             db.session.add(payment_movement)
             db.session.commit()
@@ -857,7 +857,7 @@ def account_transfer():
 
     # Retrieve all account movements
     account_movement_lookup = {}
-    account_movements = PaymentMovement.query.all()
+    account_movements = AccountMovement.query.all()
     for movement in account_movements:
         date = movement.timestamp.date()
         if date in account_movement_lookup:
@@ -866,4 +866,57 @@ def account_transfer():
             account_movement_lookup[date] = [movement]
 
     return render_template('account_transfer.html', accounts=accounts, account_movement_lookup=account_movement_lookup)
+
+
+@app.route('/search_payee', methods=['GET', 'POST'])
+def search_payee():
+    phone_number = request.json["phone_number"]
+    payee = Payment.query.filter_by(phone_number=phone_number).first()
+    response = {}
+    if payee:
+        response = {
+            "id": payee.id,
+            "name": payee.name,
+            "phone_number": payee.phone_number,
+        }
+    return jsonify(response)
+
+
+@app.route('/make_payment', methods=['GET', 'POST'])
+def make_payment():
+    form = PaymentForm()
+    if form.validate_on_submit():
+        payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data)
+        db.session.add(payment)
+        db.session.commit()
+        return redirect(url_for('view_payments'))
+    return render_template('make_payments.html', form=form)
+
+
+@app.route('/view_payments', methods=['GET', 'POST'])
+def view_payments():
+    payees = Payment.query.all()
+    return render_template('view_payments.html', payees=payees)
+
+
+@app.route('/update_debtor/<int:debtor_id>', methods=['GET', 'POST'])
+def update_debtor(debtor_id):
+    debtor = Debtor.query.get_or_404(debtor_id)
+    form = UpdateDebtorForm()
+    if request.method == 'GET':
+        form.name.data = debtor.name
+        form.company_name.data = debtor.company_name
+        form.phone_number.data = debtor.phone_number
+    if request.method == 'POST':
+        debtor.name = form.name.data
+        debtor.company_name = form.company_name.data
+        debtor.phone_number = form.phone_number.data
+        if form.amount_paid.data <= debtor.unpaid_amount:
+            debtor.unpaid_amount -= form.amount_paid.data
+        else:
+            flash("Amount is more than balance", "warning")
+        db.session.commit()
+        return redirect(url_for('view_debtors'))
+    return render_template('update_debtor.html', form=form)
+
 

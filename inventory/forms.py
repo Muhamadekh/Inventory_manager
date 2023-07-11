@@ -104,6 +104,14 @@ class DebtorRegistrationForm(FlaskForm):
     submit = SubmitField('Save')
 
 
+class UpdateDebtorForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
+    phone_number = StringField('Phone Number', validators=[DataRequired()])
+    amount_paid = IntegerField('Amount Paid', validators=[Optional()])
+    submit = SubmitField('Save')
+
+
 class ShopKeeperRegistrationForm(FlaskForm):
     shopkeeper = SelectField('Select a shopkeeper', choices=[])
     submit = SubmitField('Assign')
@@ -128,3 +136,10 @@ class ShopKeeperRegistrationForm(FlaskForm):
 class AccountRegistrationForm(FlaskForm):
     account_name = StringField('Account Name', validators=[DataRequired(), Length(min=4)])
     submit = SubmitField('Add')
+
+
+class PaymentForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    phone_number = StringField('Phone Number', validators=[DataRequired()])
+    amount = IntegerField('Amount', validators=[Optional()])
+    submit = SubmitField('Save')

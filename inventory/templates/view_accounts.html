@@ -3,7 +3,8 @@
 {% block content %}
 <div class="mb-4 mr-4 ml-4">
     <div class="d-flex justify-content-end">
-        <button class="btn btn-primary mr-2">Make Payments</button>
+        <a href="{{ url_for('view_payments') }}"><button class="btn btn-primary mr-2">View Payments</button></a>
+        <a href="{{ url_for('make_payment') }}"><button class="btn btn-primary mr-2">Make Payment</button></a>
         <a href="{{ url_for('account_transfer') }}"><button class="btn btn-primary mr-2">Transfer</button></a>
     </div>
     <!--  Table to display the accounts  -->
@@ -29,26 +30,26 @@
         </tbody>
     </table>
 
-    <table class="table mt-5">
-        {% for date in date_list %}
-        <caption style="caption-side: top"><span class="d-flex justify-content-center font-weight-bold">{{ date }}</span></caption>
-        <thead>
-            <tr>
-                <th scope="col">Account Name </th>
-                <th scope="col">Balance</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for key, value in balance_log_lookup.items() %}
-            <tr>
-                <td>{{ key }}</td>
-                <td>{{ "{:,}".format(value[0]) }}</td>
-                <td><a href="#">Edit</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        {% endfor %}
-    </table>
+    {% for key, value in balance_log_lookup.items() %}
+        <table class="table mt-5">
+            <caption style="caption-side: top"><span class="d-flex justify-content-center font-weight-bold">{{ key }}</span></caption>
+            <thead>
+                <tr>
+                    <th scope="col">Account Name </th>
+                    <th scope="col">Balance</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account_name, balance in value.items() %}
+                <tr>
+                    <td>{{ account_name }}</td>
+                    <td>{{ "{:,}".format(balance[0]) }}</td>
+                    <td><a href="#">Edit</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
 </div>
 {% endblock %}

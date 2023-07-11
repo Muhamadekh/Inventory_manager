@@ -9,19 +9,19 @@
                             <thead>
                                 <tr>
                                     <th >Name</th>
-                                    <th>Company Name</th>
                                     <th>Phone Number</th>
-                                    <th>Balance</th>
+                                    <th>Amount Paid</th>
+                                    <th>Date paid</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for debtor in debtors %}
+                                {% for payee in payees %}
                                     <tr>
-                                        <td>{{ debtor.name }}</td>
-                                        <td>{{ debtor.company_name }}</td>
-                                        <td>{{ debtor.phone_number }}</td>
-                                        <td>{{ "{:,}".format(debtor.unpaid_amount) }}</td>
-                                        <td><a href="{{ url_for ('update_debtor', debtor_id=debtor.id) }}"><button>Edit</button></a></td>
+                                        <td>{{ payee.name }}</td>
+                                        <td>{{ payee.phone_number }}</td>
+                                        <td>{{ "{:,}".format(payee.amount) }}</td>
+                                        <td>{{ payee.timestamp.strftime("%Y-%m-%d") }}</td>
+                                        <td><button>Edit</button></td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
