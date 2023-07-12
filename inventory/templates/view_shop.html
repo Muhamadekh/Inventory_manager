@@ -5,14 +5,17 @@
       <a href="{{ url_for('view_shop', shop_id=shop.id)}}" class="button">Stock</a>
       <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button">Sales</a>
       <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
-      <a class="ml-4">Date:{{date}}</a>
+      {% if current_user.user_role != 'Admin' %}
+          <a class="ml-4">Date:{{date}}</a>
+      {% endif %}
       {% if current_user in shop.shopkeepers %}
           <a class="ml-4"><strong>Shopkeeper:</strong>{{current_user.username }}</a>
       {% else %}
           <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeepers[0].user_details.username }}</a>
       {% endif %}
       <input type="search" id="searchShops" class="inline-search ml-4 border border-dark" placeholder="Search all shops">
-      <div id="searchedStock" class="font-weight-bold bg-light d-flex justify-content-center overflow-auto"></div>
+      <a href="{{ url_for('view_daily_count', shop_id=shop.id)}}" class="button">Daily Count</a>
+      <div id="searchedStock" style="text-align: center; font-weight: bold; right: 0"></div>
       {% if current_user.user_role == 'Admin' %}
           <div class="float-right">
               <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

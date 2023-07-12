@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+{% block content %}
+{% for date in count_comparison_lookup.keys() %}
+  <div class="table">
+    <div class="row">
+      <table class="table col-9 m-auto">
+        <thead>
+          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+          <tr>
+            <th>Item Name</th>
+            <th>Item Quantity</th>
+            <th>Daily Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for key, values in count_comparison_lookup[date].items() %}
+            <tr>
+              <td>{{ key }}</td>
+              <td>{{ values[0] }}</td>
+              <td>{{ values[1] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}
+

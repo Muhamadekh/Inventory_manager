@@ -1,0 +1,73 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <section class="p-t-20">
+        <div class="container">
+            <div class="row" id="usersTableRow">
+                <div class="col-md-12">
+                    <div class="table-responsive table-responsive-data2">
+                        <table class="table font-weight-bold">
+                            <thead>
+                                <tr>
+                                    <th >Name</th>
+                                    <th>Cash</th>
+                                    <th>Orange Money</th>
+                                    <th>Bank</th>
+                                    <th>Total Sales</th>
+                                    <th>Total Discount</th>
+                                    <th>Total Cost</th>
+                                    <th>Net Profit/Loss</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for shop in shops %}
+                                    <tr>
+                                        <td>{{ shop.shop_name }}</td>
+                                        {% if payment_methods_lookup[shop.shop_name]["Cash"] %}
+                                            <td>{{ payment_methods_lookup[shop.shop_name]["Cash"] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                        {% if payment_methods_lookup[shop.shop_name]["Orange Money"] %}
+                                            <td>{{ payment_methods_lookup[shop.shop_name]["Orange Money"] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                        {% if payment_methods_lookup[shop.shop_name]["Bank"] %}
+                                            <td>{{ payment_methods_lookup[shop.shop_name]["Bank"] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                        {% if total_sales_lookup[shop.shop_name]%}
+                                            <td>{{ total_sales_lookup[shop.shop_name] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                        {% if discount_lookup[shop.shop_name] %}
+                                            <td>{{ discount_lookup[shop.shop_name] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                        {% if sales_cost_lookup[shop.shop_name] %}
+                                            <td>{{ sales_cost_lookup[shop.shop_name] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                        {% if profit_lookup[shop.shop_name] %}
+                                            <td>{{ profit_lookup[shop.shop_name] }}</td>
+                                        {% else %}
+                                            <td>0</td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td class="font-weight-bold font-italic " colspan="7"><span class="float-right">Total Profit/Loss</span></td>
+                                    <td class="font-weight-bold font-italic" colspan="7"><h3>{{ total_profit }}</h3></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock content%}

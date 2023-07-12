@@ -14680,14 +14680,13 @@ section {
 
 /* CSS styles for the shop buttons */
 .button-container {
-  margin-bottom: 10px;
-  margin-left: 10px;
-  margin-right: 10px;
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
 .button-container .button {
   display: inline-block;
-  padding: 10px 20px;
+  padding: 5px 5px;
   background-color: #f2f2f2;
   color: black;
   border: none;
@@ -14695,7 +14694,7 @@ section {
   text-decoration: none;
   font-size: 16px;
   font-family: helvetica, arial;
-  margin-right: 4px; /* Remove space between buttons */
+  margin-right: 2px; /* Remove space between buttons */
   border-radius: 5px; /* Add round edges to buttons */
   background-color: lightgrey;
 }

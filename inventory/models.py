@@ -32,6 +32,7 @@ class Shop(db.Model):
     item_association = db.relationship('ShopItem', back_populates='shop')
     items = association_proxy("item_association", "item")
     shopkeepers = db.relationship('Shopkeeper', backref='shop_details', lazy=True)
+    daily_shop_count = db.relationship('DailyCount', backref='shop', lazy=True)
 
 
 class ShopItem(db.Model):
@@ -161,6 +162,7 @@ class DailyCount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     count = db.Column(db.Integer, nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     date = db.Column(db.DateTime, default=datetime.now)
 
 
