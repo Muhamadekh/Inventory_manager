@@ -2,33 +2,40 @@
 {% block content %}
     <section class="p-t-20">
         <div class="container">
-            <div class="row" id="usersTableRow">
-                <div class="col-md-12">
-                    <div class="table-responsive table-responsive-data2">
-                        <table class="table table-data2">
-                            <thead>
-                                <tr>
-                                    <th >Name</th>
-                                    <th>Phone Number</th>
-                                    <th>Amount Paid</th>
-                                    <th>Date paid</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for payee in payees %}
+            {% for date in payee_lookup.keys() %}
+                <caption style="caption-side: top"><span class="d-flex justify-content-center border-bottom"><strong>{{date}}</strong></span></caption>
+                <div class="row" id="usersTableRow">
+                    <div class="col-md-12">
+                        <div class="table-responsive table-responsive-data2">
+                            <table class="table table-data2">
+                                <thead>
                                     <tr>
-                                        <td>{{ payee.name }}</td>
-                                        <td>{{ payee.phone_number }}</td>
-                                        <td>{{ "{:,}".format(payee.amount) }}</td>
-                                        <td>{{ payee.timestamp.strftime("%Y-%m-%d") }}</td>
-                                        <td><button>Edit</button></td>
+                                        <th >Name</th>
+                                        <th>Phone Number</th>
+                                        <th>Amount Paid</th>
+                                        <th>Date paid</th>
                                     </tr>
-                                {% endfor %}
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        {% for payee in payee_lookup[date] %}
+                                            <td>{{ payee.name }}</td>
+                                            <td>{{ payee.phone_number }}</td>
+                                            <td>{{ "{:,}".format(payee.amount) }}</td>
+                                            <td>{{ payee.timestamp.strftime("%Y-%m-%d") }}</td>
+                                            <td><button>Edit</button></td>
+                                        {% endfor %}
+                                    </tr>
                             </tbody>
-                        </table>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% else %}
+                <div class="d-flex justify-content-center font-weight-bold">
+                    <h5> No payments made yet</h5>
+                </div>
+            {% endfor %}
         </div>
     </section>
 

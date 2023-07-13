@@ -709,53 +709,74 @@ def save_daily_count():
     return jsonify({"shop_id": shop_id})
 
 
+# View total discounts, total sales value, total item cost, net profit per shop for the last 7 days
 @app.route('/shop_daily_report', methods=['GET', 'POST'])
 def shop_daily_report():
     shops = Shop.query.all()
     current_date = datetime.now().date()
+    start_date = current_date - timedelta(days=7)
+    all_sales = Sale.query.order_by(Sale.date_sold.desc()).all()
+    date_list = []
+    counter = 1
+    for sale in all_sales:
+        date = sale.date_sold.strftime("%Y-%m-%d")
+        if date not in date_list and counter <= 7:
+            date_list.append(date)
+            counter += 1
 
     payment_methods_lookup = {}
     sales_cost_lookup = {}
     discount_lookup = {}
     total_sales_lookup = {}
     profit_lookup = {}
-    total_profit = 0
-    for shop in shops:
-        shop_name = shop.shop_name
-        payment_methods_lookup[shop_name] = {}
-        sales_cost_lookup[shop_name] = 0
-        discount_lookup[shop_name] = 0
-        total_sales_lookup[shop_name] = 0
+    total_profit = {}
 
-        sales = Sale.query.filter(func.date(Sale.date_sold == current_date), Sale.shop_id == shop.id).all()
+    for date in date_list:
+        payment_methods_lookup[date] = {}
+        sales_cost_lookup[date] = {}
+        discount_lookup[date] = {}
+        total_sales_lookup[date] = {}
+        profit_lookup[date] = {}
+        total_profit[date] = 0
+        for shop in shops:
+            shop_name = shop.shop_name
+            payment_methods_lookup[date][shop_name] = {}
+            sales_cost_lookup[date][shop_name] = 0
+            discount_lookup[date][shop_name] = 0
+            total_sales_lookup[date][shop_name] = 0
 
-        for sale in sales:
-            payment_method = sale.payment_method
-            stock_sold = StockSold.query.filter_by(sale_id=sale.id).all()
+            sales = Sale.query.filter(func.date(Sale.date_sold == date), Sale.shop_id == shop.id).all()
 
-            for item in stock_sold:
-                product = Item.query.filter_by(item_name=item.item_name).first()
-                cost_price = product.item_cost_price
-                item_cost = item.item_quantity * cost_price
+            for sale in sales:
+                if date == sale.date_sold.strftime("%Y-%m-%d"):
+                    payment_method = sale.payment_method
+                    stock_sold = StockSold.query.filter_by(sale_id=sale.id).all()
+                    for item in stock_sold:
+                        product = Item.query.filter_by(item_name=item.item_name).first()
+                        cost_price = product.item_cost_price
+                        item_cost = item.item_quantity * cost_price
 
-                sales_cost_lookup[shop_name] += item_cost
-                discount_lookup[shop_name] += item.item_discount * item.item_quantity
+                        sales_cost_lookup[date][shop_name] += item_cost
+                        discount_lookup[date][shop_name] += item.item_discount * item.item_quantity
 
-            discount_lookup[shop_name] += sale.sales_discount
-            total_sales_lookup[shop_name] += sale.sales_value
+                    discount_lookup[date][shop_name] += sale.sales_discount
+                    total_sales_lookup[date][shop_name] += sale.sales_value
 
-            if payment_method in payment_methods_lookup[shop_name]:
-                payment_methods_lookup[shop_name][payment_method] += sale.sales_value
-            else:
-                payment_methods_lookup[shop_name][payment_method] = sale.sales_value
-
-        profit_lookup[shop_name] = total_sales_lookup[shop_name] - sales_cost_lookup[shop_name]
-        total_profit += profit_lookup[shop_name]
+                    if payment_method in payment_methods_lookup[date][shop_name]:
+                        payment_methods_lookup[date][shop_name][payment_method] += sale.sales_value
+                    else:
+                        payment_methods_lookup[date][shop_name][payment_method] = sale.sales_value
+            profit_lookup[date][shop_name] = total_sales_lookup[date][shop_name] - sales_cost_lookup[date][shop_name]
+            total_profit[date] += profit_lookup[date][shop_name]
 
     return render_template('reports.html', payment_methods_lookup=payment_methods_lookup,
                            total_sales_lookup=total_sales_lookup, sales_cost_lookup=sales_cost_lookup,
                            discount_lookup=discount_lookup, shops=shops, profit_lookup=profit_lookup,
-                           total_profit=total_profit)
+                           total_profit=total_profit, date_list=date_list)
+
+
+
+
 
 
 # Assign shopkeeper to a shop
@@ -829,15 +850,14 @@ def add_account():
 def view_accounts():
     date = today_date()
     accounts = Account.query.all()
-
-    # Account The Last Daily Balance Log for every account
+    # Store the date as the key and nest other dicts of account names as the keys and a list of all balance logs
+    # for that account as the values
     balance_log_lookup = {}
 
     for account in accounts:
         account_name = account.account_name
         balance_logs = AccountBalanceLog.query.filter(AccountBalanceLog.account_id == account.id).order_by(
-            AccountBalanceLog.timestamp.desc()).all()
-
+            AccountBalanceLog.timestamp.desc()).all()  # Grab the balance logs of every account
         if balance_logs:
             for balance_log in balance_logs:
                 date = balance_log.timestamp.date()
@@ -849,8 +869,6 @@ def view_accounts():
                         balance_log_lookup[date][account_name] = [balance_log.balance]
                 else:
                     balance_log_lookup[date] = {account_name: [balance_log.balance]}
-
-    print(balance_log_lookup)
 
     return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup)
 
@@ -926,12 +944,24 @@ def make_payment():
     return render_template('make_payments.html', form=form)
 
 
+# View list of people you made payments to in the last 30 days
 @app.route('/view_payments', methods=['GET', 'POST'])
 def view_payments():
-    payees = Payment.query.all()
-    return render_template('view_payments.html', payees=payees)
+    date_today = datetime.now().date()
+    start_date = date_today - timedelta(days=30)
+    # Store date of payment as the key and the payee objects as a list of values
+    payee_lookup = {}
+    payees = Payment.query.filter(func.date(Payment.timestamp >= start_date)).order_by(Payment.timestamp.desc()).all()
+    for payee in payees:
+        date = payee.timestamp.strftime("%Y-%m-%d")  # date of payment
+        if date in payee_lookup:
+            payee_lookup[date].append(payee)
+        else:
+            payee_lookup[date] = [payee]
+    return render_template('view_payments.html', payee_lookup=payee_lookup)
 
 
+# Update debtor balance or any other debtor details
 @app.route('/update_debtor/<int:debtor_id>', methods=['GET', 'POST'])
 def update_debtor(debtor_id):
     debtor = Debtor.query.get_or_404(debtor_id)
@@ -953,18 +983,21 @@ def update_debtor(debtor_id):
     return render_template('update_debtor.html', form=form)
 
 
-# Show daily count from each shop for the last 7 days
+# Show daily count from each shop 7 days
 @app.route('/<int:shop_id>/view_daily_count', methods=['GET'])
 def view_daily_count(shop_id):
 
     count_comparison_lookup = {}
     date_today = datetime.now().date()
     start_date = date_today - timedelta(days=7)
+    # Query the Database to retrieve all daily counts submitted from all shops in the last 7 days
+    daily_counts = DailyCount.query.filter(func.date(DailyCount.date >= start_date),
+                                           DailyCount.shop_id == shop_id).order_by(DailyCount.date.desc()).all()
 
-    daily_count = DailyCount.query.filter(func.date(DailyCount.date == date_today),
-                                          DailyCount.shop_id == shop_id).order_by(DailyCount.date.desc()).all()
-
-    for item in daily_count:
+    # Iterate over each daily count submitted from every shop and put the date in a dictionary that has a nested
+    # dict with the item name as the key and a list of item quantity in shop and item count submitted from shop as the
+    # values
+    for item in daily_counts:
         item_name = item.daily_count_item.item.item_name
         item_id = item.daily_count_item.item.id
         shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
@@ -980,7 +1013,4 @@ def view_daily_count(shop_id):
                     count_comparison_lookup[date][item_name] = [shop_item.item_quantity, item.count]
             else:
                 count_comparison_lookup[date] = {item_name: [shop_item.item_quantity, item.count]}
-        else:
-            flash("")
-    print(count_comparison_lookup)
     return render_template('view_daily_count.html', count_comparison_lookup=count_comparison_lookup)
