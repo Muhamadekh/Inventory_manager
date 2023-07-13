@@ -37,7 +37,7 @@ class ShopNewItemForm(FlaskForm):
 
 
 class ShopStockReceivedForm(FlaskForm):
-    item_name = SearchField('Search Item Name')
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
 
@@ -46,7 +46,7 @@ payment_methods_list = ['Cash', 'Orange Money', 'Bank']
 
 
 class ShopStockSoldForm(FlaskForm):
-    item_name = SearchField('Search Item Name')
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Sold', validators=[DataRequired()])
     item_discount = IntegerField('Discount', validators=[Optional()])
     submit = SubmitField('Add')
@@ -74,13 +74,13 @@ class StoreNewItemForm(FlaskForm):
 
 
 class StoreStockInForm(FlaskForm):
-    item_name = SearchField('Search Item Name')
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
 
 
 class StoreStockOutForm(FlaskForm):
-    item_name = SearchField('Search Item Name')
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     shop = SelectField('Select Shop', choices=[])
     submit = SubmitField('Send Stock')

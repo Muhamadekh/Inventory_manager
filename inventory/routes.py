@@ -15,6 +15,7 @@ from flask import make_response
 import io
 import itertools
 from sqlalchemy.exc import IntegrityError
+import xlsxwriter
 
 
 def today_date():
@@ -153,52 +154,6 @@ def view_shop(shop_id):
     for product in ShopItem.query.filter_by(shop_id=shop.id).all():
         stock_value_list.append(product.item_value)
     total_stock_value = sum(stock_value_list)
-
-    # Request reports download
-    if request.args.get('download'):
-        time_range = request.args.get('time_range')  # Get the specified time range from the request arguments
-
-        # Define the start date based on the specified time range
-        if time_range == '7':  # 7 days
-            start_date = datetime.now() - timedelta(days=7)
-        elif time_range == '30':  # 30 days
-            start_date = datetime.now() - timedelta(days=30)
-        elif time_range == '6m':  # 6 months
-            start_date = datetime.now() - timedelta(days=30 * 6)
-        else:
-            # Handle invalid time range here, e.g., redirect to an error page or display an error message
-            flash("Range does not exist", "warning")
-
-        # Get the sales entries within the specified time range
-        sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date,
-                                               StockSold.shop_id == shop.id
-                                               ).order_by(StockSold.date_sold.desc()).all()
-
-        # Prepare the CSV file data
-        headers = ['Date Sold', 'Item Name', 'Quantity', 'Discount', 'Value']
-        rows = []
-        for entry in sales_entries:
-            row = [
-                entry.date_sold.strftime('%d-%m-%Y'),
-                entry.item_name,
-                entry.item_quantity,
-                entry.item_discount,
-                entry.item_value
-            ]
-            rows.append(row)
-
-        # Create a CSV file
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(headers)
-        writer.writerows(rows)
-
-        # Prepare the response with the CSV file
-        filename = f"{shop.shop_name.replace(' ', '_')}_Sales.csv"
-        response = make_response(output.getvalue())
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
-        response.headers['Content-type'] = 'text/csv'
-        return response
     return render_template('view_shop.html', shop=shop, total_stock_value=total_stock_value, date=date, ShopItem=ShopItem)
 
 
@@ -247,7 +202,6 @@ def stock_received(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     form = ShopStockReceivedForm()
     if form.validate_on_submit():
-        stock_sent = StockOut.query.filter_by(is_received=False).all()
         selected_name = form.item_name.data.split(" (")
         item_name = selected_name[0]
         item = Item.query.filter_by(item_name=item_name).first()
@@ -308,12 +262,13 @@ def stock_sold(shop_id):
     selection_form = ShopStockSoldForm()
     sales_form = SaleForm()
 
+    # Form to add items to cart
     if selection_form.validate_on_submit() and selection_form.submit.data:
         item_name = selection_form.item_name.data
-        item = Item.query.filter_by(item_name=item_name).first()
-        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()
-        discount = selection_form.item_discount.data if selection_form.item_discount.data else 0
-        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:
+        item = Item.query.filter_by(item_name=item_name).first()  # query the item class using the item name selected
+        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
+        discount = selection_form.item_discount.data if selection_form.item_discount.data else 0 # get the item discount
+        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data: # Check whether quantity in stock
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                                   item_discount=discount)
             item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
@@ -323,7 +278,7 @@ def stock_sold(shop_id):
             db.session.commit()
             db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
-    cart_items = StockSold.query.filter_by(sale_id=None).all()
+    cart_items = StockSold.query.filter_by(sale_id=None).all() # Grab cart items
     total_amount = 0
     for item in cart_items:
         total_amount += item.item_value
@@ -687,7 +642,6 @@ def get_shops_stock():
     all_stock = ShopItem.query.all()
     response = []
     for item in all_stock:
-        print(item.item_quantity, item.item.item_name)
         if item.item_quantity > 0 and searched_term.lower() in item.item.item_name.lower():
             shop_names = [shop.shop.shop_name for shop in item.item.shops]
             response.append({"name": f"{item.item.item_name} ({shop_names[:1]})"})
@@ -713,23 +667,21 @@ def save_daily_count():
 @app.route('/shop_daily_report', methods=['GET', 'POST'])
 def shop_daily_report():
     shops = Shop.query.all()
-    current_date = datetime.now().date()
-    start_date = current_date - timedelta(days=7)
-    all_sales = Sale.query.order_by(Sale.date_sold.desc()).all()
-    date_list = []
-    counter = 1
+    all_sales = Sale.query.order_by(Sale.date_sold.desc()).all() # Grab all sale objects
+    date_list = [] # Store sale dates in this list
+    counter = 1  # This is for displaying only the sale of the last 7 days
     for sale in all_sales:
         date = sale.date_sold.strftime("%Y-%m-%d")
         if date not in date_list and counter <= 7:
             date_list.append(date)
             counter += 1
 
-    payment_methods_lookup = {}
-    sales_cost_lookup = {}
-    discount_lookup = {}
-    total_sales_lookup = {}
-    profit_lookup = {}
-    total_profit = {}
+    payment_methods_lookup = {} # Stores payment methods and their total values for each shop
+    sales_cost_lookup = {}     # Stores total cost of items sold in each shop
+    discount_lookup = {}       # Stores total discount (both item discount and general sale discount) for each shop
+    total_sales_lookup = {}   # Stores total sales value of items sold in each shop
+    profit_lookup = {}        # Stores total profit of each shop
+    total_profit = {}        # Stores total profit of all shop
 
     for date in date_list:
         payment_methods_lookup[date] = {}
@@ -773,10 +725,6 @@ def shop_daily_report():
                            total_sales_lookup=total_sales_lookup, sales_cost_lookup=sales_cost_lookup,
                            discount_lookup=discount_lookup, shops=shops, profit_lookup=profit_lookup,
                            total_profit=total_profit, date_list=date_list)
-
-
-
-
 
 
 # Assign shopkeeper to a shop
@@ -986,14 +934,12 @@ def update_debtor(debtor_id):
 # Show daily count from each shop 7 days
 @app.route('/<int:shop_id>/view_daily_count', methods=['GET'])
 def view_daily_count(shop_id):
-
     count_comparison_lookup = {}
     date_today = datetime.now().date()
     start_date = date_today - timedelta(days=7)
     # Query the Database to retrieve all daily counts submitted from all shops in the last 7 days
     daily_counts = DailyCount.query.filter(func.date(DailyCount.date >= start_date),
                                            DailyCount.shop_id == shop_id).order_by(DailyCount.date.desc()).all()
-
     # Iterate over each daily count submitted from every shop and put the date in a dictionary that has a nested
     # dict with the item name as the key and a list of item quantity in shop and item count submitted from shop as the
     # values
@@ -1003,9 +949,7 @@ def view_daily_count(shop_id):
         shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
         date = item.date.strftime("%Y-%m-%d")
         if shop_item:
-            print(shop_item)
             if date in count_comparison_lookup:
-                print(item_name, date)
                 if item_name in count_comparison_lookup[date]:
                     count_comparison_lookup[date][item_name].append(shop_item.item_quantity)
                     count_comparison_lookup[date][item_name].append(item.count)
@@ -1014,3 +958,133 @@ def view_daily_count(shop_id):
             else:
                 count_comparison_lookup[date] = {item_name: [shop_item.item_quantity, item.count]}
     return render_template('view_daily_count.html', count_comparison_lookup=count_comparison_lookup)
+
+
+@app.route('/download_reports', methods=['GET', 'POST'])
+def download_reports():
+    shops = Shop.query.all()
+    # Request reports download
+    if request.args.get('download'):
+        time_range = request.args.get('time_range')
+
+        # Define the start date based on the specified time range
+        if time_range == '7':  # 7 days
+            start_date = datetime.now() - timedelta(days=7)
+        elif time_range == '30':  # 30 days
+            start_date = datetime.now() - timedelta(days=30)
+        elif time_range == '6m':  # 6 months
+            start_date = datetime.now() - timedelta(days=30 * 6)
+        else:
+            # Handle invalid time range here, e.g., redirect to an error page or display an error message
+            flash("Range does not exist", "warning")
+
+        all_sales = Sale.query.filter(Sale.date_sold >= start_date).order_by(Sale.date_sold.desc()).all()  # Grab all sale objects
+        date_list = []  # Store sale dates in this list
+        counter = 1  # This is for displaying only the sale of the last 7 days
+        for sale in all_sales:
+            date = sale.date_sold.strftime("%Y-%m-%d")
+            if date not in date_list and counter <= int(time_range):
+                date_list.append(date)
+                counter += 1
+
+        # Initialize data structures for storing the report data
+        report_data = {}
+
+        for date in date_list:
+            month = datetime.strptime(date, "%Y-%m-%d").strftime("%B")  # Extract month from date
+            if month not in report_data:
+                report_data[month] = {'Total Profit': 0}
+
+            for shop in shops:
+                shop_name = shop.shop_name
+                sales_cost = 0
+                discount = 0
+                total_sales = 0
+
+                sales = Sale.query.filter(func.date(Sale.date_sold) == date, Sale.shop_id == shop.id).all()
+
+                for sale in sales:
+                    stock_sold = StockSold.query.filter_by(sale_id=sale.id).all()
+                    for item in stock_sold:
+                        product = Item.query.filter_by(item_name=item.item_name).first()
+                        cost_price = product.item_cost_price
+                        item_cost = item.item_quantity * cost_price
+
+                        sales_cost += item_cost
+                        discount += item.item_discount * item.item_quantity
+
+                    discount += sale.sales_discount
+                    total_sales += sale.sales_value
+
+                profit = total_sales - sales_cost
+
+                if shop_name not in report_data[month]:
+                    # noinspection PyTypeChecker
+                    report_data[month][shop_name] = {
+                        'Total Sales': total_sales,
+                        'Total Cost': sales_cost,
+                        'Total Discount': discount,
+                        'Total Profit': profit
+                    }
+                else:
+                    report_data[month][shop_name]['Total Sales'] += total_sales
+                    report_data[month][shop_name]['Total Cost'] += sales_cost
+                    report_data[month][shop_name]['Total Discount'] += discount
+                    report_data[month][shop_name]['Total Profit'] += profit
+
+                report_data[month]['Total Profit'] += profit
+
+        # Sort the report data by month
+        sorted_months = sorted(report_data.keys(), key=lambda m: datetime.strptime(m, "%B"))
+
+        # Create an Excel workbook and add a worksheet
+        workbook = xlsxwriter.Workbook('Shop_Reports.xlsx')
+        worksheet = workbook.add_worksheet()
+
+        # Define cell formats for headers and bold text
+        header_format = workbook.add_format({'bold': True})
+        bold_right_format = workbook.add_format({'bold': True, 'align': 'right'})
+
+        # Write the headers
+        headers = ['Month', 'Shop Name', 'Total Sales', 'Total Cost', 'Total Discount', 'Total Profit']
+        for col, header in enumerate(headers):
+            worksheet.write(0, col, header, header_format)
+
+        # Write the report data
+        row = 1
+        for month in sorted_months:
+            for shop_name, shop_data in report_data[month].items():
+                if shop_name != 'Total Profit':
+                    worksheet.write(row, 0, month)
+                    worksheet.write(row, 1, shop_name)
+                    worksheet.write(row, 2, shop_data['Total Sales'])
+                    worksheet.write(row, 3, shop_data['Total Cost'])
+                    worksheet.write(row, 4, shop_data['Total Discount'])
+                    worksheet.write(row, 5, shop_data['Total Profit'])
+                    row += 1
+
+        # Merge cells for the "Total Profit for all shops" row
+        last_row = row
+        worksheet.merge_range(last_row, 0, last_row, 4, 'Total Profit for all shops', bold_right_format)
+        worksheet.write(last_row, 5, report_data[sorted_months[-1]]['Total Profit'], bold_right_format)
+
+        # Set column widths
+        worksheet.set_column(0, 0, 12)
+        worksheet.set_column(1, 1, 20)
+        worksheet.set_column(2, 5, 15)
+
+        # Close the workbook
+        workbook.close()
+
+        # Prepare the response with the Excel file
+        filename = 'Shop_Reports.xlsx'
+        with open('Shop_Reports.xlsx', 'rb') as file:
+            response = make_response(file.read())
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        response.headers['Content-type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        return response
+
+
+
+
+
