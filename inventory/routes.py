@@ -19,7 +19,7 @@ import xlsxwriter
 
 
 def today_date():
-    date_today = datetime.today().strftime('%d-%m-%Y')
+    date_today = datetime.today().strftime('%Y-%m-%d')
     return date_today
 
 
@@ -48,13 +48,16 @@ def home():
     # Finding total net sales and discount
     sales_value_list = []
     discount_list = []
-    sales = Sale.query.filter(func.date(Sale.date_sold == current_date)).all()
+    sales = Sale.query.order_by(Sale.date_sold.desc()).all()
     for sale in sales:
-        sales_value_list.append(sale.sales_value)
-        discount_list.append(sale.sales_discount)
-        for item in sale.sale_items:
-            if item.item_discount > 0:
-                discount_list.append(item.item_discount)
+        today = today_date()
+        if sale.date_sold.strftime("%Y-%m-%d") == today:
+            print(sale.date_sold)
+            sales_value_list.append(sale.sales_value)
+            discount_list.append(sale.sales_discount)
+            for item in sale.sale_items:
+                if item.item_discount > 0:
+                    discount_list.append(item.item_discount)
     total_sales_value = sum(sales_value_list)
     total_discount = sum(discount_list)
 
@@ -963,7 +966,9 @@ def view_daily_count(shop_id):
 @app.route('/download_reports', methods=['GET', 'POST'])
 def download_reports():
     shops = Shop.query.all()
+
     # Request reports download
+    print("hey, download")
     if request.args.get('download'):
         time_range = request.args.get('time_range')
 
@@ -972,7 +977,7 @@ def download_reports():
             start_date = datetime.now() - timedelta(days=7)
         elif time_range == '30':  # 30 days
             start_date = datetime.now() - timedelta(days=30)
-        elif time_range == '6m':  # 6 months
+        elif time_range == '180':  # 6 months
             start_date = datetime.now() - timedelta(days=30 * 6)
         else:
             # Handle invalid time range here, e.g., redirect to an error page or display an error message
@@ -1083,7 +1088,6 @@ def download_reports():
         response.headers['Content-Disposition'] = f'attachment; filename={filename}'
         response.headers['Content-type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         return response
-
 
 
 
