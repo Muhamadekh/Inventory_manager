@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, SearchField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional
-from inventory.models import User, Shop
+from inventory.models import User, Shop, Account, Sale
 from flask import session
 from flask_login import current_user
 
@@ -81,7 +81,7 @@ class StoreStockInForm(FlaskForm):
 
 class StoreStockOutForm(FlaskForm):
     item_name = SearchField('Search Item Name', validators=[DataRequired()])
-    item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    item_quantity = IntegerField('Quantity Sending', validators=[DataRequired()])
     shop = SelectField('Select Shop', choices=[])
     submit = SubmitField('Send Stock')
 
@@ -109,6 +109,7 @@ class UpdateDebtorForm(FlaskForm):
     company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
     amount_paid = IntegerField('Amount Paid', validators=[Optional()])
+    payment_method = SelectField('Payment Method', choices=[payment_methods_list])
     submit = SubmitField('Save')
 
 
@@ -142,4 +143,38 @@ class PaymentForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
     amount = IntegerField('Amount', validators=[Optional()])
+    account = SelectField('Choose Account', choices=[])
     submit = SubmitField('Save')
+
+    def populate_account_choices(self):
+        self.account.choices = [account for account in Account.query.filter(Account.balance > 0).all()]
+
+    def get_selected_account(self):
+        selected_account = self.account.data
+        if selected_account is not None:
+            return int(selected_account)
+        else:
+            return 0
+
+
+class TransferStockForm(FlaskForm):
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
+    item_quantity = IntegerField('Transfer Quantity', validators=[DataRequired()])
+    shop = SelectField('Select Shop', choices=[])
+    submit = SubmitField('Transfer Stock')
+
+    def populate_shop_choices(self):
+        self.shop.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
+
+    def get_selected_shop_id(self):
+        selected_shop_id = self.shop.data
+        if selected_shop_id is not None:
+            return int(selected_shop_id)
+        else:
+            return 0
+
+
+class StockFromShopForm(FlaskForm):
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
+    item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    submit = SubmitField('Receive Stock')

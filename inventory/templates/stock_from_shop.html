@@ -47,7 +47,7 @@
                                 <th>Item ID</th>
                                 <th>Item Name</th>
                                 <th>Item Quantity</th>
-                                <th>Store From</th>
+                                <th>Shop From</th>
                                 <th>Date Received</th>
                             </tr>
                         </thead>
@@ -57,9 +57,8 @@
                                 <td>{{ entry.id }}</td>
                                 <td>{{ entry.item_name }}</td>
                                 <td>{{ entry.item_quantity }}</td>
+                                <td>{{ entry.transfer_from.shop_name }}</td>
                                 <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
-                                {% if current_user.user_role == 'Admin'%}
-                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -92,7 +91,7 @@
                 console.log(shopId);
                 console.log(item_name);
 
-                fetchData(`http://${window.location.hostname}:5000/get_stock_sent_items`, "POST", {
+                fetchData(`http://${window.location.hostname}:5000/get_transfered_items`, "POST", {
                     "item_name": item_name,
                     "shop_id": shopId
                 }, (data) => {

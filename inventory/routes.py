@@ -2,11 +2,11 @@ from flask import render_template, url_for, flash, redirect, session, request, j
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
                               StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, AccountMovement,
-                              AccountBalanceLog, Payment)
+                              AccountBalanceLog, Payment, TransferStock, CountDifference)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm, ShopKeeperRegistrationForm,
-                             AccountRegistrationForm, PaymentForm, UpdateDebtorForm)
+                             AccountRegistrationForm, PaymentForm, UpdateDebtorForm, TransferStockForm, StockFromShopForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -237,11 +237,11 @@ def stock_received(shop_id):
 
     restock_lookup = {}
     current_date = datetime.now()
-    restock_entries = StockReceived.query.filter(StockReceived.date_received <= current_date,
-                                                 StockReceived.shop_id == shop.id)\
-        .order_by(StockReceived.date_received.desc()).all()
+    restock_entries = StockOut.query.filter(StockOut.date_sent <= current_date, StockOut.is_received is True,
+                                            StockOut.shop_id == shop.id)\
+        .order_by(StockOut.date_sent.desc()).all()
     for entry in restock_entries:
-        date = entry.date_received.strftime("%d-%m-%Y")
+        date = entry.date_sent.strftime("%d-%m-%Y")
         if date in restock_lookup:
             restock_lookup[date].append(entry)
         else:
@@ -328,6 +328,95 @@ def stock_sold(shop_id):
     return render_template('stock_sold.html', selection_form=selection_form, sales_lookup=sales_lookup, Date=Date, shop=shop,
                            sales_form=sales_form, cart_items=cart_items, total_amount=total_amount,
                            sales_entries=sales_entries, total_discount=total_discount)
+
+
+@app.route('/<int:shop_id>/transfer_stock', methods=['GET', 'POST'])
+def transfer_stock(shop_id):
+    shop_from = Shop.query.get_or_404(shop_id)
+    form = TransferStockForm()
+    form.populate_shop_choices()
+    selected_shop_id = form.get_selected_shop_id()
+    shop_to = Shop.query.filter_by(id=selected_shop_id).first()
+    if form.validate_on_submit():
+        item_name = form.item_name.data
+        item = Item.query.filter_by(item_name=item_name).first()
+        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_from.id).first()
+        if shop_item and shop_item.item_quantity >= form.item_quantity.data > 0:
+            stock_sent = TransferStock(item_name=item_name, item_quantity=form.item_quantity.data,
+                                       transfer_from_id=shop_from.id, transfer_to_id=shop_to.id)
+            shop_item.item_quantity -= form.item_quantity.data
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
+            db.session.add(stock_sent)
+            db.session.commit()
+            db.session.commit()
+            return redirect(url_for('transfer_stock', shop_id=shop_from.id))
+        else:
+            flash("Quantity is more than available.", "warning")
+
+    stock_transfered_lookup = {}
+
+    current_date = datetime.now()
+    stock_sent_entries = TransferStock.query.filter(TransferStock.date_sent <= current_date,
+                                                    TransferStock.transfer_from_id == shop_from.id)\
+        .order_by(TransferStock.date_sent.desc()).all()
+    for entry in stock_sent_entries:
+        date = entry.date_sent.date()
+        if date in stock_transfered_lookup:
+            stock_transfered_lookup[date].append(entry)
+        else:
+            stock_transfered_lookup[date] = [entry]
+
+    return render_template('transfer_stock.html', form=form, stock_transfered_lookup=stock_transfered_lookup, shop=shop_from)
+
+
+@app.route('/<int:shop_id>/stock_from_shop', methods=['GET', 'POST'])
+def stock_from_shop(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    form = StockFromShopForm()
+    if form.validate_on_submit():
+        selected_name = form.item_name.data.split(" (")
+        item_name = selected_name[0]
+        item = Item.query.filter_by(item_name=item_name).first()
+        item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
+        item_sent = TransferStock.query.filter_by(is_received=False, item_name=item.item_name,
+                                             item_quantity=form.item_quantity.data, transfer_to_id=shop.id).first()
+        if item_sent and not item_sent.is_received:
+            item_sent.is_received = True
+            db.session.add(item_received)
+            db.session.commit()
+        else:
+            flash("An error has occurred", "warning")
+        if item in shop.items:
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+            shop_item.item_quantity = shop_item.item_quantity + item_received.item_quantity
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
+            if shop_item.item_quantity < 500:
+                shop_item.item_status = 'Running Out'
+            db.session.commit()
+        else:
+            shop_item = ShopItem(shop=shop, item=item, item_quantity=form.item_quantity.data)
+            shop_item.item_value = form.item_quantity.data * item.item_cost_price
+            db.session.add(shop_item)
+            db.session.commit()
+            if shop_item.item_quantity < 500:
+                shop_item.stock_status = 'Running Out'
+            db.session.commit()
+
+        return redirect(url_for('stock_from_shop', shop_id=shop.id))
+
+    restock_lookup = {}
+    current_date = datetime.now()
+    restock_entries = TransferStock.query.filter(TransferStock.date_sent <= current_date,
+                                                 TransferStock.transfer_to_id == shop.id,
+                                                 TransferStock.is_received == True)\
+        .order_by(TransferStock.date_sent.desc()).all()
+    for entry in restock_entries:
+        date = entry.date_sent.strftime("%d-%m-%Y")
+        if date in restock_lookup:
+            restock_lookup[date].append(entry)
+        else:
+            restock_lookup[date] = [entry]
+    return render_template('stock_from_shop.html', form=form, shop=shop, restock_lookup=restock_lookup)
 
 
 @app.route('/history', methods=['GET'])
@@ -888,8 +977,13 @@ def search_payee():
 def make_payment():
     form = PaymentForm()
     if form.validate_on_submit():
-        payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data)
+        payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data,
+                          account= form.account.data)
+        selected_account = Account.query.filter_by(account_name=payment.account).first()
+        selected_account.balance -= payment.amount
+        balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
         db.session.add(payment)
+        db.session.add(balance_log)
         db.session.commit()
         return redirect(url_for('view_payments'))
     return render_template('make_payments.html', form=form)
@@ -929,6 +1023,10 @@ def update_debtor(debtor_id):
             debtor.unpaid_amount -= form.amount_paid.data
         else:
             flash("Amount is more than balance", "warning")
+        deposited_account = Account.query.filter_by(account_name=form.payment_method.data).first()
+        deposited_account.balance += form.amount_paid.data
+        balance_log = AccountBalanceLog(account_id=deposited_account.id, balance=deposited_account.balance)
+        db.session.add(balance_log)
         db.session.commit()
         return redirect(url_for('view_debtors'))
     return render_template('update_debtor.html', form=form)
@@ -963,6 +1061,7 @@ def view_daily_count(shop_id):
     return render_template('view_daily_count.html', count_comparison_lookup=count_comparison_lookup)
 
 
+# Download reports of shops over a certain period of time
 @app.route('/download_reports', methods=['GET', 'POST'])
 def download_reports():
     shops = Shop.query.all()
@@ -978,7 +1077,9 @@ def download_reports():
         elif time_range == '30':  # 30 days
             start_date = datetime.now() - timedelta(days=30)
         elif time_range == '180':  # 6 months
-            start_date = datetime.now() - timedelta(days=30 * 6)
+            start_date = datetime.now() - timedelta(days=183)
+        elif time_range == '365':  # 6 months
+            start_date = datetime.now() - timedelta(days=365)
         else:
             # Handle invalid time range here, e.g., redirect to an error page or display an error message
             flash("Range does not exist", "warning")
@@ -1090,5 +1191,13 @@ def download_reports():
         return response
 
 
-
+# Get items transfered from another shop
+@app.route('/get_transfered_items', methods=['GET', 'POST'])
+def get_transfered_items():
+    item_name = request.json["item_name"]
+    shop_id = request.json["shop_id"]
+    shop = Shop.query.get_or_404(shop_id)
+    stock_sent = TransferStock.query.filter_by(is_received=False, transfer_to_id=shop.id).all()
+    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if item_name.lower() in item.item_name.lower()]
+    return jsonify(response)
 

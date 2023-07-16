@@ -7,7 +7,9 @@
     <div class="button-container">
         <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
         <a href="{{ url_for('view_shop', shop_id=shop.id)}}"class="button">Stock</a>
-        <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Receive Stock</a>
+        <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Stock From Store</a>
+        <a href="{{ url_for('stock_from_shop', shop_id=shop.id)}}" class="button">Stock From Shop</a>
+        <a href="{{ url_for('transfer_stock', shop_id=shop.id)}}" class="button">Transfer Stock</a>
         <a class="ml-4"><strong>Date</strong>:{{Date}}</a>
         {% if current_user in shop.shopkeepers %}
           <a class="ml-4"><strong>Shopkeeper:</strong>{{current_user.username }}</a>
