@@ -24,6 +24,7 @@
                 <td><button class="btn btn-success">Correct</button></td>
               {% else %}
                 <td><button class="btn btn-danger">Incorrect</button></td>
+                <td><a href="{{ url_for('void_count_differences', shop_id=shop.id, item_id=values[2])}}"><button class="btn btn-danger">Void</button></a></td>
               {% endif %}
             </tr>
           {% endfor %}

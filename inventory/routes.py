@@ -1042,6 +1042,7 @@ def update_debtor(debtor_id):
 # Show daily count from each shop 7 days
 @app.route('/<int:shop_id>/view_daily_count', methods=['GET'])
 def view_daily_count(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
     count_comparison_lookup = {}
     date_today = datetime.now().date()
     start_date = date_today - timedelta(days=7)
@@ -1061,11 +1062,13 @@ def view_daily_count(shop_id):
                 if item_name in count_comparison_lookup[date]:
                     count_comparison_lookup[date][item_name].append(shop_item.item_quantity)
                     count_comparison_lookup[date][item_name].append(item.count)
+                    count_comparison_lookup[date][item_name].append(item_id)
                 else:
-                    count_comparison_lookup[date][item_name] = [shop_item.item_quantity, item.count]
+                    count_comparison_lookup[date][item_name] = [shop_item.item_quantity, item.count, item_id]
             else:
                 count_comparison_lookup[date] = {item_name: [shop_item.item_quantity, item.count]}
-    return render_template('view_daily_count.html', count_comparison_lookup=count_comparison_lookup)
+    print(count_comparison_lookup)
+    return render_template('view_daily_count.html', count_comparison_lookup=count_comparison_lookup, shop=shop)
 
 
 # Download reports of shops over a certain period of time
@@ -1222,3 +1225,25 @@ def remove_shopkeeper(shopkeeper_id):
     else:
         flash("Shopkeeper does not exist")
     return redirect(url_for('view_shops'))
+
+
+# Harmonize differences in daily count submitted by shopkeepers and item quantity in the system
+@app.route('/<int:shop_id>/<int:item_id>/void_count_differences', methods=['GET', 'POST'])
+def void_count_differences(shop_id, item_id):
+    current_date = datetime.now()
+    shops_daily_count = DailyCount.query.filter(DailyCount.date <= current_date, DailyCount.shop_id == shop_id,
+                                                DailyCount.shop_item_id == item_id).order_by(DailyCount.date.desc()).all()
+    for item in shops_daily_count:
+        item_name = item.daily_count_item.item.item_name
+        shop_item = shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
+        print(item_name, shop_item.item_quantity, item.count)
+        if item.count != shop_item.item_quantity:
+            difference = shop_item.item_quantity - item.count
+            count_difference = CountDifference(quantity=difference, shop_id=shop_id, shop_item_id=shop_item.id)
+            shop_item.item_quantity = item.count
+            print(item_name, shop_item.item_quantity, item.count)
+            db.session.add(count_difference)
+            db.session.commit()
+        else:
+            print("Count is equal")
+    return redirect(url_for('view_daily_count', shop_id=shop_id))
