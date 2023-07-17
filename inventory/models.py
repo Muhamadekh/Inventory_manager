@@ -177,6 +177,7 @@ class Shopkeeper(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    # date_assigned = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
 
 # Model for physical count items submitted from shops
@@ -204,7 +205,7 @@ class Account(db.Model):
 class AccountMovement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
-    rate = db.Column(db.Float) # dollar against shilling rate
+    rate = db.Column(db.Float)  # dollar against shilling rate
     transfer_from_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     transfer_to_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
@@ -237,4 +238,3 @@ class CountDifference(db.Model):
     shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     date = db.Column(db.DateTime, default=datetime.now)
-

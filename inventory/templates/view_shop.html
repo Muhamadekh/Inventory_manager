@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %}
     <!-- Buttons -->
-    <div class="button-container">
+    <div class="button-container mb-2">
       <a href="{{ url_for('view_shop', shop_id=shop.id)}}" class="button">Stock</a>
       <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button">Sales</a>
       <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Stock From Store</a>
@@ -12,7 +12,7 @@
       {% endif %}
       {% if current_user in shop.shopkeepers %}
           <a class="ml-4"><strong>Shopkeeper:</strong>{{current_user.username }}</a>
-      {% else %}
+      {% elif shop.shopkeepers %}
           <a class="ml-4"><strong>Shopkeeper:</strong>{{shop.shopkeepers[0].user_details.username }}</a>
       {% endif %}
       {% if current_user.user_role == 'Admin' %}

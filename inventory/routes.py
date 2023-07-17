@@ -924,6 +924,7 @@ def account_transfer():
         amount = float(request.form['amount'])
         transfer_from_id = int(request.form['transfer_from'])
         transfer_to_id = int(request.form['transfer_to'])
+        rate = float(request.form['rate'])
 
         transfer_from = Account.query.get_or_404(transfer_from_id)
         transfer_to = Account.query.get_or_404(transfer_to_id)
@@ -935,7 +936,7 @@ def account_transfer():
             db.session.add(balance_log)
             db.session.commit()
             # Add amount to transfer_to account
-            transfer_to.balance += amount
+            transfer_to.balance += amount * rate
             balance_log = AccountBalanceLog(account_id=transfer_to.id, balance=transfer_to.balance)
             db.session.add(balance_log)
             db.session.commit()
@@ -1198,7 +1199,7 @@ def download_reports():
 
 
 # Get items transfered from another shop
-@app.route('/get_transfered_items', methods=['GET', 'POST'])
+@app.route('/get_transferred_items', methods=['GET', 'POST'])
 def get_transfered_items():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
@@ -1209,9 +1210,9 @@ def get_transfered_items():
 
 
 # Remove a shopkeeper from a shop
-@app.route('/<int:shop_id>/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
-def remove_shopkeeper(shop_id, shopkeeper_id):
-    shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id, shop_id)
+@app.route('/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
+def remove_shopkeeper(shopkeeper_id):
+    shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id)
     print(shopkeeper.id)
     if shopkeeper:
         print(shopkeeper.user_details.username)

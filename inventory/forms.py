@@ -109,7 +109,7 @@ class UpdateDebtorForm(FlaskForm):
     company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
     amount_paid = IntegerField('Amount Paid', validators=[Optional()])
-    payment_method = SelectField('Payment Method', choices=[payment_methods_list])
+    payment_method = SelectField('Payment Method', choices=payment_methods_list)
     submit = SubmitField('Save')
 
 

@@ -30,6 +30,13 @@
             </div>
         </div>
         <div class="form-group row">
+            <label for="amount" class="col-md-2 col-form-label">Rate:</label>
+            <div class="col-md-4">
+                <input type="number" step="0.00001" min="0" name="rate" id="rate" class="form-control" required>
+                <span class="text-danger">Use the current rate if Dollar Account is involved otherwise use 1</span>
+            </div>
+        </div>
+        <div class="form-group row">
             <div class="offset-md-2 col-md-4">
                 <button type="submit" class="btn btn-primary">Transfer</button>
             </div>
@@ -65,4 +72,24 @@
         {% endfor %}
     </table>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    let transfer_from_account = document.getElementById("transfer_from");
+    let transfer_to_account = document.getElementById("transfer_to");
+    let rate = document.getElementById("rate");
+
+    function updateRateRequired() {
+        let accountFrom = transfer_from_account.value;
+        let accountTo = transfer_to_account.value;
+
+        if (accountFrom === 'Dollar Account' || accountTo === 'Dollar Account') {
+            rate.setAttribute('required', '');
+        }
+        console.log("Please provide rate");
+    }
+
+    transfer_from_account.addEventListener('change', updateRateRequired);
+    transfer_to_account.addEventListener('change', updateRateRequired);
+</script>
+
 {% endblock %}
