@@ -342,14 +342,17 @@ def transfer_stock(shop_id):
         item = Item.query.filter_by(item_name=item_name).first()
         shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_from.id).first()
         if shop_item and shop_item.item_quantity >= form.item_quantity.data > 0:
-            stock_sent = TransferStock(item_name=item_name, item_quantity=form.item_quantity.data,
-                                       transfer_from_id=shop_from.id, transfer_to_id=shop_to.id)
-            shop_item.item_quantity -= form.item_quantity.data
-            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
-            db.session.add(stock_sent)
-            db.session.commit()
-            db.session.commit()
-            return redirect(url_for('transfer_stock', shop_id=shop_from.id))
+            if shop_from.id != shop_to.id:
+                stock_sent = TransferStock(item_name=item_name, item_quantity=form.item_quantity.data,
+                                           transfer_from_id=shop_from.id, transfer_to_id=shop_to.id)
+                shop_item.item_quantity -= form.item_quantity.data
+                shop_item.item_value = shop_item.item_quantity * item.item_cost_price
+                db.session.add(stock_sent)
+                db.session.commit()
+                db.session.commit()
+                return redirect(url_for('transfer_stock', shop_id=shop_from.id))
+            else:
+                flash("Please select the right shop.", "warning")
         else:
             flash("Quantity is more than available.", "warning")
 
@@ -976,11 +979,14 @@ def search_payee():
 @app.route('/make_payment', methods=['GET', 'POST'])
 def make_payment():
     form = PaymentForm()
+    form.populate_account_choices()
+    selected_account_name = form.get_selected_account_name()
+    selected_account = Account.query.filter_by(account_name=selected_account_name).first()
     if form.validate_on_submit():
         payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data,
-                          account= form.account.data)
-        selected_account = Account.query.filter_by(account_name=payment.account).first()
+                          account=selected_account.account_name)
         selected_account.balance -= payment.amount
+        print(selected_account.balance)
         balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
         db.session.add(payment)
         db.session.add(balance_log)
@@ -1201,3 +1207,17 @@ def get_transfered_items():
     response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if item_name.lower() in item.item_name.lower()]
     return jsonify(response)
 
+
+# Remove a shopkeeper from a shop
+@app.route('/<int:shop_id>/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
+def remove_shopkeeper(shop_id, shopkeeper_id):
+    shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id, shop_id)
+    print(shopkeeper.id)
+    if shopkeeper:
+        print(shopkeeper.user_details.username)
+        db.session.delete(shopkeeper)
+        db.session.commit()
+        print("Deleted")
+    else:
+        flash("Shopkeeper does not exist")
+    return redirect(url_for('view_shops'))

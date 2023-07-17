@@ -6,7 +6,7 @@
       <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button">Sales</a>
       <a href="{{ url_for('stock_received', shop_id=shop.id)}}" class="button">Stock From Store</a>
       <a href="{{ url_for('stock_from_shop', shop_id=shop.id)}}" class="button">Stock From Shop</a>
-      <a href="{{ url_for('transfer_stock', shop_id=shop.id)}}" class="button">Transfer Stock</a>
+      <a href="{{ url_for('transfer_stock', shop_id=shop.id)}}" class="button">Transfer</a>
       {% if current_user.user_role != 'Admin' %}
           <a class="ml-4">Date:{{date}}</a>
       {% endif %}
@@ -65,6 +65,7 @@
                   {% if current_user.user_role=='Admin' %}
                       <td colspan="5" class="text-right"><strong>Total Stock Value</strong></td>
                       <td class="text-right"><strong>{{total_stock_value}}</strong></td>
+
                   {% endif %}
               </tr>
           </tbody>

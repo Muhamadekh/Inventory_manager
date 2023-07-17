@@ -17,7 +17,7 @@
               <td>{{ store.id }}</td>
               <td>{{store.store_name }}</td>
               <td>{{store.location}}</td>
-              <td>{{ store_stock_lookup[store.id] }}</td>
+              <td>{{ "{:,}".format(store_stock_lookup[store.id]) }}</td>
               <td><a href="{{ url_for('view_store', store_id=store.id )}}">View More</a></td>
 
             </tr>

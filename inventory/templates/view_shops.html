@@ -11,7 +11,7 @@
               <th scope="col">Total Stock Value</th>
               <th>Action</th>
               <th></th>
-            </tr>
+            </tr>q
           </thead>
           <tbody>
           {% for shop in shops %}
@@ -24,9 +24,26 @@
                 <!-- Shopkeepers column -->
                 <td>
                   {% if shop.shopkeepers %}
-                    {{ shop.shopkeepers[0].user_details.username }}
-                    {% for shopkeeper in shop.shopkeepers[1:] %}
-                      , {{ shopkeeper.user_details.username }}
+                    {% for shopkeeper in shop.shopkeepers %}
+                        <a data-toggle="modal" data-target="#deleteModal">
+                        <span>[</span> {{ shopkeeper.user_details.username }}<span>]</span></a>
+                        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModal" aria-hidden="true">
+                          <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title font-italic" id="deleteModalLabel">Do you want to remove this shopkeeper from this shop?</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                  <span aria-hidden="true">&times;</span>
+                                </button>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <a href="{{ url_for('remove_shopkeeper', shop_id=shop.id, shopkeeper_id=shopkeeper.id)}}">
+                                    <button type="button" class="btn btn-danger">Remove</button></a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                     {% endfor %}
                   {% else %}
                     __

@@ -147,14 +147,14 @@ class PaymentForm(FlaskForm):
     submit = SubmitField('Save')
 
     def populate_account_choices(self):
-        self.account.choices = [account for account in Account.query.filter(Account.balance > 0).all()]
+        self.account.choices = [account.account_name for account in Account.query.filter(Account.balance > 0).all()]
 
-    def get_selected_account(self):
+    def get_selected_account_name(self):
         selected_account = self.account.data
         if selected_account is not None:
-            return int(selected_account)
+            return selected_account
         else:
-            return 0
+            return None
 
 
 class TransferStockForm(FlaskForm):

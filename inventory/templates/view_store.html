@@ -42,7 +42,7 @@
         {% endfor %}
           <tr>
               <td colspan="5" class="text-right"><strong>Total Stock Value</strong></td>
-              <td class="text-right"><strong>{{total_stock_value}}</strong></td>
+              <td class="text-right"><strong>{{ "{:,}".format(total_stock_value)}}</strong></td>
               <td colspan="3"></td>
           </tr>
       </tbody>
