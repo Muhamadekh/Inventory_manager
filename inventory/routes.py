@@ -1074,7 +1074,6 @@ def download_reports():
     shops = Shop.query.all()
 
     # Request reports download
-    print("hey, download")
     if request.args.get('download'):
         time_range = request.args.get('time_range')
 
@@ -1083,7 +1082,7 @@ def download_reports():
             start_date = datetime.now() - timedelta(days=7)
         elif time_range == '30':  # 30 days
             start_date = datetime.now() - timedelta(days=30)
-        elif time_range == '180':  # 6 months
+        elif time_range == '183':  # 6 months
             start_date = datetime.now() - timedelta(days=183)
         elif time_range == '365':  # 6 months
             start_date = datetime.now() - timedelta(days=365)

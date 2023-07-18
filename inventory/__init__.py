@@ -9,7 +9,8 @@ app = Flask(__name__)
 
 
 app.config['SECRET_KEY'] = 'daf871535e9fb00d72ba5e35ae01ca5f'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/jnq_inventory'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, render_as_batch=True)
 bcrypt = Bcrypt(app)

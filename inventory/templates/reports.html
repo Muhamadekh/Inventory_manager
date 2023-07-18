@@ -1,18 +1,18 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <div class="d-flex float-right">
-      <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Download Sales Report
-      </button>
-      <div class="dropdown-menu" aria-labelledby="salesDropdown">
-        <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='7') }}">7 days</a>
-        <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='30') }}">30 days</a>
-        <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='183') }}">6 months</a>
-        <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='365') }}">1 Year</a>
-      </div>
-    </div>
     <section class="p-t-20">
-        <div class="container">
+        <div class="d-flex float-right">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Download Sales Report
+          </button>
+          <div class="dropdown-menu" aria-labelledby="salesDropdown">
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='7') }}">7 days</a>
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='30') }}">30 days</a>
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='183') }}">6 months</a>
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='365') }}">1 Year</a>
+          </div>
+        </div>
+        <div class="container mt-4">
             {% for date in date_list %}
                 <caption style="caption-side: top"><span class="d-flex justify-content-center border-bottom"><strong>{{date}}</strong></span></caption>
                 <div class="row" id="usersTableRow">

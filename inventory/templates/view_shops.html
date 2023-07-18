@@ -24,12 +24,13 @@
                 <!-- Shopkeepers column -->
                 <td>
                   {% if shop.shopkeepers %}
-                    {% for shopkeeper in shop.shopkeepers %}
-                       {{ shopkeeper.user_details.username }}
-                    {% endfor %}
+                      {% for shopkeeper in shop.shopkeepers %}
+                        {{ shopkeeper.user_details.username }}{% if not loop.last %}, {% endif %}
+                      {% endfor %}
                   {% else %}
-                    __
+                      __
                   {% endif %}
+
                 </td>
 
                 <!-- Total Stock Value column -->

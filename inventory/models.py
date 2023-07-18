@@ -177,7 +177,7 @@ class Shopkeeper(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    # date_assigned = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    date_assigned = db.Column(db.DateTime, default=datetime.now)
 
 
 # Model for physical count items submitted from shops
@@ -225,7 +225,7 @@ class Payment(db.Model):
     name = db.Column(db.String(50), nullable=False)
     phone_number = db.Column(db.String(50))
     amount = db.Column(db.Integer, nullable=False)
-    account = db.Column(db.String)
+    account = db.Column(db.String(40))
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
 
