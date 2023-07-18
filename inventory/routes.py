@@ -10,9 +10,7 @@ from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginFo
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
-import csv
 from flask import make_response
-import io
 import itertools
 from sqlalchemy.exc import IntegrityError
 import xlsxwriter
@@ -752,7 +750,7 @@ def save_daily_count():
         item_id = item_data["item_id"]
         count = item_data["count"]
         shop_item = ShopItem.query.get_or_404(item_id)
-        daily_count = DailyCount(count=count, shop_item_id=item_id, shop_id=shop_id)
+        daily_count = DailyCount(count=count, shop_item_id=shop_item.id, shop_id=shop_id)
         db.session.add(daily_count)
         db.session.commit()
     return jsonify({"shop_id": shop_id})
@@ -1039,35 +1037,34 @@ def update_debtor(debtor_id):
     return render_template('update_debtor.html', form=form)
 
 
-# Show daily count from each shop 7 days
-@app.route('/<int:shop_id>/view_daily_count', methods=['GET'])
-def view_daily_count(shop_id):
+def get_daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     count_comparison_lookup = {}
-    date_today = datetime.now().date()
+    date_today = datetime.now()
     start_date = date_today - timedelta(days=7)
-    # Query the Database to retrieve all daily counts submitted from all shops in the last 7 days
-    daily_counts = DailyCount.query.filter(func.date(DailyCount.date >= start_date),
-                                           DailyCount.shop_id == shop_id).order_by(DailyCount.date.desc()).all()
-    # Iterate over each daily count submitted from every shop and put the date in a dictionary that has a nested
-    # dict with the item name as the key and a list of item quantity in shop and item count submitted from shop as the
-    # values
+    daily_counts = DailyCount.query.filter(DailyCount.date >= start_date, DailyCount.shop_id == shop_id).order_by(DailyCount.date.desc()).all()
+
     for item in daily_counts:
         item_name = item.daily_count_item.item.item_name
         item_id = item.daily_count_item.item.id
         shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
         date = item.date.strftime("%Y-%m-%d")
+
         if shop_item:
             if date in count_comparison_lookup:
-                if item_name in count_comparison_lookup[date]:
-                    count_comparison_lookup[date][item_name].append(shop_item.item_quantity)
-                    count_comparison_lookup[date][item_name].append(item.count)
-                    count_comparison_lookup[date][item_name].append(item_id)
-                else:
+                if item_name not in count_comparison_lookup[date]:
                     count_comparison_lookup[date][item_name] = [shop_item.item_quantity, item.count, item_id]
             else:
-                count_comparison_lookup[date] = {item_name: [shop_item.item_quantity, item.count]}
-    print(count_comparison_lookup)
+                count_comparison_lookup[date] = {item_name: [shop_item.item_quantity, item.count, item_id]}
+
+    return count_comparison_lookup
+
+
+# Show daily count from each shop 7 days
+@app.route('/<int:shop_id>/view_daily_count', methods=['GET'])
+def view_daily_count(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    count_comparison_lookup = get_daily_count(shop_id)  # Call the get_daily_count function
     return render_template('view_daily_count.html', count_comparison_lookup=count_comparison_lookup, shop=shop)
 
 
@@ -1230,20 +1227,28 @@ def remove_shopkeeper(shopkeeper_id):
 # Harmonize differences in daily count submitted by shopkeepers and item quantity in the system
 @app.route('/<int:shop_id>/<int:item_id>/void_count_differences', methods=['GET', 'POST'])
 def void_count_differences(shop_id, item_id):
-    current_date = datetime.now()
-    shops_daily_count = DailyCount.query.filter(DailyCount.date <= current_date, DailyCount.shop_id == shop_id,
-                                                DailyCount.shop_item_id == item_id).order_by(DailyCount.date.desc()).all()
-    for item in shops_daily_count:
-        item_name = item.daily_count_item.item.item_name
-        shop_item = shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
-        print(item_name, shop_item.item_quantity, item.count)
-        if item.count != shop_item.item_quantity:
-            difference = shop_item.item_quantity - item.count
-            count_difference = CountDifference(quantity=difference, shop_id=shop_id, shop_item_id=shop_item.id)
-            shop_item.item_quantity = item.count
-            print(item_name, shop_item.item_quantity, item.count)
-            db.session.add(count_difference)
-            db.session.commit()
-        else:
-            print("Count is equal")
+    count_comparison_lookup = get_daily_count(shop_id)
+    print("First", count_comparison_lookup)
+
+    for date, items in count_comparison_lookup.items():
+        if date == datetime.now().strftime("%Y-%m-%d"):  # Only make changes for the current date
+            for item_name, values in items.items():
+                if values[2] == item_id:  # Check if the item ID matches the clicked item
+                    shop_item = ShopItem.query.filter_by(shop_id=shop_id, item_id=item_id).first()
+                    shop_item_quantity = values[0]
+                    item_daily_count = values[1]
+
+                    if shop_item_quantity != item_daily_count:
+                        difference = shop_item_quantity - item_daily_count
+                        count_difference = CountDifference(quantity=difference, shop_id=shop_id, shop_item_id=shop_item.id)
+                        shop_item.item_quantity = item_daily_count
+                        db.session.add(count_difference)
+                        db.session.commit()
+
+                        count_comparison_lookup[date][item_name][0] = item_daily_count  # Update the item quantity in the dictionary
+
+    print("Second", count_comparison_lookup)
     return redirect(url_for('view_daily_count', shop_id=shop_id))
+
+
+

@@ -1,37 +1,37 @@
 {% extends 'layout.html' %}
 {% block content %}
-<!-- Display item names, item quantity, item daily count for each date. -->
-{% for date in count_comparison_lookup.keys() %}
-  <div class="table">
-    <div class="row">
-      <table class="table col-9 m-auto">
-        <thead>
-          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
-          <tr>
-            <th>Item Name</th>
-            <th>Item Quantity</th>
-            <th>Daily Count</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for key, values in count_comparison_lookup[date].items() %}
+  <!-- Display item names, item quantity, item daily count for each date. -->
+  {% for date, items in count_comparison_lookup.items() %}
+    <div class="table">
+      <div class="row">
+        <table class="table col-9 m-auto">
+          <thead>
+            <caption style="caption-side: top; text-align: center"><span><strong>{{ date }}</strong></span></caption>
             <tr>
-              <td>{{ key }}</td>
-              <td>{{ values[0] }}</td>
-              <td>{{ values[1] }}</td>
-              {% if values[0] == values[1] %}
-                <td><button class="btn btn-success">Correct</button></td>
-              {% else %}
-                <td><button class="btn btn-danger">Incorrect</button></td>
-                <td><a href="{{ url_for('void_count_differences', shop_id=shop.id, item_id=values[2])}}"><button class="btn btn-danger">Void</button></a></td>
-              {% endif %}
+              <th>Item Name</th>
+              <th>Item Quantity</th>
+              <th>Daily Count</th>
+              <th>Status</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for item_name, values in items.items() %}
+              <tr>
+                <td>{{ item_name }}</td>
+                <td>{{ values[0] }}</td>
+                <td>{{ values[1] }}</td>
+                {% if values[0] == values[1] %}
+                  <td><button class="btn btn-success">Correct</button></td>
+                {% else %}
+                  <td><button class="btn btn-danger">Incorrect</button></td>
+                  <td><a href="{{ url_for('void_count_differences', shop_id=shop.id, item_id=values[2])}}"><button class="btn btn-danger">Void</button></a></td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-{% endfor %}
+  {% endfor %}
 {% endblock %}
 
