@@ -1,27 +1,32 @@
+<!-- view_lost_items.html -->
+
 {% extends 'layout.html' %}
 {% block content %}
     <section class="p-t-20">
         <div class="container mt-4">
             {% for shop_name, dates in lost_items_lookup.items() %}
                 <caption style="caption-side: top"><span class="d-flex justify-content-center border-bottom"><strong>{{shop_name}}</strong></span></caption>
-                <div class="row" id="usersTableRow">
+                <div class="row mb-5">
                     <div class="col-md-12">
                         <div class="table-responsive table-responsive-data2">
                             <table class="table font-weight-bold">
                                 <thead>
                                     <tr>
-                                        <th >Date</th>
+                                        <th>Date</th>
                                         <th>Item Name</th>
                                         <th>Quantity</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for date in dates.keys() %}
-                                        <tr>
-                                            <td>{{ date }}</td>
-                                            <td>{{ date }}</td>
-                                            <td>{{ date }}</td>
-                                            <td>{{ date }}</td>
+                                    {% for date, item_names in dates.items() %}
+                                        {% for item_name, quantity in item_names.items() %}
+                                            <tr>
+                                                <td>{{ date }}</td>
+                                                <td>{{ item_name }}</td>
+                                                <td>{{ quantity }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
@@ -31,4 +36,3 @@
         </div>
     </section>
 {% endblock content%}
-

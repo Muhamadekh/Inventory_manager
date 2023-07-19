@@ -1238,7 +1238,7 @@ def void_count_differences(shop_id, item_id):
                     item_daily_count = values[1]
 
                     if shop_item_quantity != item_daily_count:
-                        difference = shop_item_quantity - item_daily_count
+                        difference =  item_daily_count - shop_item_quantity
                         count_difference = CountDifference(quantity=difference, shop_id=shop_id, shop_item_id=shop_item.id)
                         shop_item.item_quantity = item_daily_count
                         db.session.add(count_difference)
@@ -1253,7 +1253,7 @@ def void_count_differences(shop_id, item_id):
 # List lost items for every shop for the last 30 days
 @app.route('/view_lost_items', methods=['GET'])
 def view_lost_items():
-    lost_items_lookup ={}
+    lost_items_lookup = dict()
     current_date = datetime.now()
     start_time = current_date - timedelta(days=30)
     lost_items = CountDifference.query.filter(CountDifference.date >= start_time)\
@@ -1261,13 +1261,17 @@ def view_lost_items():
     for item in lost_items:
         shop_name = item.difference_item.shop_name
         date = item.date.strftime("%Y-%m-%d")
-        if date:
-            if shop_name in lost_items_lookup:
-                if date in lost_items_lookup[shop_name]:
-                    lost_items_lookup[shop_name][date].append(item.quantity, item.shop_item.item.item_name)
-                else:
-                    lost_items_lookup[shop_name][date] = [item.quantity, item.shop_item.item.item_name]
-            else:
-                lost_items_lookup = {shop_name: {date: [item.quantity, item.shop_item.item.item_name]}}
+        item_name = item.shop_item.item.item_name
 
+        if shop_name in lost_items_lookup:
+            print("First", shop_name)
+            if date in lost_items_lookup[shop_name]:
+                if item_name not in lost_items_lookup[shop_name][date]:
+                    lost_items_lookup[shop_name][date][item_name] = item.quantity
+            else:
+                lost_items_lookup[shop_name][date] = {item_name: item.quantity}
+        else:
+            lost_items_lookup[shop_name] = {date: {item_name: item.quantity}}
+            print("Second", shop_name)
+    print(lost_items_lookup)
     return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup)

@@ -126,6 +126,15 @@
                                 </li>
                             </ul>
                         </div>
+                    {% elif current_user.is_authenticated and current_user.user_role != 'Admin' %}
+                        <div class="header__navbar">
+                            <ul class="list-unstyled float-right">
+                               <li>
+                                    <a href="{{ url_for('logout')}}">
+                                        <span class="bot-line"></span>Logout</a>
+                                </li>
+                            </ul>
+                        </div>
                     {% else %}
                          <a href="{{ url_for('login') }}"><h2 style="color: white; font-family: Verdana">
                              Inventory & Stock Control System</h2></a>
