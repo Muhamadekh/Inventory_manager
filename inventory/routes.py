@@ -1250,4 +1250,24 @@ def void_count_differences(shop_id, item_id):
     return redirect(url_for('view_daily_count', shop_id=shop_id))
 
 
+# List lost items for every shop for the last 30 days
+@app.route('/view_lost_items', methods=['GET'])
+def view_lost_items():
+    lost_items_lookup ={}
+    current_date = datetime.now()
+    start_time = current_date - timedelta(days=30)
+    lost_items = CountDifference.query.filter(CountDifference.date >= start_time)\
+        .order_by(CountDifference.date.desc()).all()
+    for item in lost_items:
+        shop_name = item.difference_item.shop_name
+        date = item.date.strftime("%Y-%m-%d")
+        if date:
+            if shop_name in lost_items_lookup:
+                if date in lost_items_lookup[shop_name]:
+                    lost_items_lookup[shop_name][date].append(item.quantity, item.shop_item.item.item_name)
+                else:
+                    lost_items_lookup[shop_name][date] = [item.quantity, item.shop_item.item.item_name]
+            else:
+                lost_items_lookup = {shop_name: {date: [item.quantity, item.shop_item.item.item_name]}}
 
+    return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup)
