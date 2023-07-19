@@ -39,10 +39,11 @@
                                             {% endif %}
                                     </div>
                                 </div>
-                                <div class="login-checkbox">
-                                    <label>
-                                        <input type="checkbox" name="remember">{{form.remember.label}}
-                                    </label>
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        {{ form.remember (class="form-check-input")}}
+                                        <label class="form-check-label">{{ form.remember.label }}</label>
+                                    </div>
                                 </div>
                                 {{ form.submit (class="au-btn au-btn--block au-btn--green m-b-20")}}
                             </form>
