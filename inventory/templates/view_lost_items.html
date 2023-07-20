@@ -15,15 +15,17 @@
                                         <th>Date</th>
                                         <th>Item Name</th>
                                         <th>Quantity</th>
+                                        <th>Value</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for date, item_names in dates.items() %}
-                                        {% for item_name, quantity in item_names.items() %}
+                                        {% for item_name, values in item_names.items() %}
                                             <tr>
                                                 <td>{{ date }}</td>
                                                 <td>{{ item_name }}</td>
-                                                <td>{{ quantity }}</td>
+                                                <td>{{ values[0] }}</td>
+                                                <td>{{ values[1] * values[0] }}</td>
                                             </tr>
                                         {% endfor %}
                                     {% endfor %}

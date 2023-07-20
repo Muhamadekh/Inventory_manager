@@ -97,8 +97,8 @@ class StoreStockOutForm(FlaskForm):
 
 
 class DebtorRegistrationForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired(), Length(min=4)])
-    company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
+    name = StringField('Name', validators=[DataRequired()])
+    company_name = StringField('Company Name', validators=[DataRequired()])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
     amount_paid = IntegerField('Amount Paid', validators=[Optional()])
     submit = SubmitField('Save')
@@ -178,3 +178,9 @@ class StockFromShopForm(FlaskForm):
     item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
+
+
+class UpdateAccountForm(FlaskForm):
+    account_name = StringField('Account Name', validators=[DataRequired()])
+    balance = IntegerField('Account Balance', validators=[DataRequired()])
+    submit = SubmitField('Add')

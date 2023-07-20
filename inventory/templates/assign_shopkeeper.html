@@ -36,6 +36,7 @@
                 <caption style="caption-side: top; text-align: center"><span><strong>{{ shop.shop_name }}</strong></span></caption>
                 <tr>
                     <td> Shopkeeper Name</td>
+                    <td> Date Assigned</td>
                     <td></td>
                 </tr>
             </thead>
@@ -43,6 +44,7 @@
             {% for shopkeeper in shop.shopkeepers %}
                 <tr>
                     <td> {{shopkeeper.user_details.username }} </td>
+                    <td> {{shopkeeper.date_assigned.strftime("%Y-%m-%d") }} </td>
                     <td><a data-toggle="modal" data-target="#deleteModal"><button class="btn btn-danger">Remove</button></a>
                         <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModal" aria-hidden="true">
                           <div class="modal-dialog" role="document">
