@@ -52,7 +52,6 @@ def home():
     for sale in sales:
         today = today_date()
         if sale.date_sold.strftime("%Y-%m-%d") == today:
-            print(sale.date_sold)
             sales_value_list.append(sale.sales_value)
             discount_list.append(sale.sales_discount)
             for item in sale.sale_items:
@@ -305,7 +304,6 @@ def stock_sold(shop_id):
                 db.session.add(balance_log)
         db.session.add(sale)
         db.session.commit()
-        print("hello")
         for item in cart_items:
             item.sale_id = sale.id
             db.session.commit()
@@ -548,16 +546,13 @@ def stock_in(store_id):
         db.session.add(item_received)
         db.session.commit()
         if item in store.items:
-            print("yes")
             store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
             store_item.item_quantity = store_item.item_quantity + item_received.item_quantity
             store_item.item_value = store_item.item_quantity * item.item_cost_price
             if store_item.item_quantity < 500:
                 store_item.stock_status = 'Running Out'
-            print("printing", store_item.item_quantity)
             db.session.commit()
         else:
-            print("No")
             store_item = StoreItem(store=store, item=item, item_quantity=form.item_quantity.data)
             store_item.item_value = form.item_quantity.data * item.item_cost_price
             db.session.add(store_item)
@@ -869,7 +864,6 @@ def get_stock_sent_items():
     stock_sent = StockOut.query.filter_by(is_received=False, shop_id=shop.id).all()
     response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if
                 item_name.lower() in item.item_name.lower()]
-    print(response[0])
     return jsonify(response)
 
 
@@ -996,7 +990,6 @@ def make_payment():
         payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data,
                           account=selected_account.account_name)
         selected_account.balance -= payment.amount
-        print(selected_account.balance)
         balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
         db.session.add(payment)
         db.session.add(balance_log)
@@ -1068,7 +1061,6 @@ def get_daily_count(shop_id):
                     count_comparison_lookup[date][item_name] = [item.base_count, item.count, item_id]
             else:
                 count_comparison_lookup[date] = {item_name: [item.base_count, item.count, item_id]}
-
     return count_comparison_lookup
 
 
@@ -1226,12 +1218,9 @@ def get_transfered_items():
 @app.route('/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
 def remove_shopkeeper(shopkeeper_id):
     shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id)
-    print(shopkeeper.id)
     if shopkeeper:
-        print(shopkeeper.user_details.username)
         db.session.delete(shopkeeper)
         db.session.commit()
-        print("Deleted")
     else:
         flash("Shopkeeper does not exist")
     return redirect(url_for('view_shops'))
@@ -1247,11 +1236,11 @@ def void_count_differences(shop_id, item_id):
             for item_name, values in items.items():
                 if values[2] == item_id:  # Check if the item ID matches the clicked item
                     shop_item = ShopItem.query.filter_by(shop_id=shop_id, item_id=item_id).first()
-                    shop_item_quantity = values[0]
+                    base_count = values[0]
                     item_daily_count = values[1]
 
-                    if shop_item_quantity != item_daily_count:
-                        difference = item_daily_count - shop_item_quantity
+                    if base_count != item_daily_count:
+                        difference = item_daily_count - base_count
                         item = CountDifference.query.filter_by(shop_id=shop_id,
                                                                shop_item_id=shop_item.id).first()
                         if item:
@@ -1261,10 +1250,14 @@ def void_count_differences(shop_id, item_id):
                                                                shop_item_id=shop_item.id)
                             db.session.add(count_difference)
                         shop_item.item_quantity = item_daily_count
+                        # Update the item quantity in the dictionary
+                        daily_counts = DailyCount.query.filter(DailyCount.shop_item_id == shop_item.id,
+                                                              DailyCount.shop_id == shop_id)\
+                            .order_by(DailyCount.date.desc()).all()
+                        for item in daily_counts:
+                            if item.date.strftime("%Y-%m-%d") == date:
+                                item.base_count = item.count
                         db.session.commit()
-
-                        count_comparison_lookup[date][item_name][
-                            0] = item_daily_count  # Update the item quantity in the dictionary
     return redirect(url_for('view_daily_count', shop_id=shop_id))
 
 
@@ -1290,7 +1283,6 @@ def view_lost_items():
                 lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price]}
         else:
             lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price]}}
-    print(lost_items_lookup)
     return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup)
 
 
