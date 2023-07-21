@@ -792,7 +792,7 @@ def shop_daily_report():
             discount_lookup[date][shop_name] = 0
             total_sales_lookup[date][shop_name] = 0
 
-            sales = Sale.query.filter(func.date(Sale.date_sold == date), Sale.shop_id == shop.id).all()
+            sales = Sale.query.filter(Sale.shop_id == shop.id).all()
 
             for sale in sales:
                 if date == sale.date_sold.strftime("%Y-%m-%d"):
