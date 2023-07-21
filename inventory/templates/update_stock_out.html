@@ -1,10 +1,5 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <div class="float-left">
-        <a href="{{ url_for('stock_sold', shop_id=shop.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Home</a>
-    </div>
-
-
     <!-- Table-like form for adding new stock -->
     <table class="table">
       <thead>
@@ -29,35 +24,6 @@
     </table>
     <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0"></div>
 
-    {% for date in stock_transfered_lookup.keys() %}
-      <div class="table" id="SalesTable">
-        <table class="table mt-4">
-          <thead>
-          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
-            <tr>
-              <th>Item Name</th>
-              <th>Quantity</th>
-              <th>Shop Sent To</th>
-              <th>Time Sent</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in stock_transfered_lookup[date] %}
-              <tr>
-                <td>{{ entry.item_name }}</td>
-                <td>{{ "{:,}".format (entry.item_quantity) }}</td>
-                <td>{{ entry.transfer_to.shop_name }}</td>
-                <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
-                {% if not entry.is_received %}
-                    <td> <a href="{{ url_for('edit_stock_from_shop', item_id=entry.id)}}">Edit</a></td>
-                {% endif %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% endfor %}
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         const fetchData = (url, methods, data, handle) => {
@@ -77,12 +43,12 @@
         $(document).ready(function () {
             $("#searchItemName").on("input", (e) => {
                 let item_name = $("#searchItemName").val();
-                let shop_id = "{{ shop.id}}";
+                let storeId = "{{ item.store_id}}";
                 console.log(item_name);
 
-                fetchData(`http://${window.location.hostname}:5000/get_item_name`, "POST", {
+                fetchData(`http://${window.location.hostname}:5000/get_store_items`, "POST", {
                     "item_name": item_name,
-                    "shop_id": shop_id
+                    "store_id": storeId
                 }, (data) => {
                     console.log(data);
                     // Clear the previous search results
@@ -104,5 +70,4 @@
             });
         });
     </script>
-
 {% endblock %}

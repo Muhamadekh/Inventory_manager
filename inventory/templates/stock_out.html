@@ -48,6 +48,11 @@
                 <td>{{ "{:,}".format (entry.item_quantity) }}</td>
                 <td>{{ entry.shop.shop_name }}</td>
                 <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
+                {% if current_user.user_role == 'Admin' %}
+                    {% if not entry.is_received %}
+                        <td> <a href="{{ url_for('edit_stock_from_store', item_id=entry.id)}}">Edit</a></td>
+                    {% endif %}
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>
@@ -101,5 +106,4 @@
             });
         });
     </script>
-
 {% endblock %}

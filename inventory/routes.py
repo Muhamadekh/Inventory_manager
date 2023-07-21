@@ -8,7 +8,7 @@ from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginFo
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
                              ShopKeeperRegistrationForm,
                              AccountRegistrationForm, PaymentForm, UpdateDebtorForm, TransferStockForm,
-                             StockFromShopForm, UpdateAccountForm)
+                             StockFromShopForm, UpdateAccountForm, UpdateStoreStockOutForm, UpdateTransferStockForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -756,7 +756,8 @@ def save_daily_count():
         item_id = item_data["item_id"]
         count = item_data["count"]
         shop_item = ShopItem.query.get_or_404(item_id)
-        daily_count = DailyCount(count=count, shop_item_id=shop_item.id, shop_id=shop_id)
+        daily_count = DailyCount(count=count, shop_item_id=shop_item.id, shop_id=shop_id,
+                                 base_count=shop_item.item_quantity)
         db.session.add(daily_count)
         db.session.commit()
     return jsonify({"shop_id": shop_id})
@@ -1064,9 +1065,9 @@ def get_daily_count(shop_id):
         if shop_item:
             if date in count_comparison_lookup:
                 if item_name not in count_comparison_lookup[date]:
-                    count_comparison_lookup[date][item_name] = [shop_item.item_quantity, item.count, item_id]
+                    count_comparison_lookup[date][item_name] = [item.base_count, item.count, item_id]
             else:
-                count_comparison_lookup[date] = {item_name: [shop_item.item_quantity, item.count, item_id]}
+                count_comparison_lookup[date] = {item_name: [item.base_count, item.count, item_id]}
 
     return count_comparison_lookup
 
@@ -1254,7 +1255,7 @@ def void_count_differences(shop_id, item_id):
                         item = CountDifference.query.filter_by(shop_id=shop_id,
                                                                shop_item_id=shop_item.id).first()
                         if item:
-                            item.difference += difference
+                            item.quantity += difference
                         else:
                             count_difference = CountDifference(quantity=difference, shop_id=shop_id,
                                                                shop_item_id=shop_item.id)
@@ -1331,3 +1332,43 @@ def update_account(account_id):
         db.session.commit()
         return redirect(url_for('view_accounts'))
     return render_template('update_account.html', form=form)
+
+
+@app.route('/edit_stock_from_store/<int:item_id>', methods=['GET', 'POST'])
+def edit_stock_from_store(item_id):
+    item = StockOut.query.get_or_404(item_id)
+    form = UpdateStoreStockOutForm()
+    form.populate_shop_choices()  # Populate the shop choices
+
+    if request.method == 'GET':
+        form.item_name.data = item.item_name
+        form.item_quantity.data = item.item_quantity
+        form.shop.data = item.shop_id  # Set the selected shop based on item's shop_id
+
+    if request.method == 'POST':
+        item.item_name = form.item_name.data
+        item.item_quantity = form.item_quantity.data
+        item.shop_id = form.shop.data
+        db.session.commit()
+        return redirect(url_for('stock_out', store_id=item.store.id))
+    return render_template('update_stock_out.html', form=form, item=item)
+
+
+@app.route('/edit_stock_from_shop/<int:item_id>', methods=['GET', 'POST'])
+def edit_stock_from_shop(item_id):
+    item = TransferStock.query.get_or_404(item_id)
+    form = UpdateTransferStockForm()
+    form.populate_shop_choices()
+
+    if request.method == 'GET':
+        form.item_name.data = item.item_name
+        form.item_quantity.data = item.item_quantity
+        form.shop.data = item.transfer_to_id  # Set the selected shop based on item's shop_id
+
+    if request.method == 'POST':
+        item.item_name = form.item_name.data
+        item.item_quantity = form.item_quantity.data
+        item.transfer_to_id = form.shop.data
+        db.session.commit()
+        return redirect(url_for('transfer_stock', shop_id=item.transfer_from.id))
+    return render_template('update_transfer_stock.html', form=form, item=item)

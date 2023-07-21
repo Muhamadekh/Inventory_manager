@@ -184,3 +184,30 @@ class UpdateAccountForm(FlaskForm):
     account_name = StringField('Account Name', validators=[DataRequired()])
     balance = IntegerField('Account Balance', validators=[DataRequired()])
     submit = SubmitField('Add')
+
+
+class UpdateStoreStockOutForm(FlaskForm):
+    item_name = StringField('Item Name', validators=[DataRequired()])
+    item_quantity = IntegerField('Quantity', validators=[DataRequired()])
+    shop = SelectField('Shop', coerce=int)
+    submit = SubmitField('Submit')
+
+    def populate_shop_choices(self):
+        shops = Shop.query.all()
+        self.shop.choices = [(shop.id, shop.shop_name) for shop in shops]
+
+    def get_selected_shop_id(self):
+        return self.shop.data
+
+
+class UpdateTransferStockForm(FlaskForm):
+    item_name = SearchField('Item Name', validators=[DataRequired()])
+    item_quantity = IntegerField('Transfer Quantity', validators=[DataRequired()])
+    shop = SelectField('Select Shop', coerce=int)
+    submit = SubmitField('Transfer Stock')
+
+    def populate_shop_choices(self):
+        self.shop.choices = [(shop.id, shop.shop_name) for shop in Shop.query.all()]
+
+    def get_selected_shop_id(self):
+        return self.shop.data

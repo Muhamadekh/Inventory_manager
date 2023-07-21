@@ -186,6 +186,7 @@ class DailyCount(db.Model):
     shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     count = db.Column(db.Integer, nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
+    base_count = db.Column(db.Integer)  # Quantity of the item as per the system at the time of sending the daily count
     date = db.Column(db.DateTime, default=datetime.now)
 
 
