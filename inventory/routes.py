@@ -1244,11 +1244,12 @@ def void_count_differences(shop_id, item_id):
                         item = CountDifference.query.filter_by(shop_id=shop_id,
                                                                shop_item_id=shop_item.id).first()
                         if item:
-                            item.quantity += difference
+                            item.count += difference
                         else:
                             count_difference = CountDifference(quantity=difference, shop_id=shop_id,
                                                                shop_item_id=shop_item.id)
                             db.session.add(count_difference)
+
                         shop_item.item_quantity = item_daily_count
                         # Update the item quantity in the dictionary
                         daily_counts = DailyCount.query.filter(DailyCount.shop_item_id == shop_item.id,
@@ -1257,6 +1258,7 @@ def void_count_differences(shop_id, item_id):
                         for item in daily_counts:
                             if item.date.strftime("%Y-%m-%d") == date:
                                 item.base_count = item.count
+
                         db.session.commit()
     return redirect(url_for('view_daily_count', shop_id=shop_id))
 
@@ -1265,6 +1267,7 @@ def void_count_differences(shop_id, item_id):
 @app.route('/view_lost_items', methods=['GET'])
 def view_lost_items():
     lost_items_lookup = dict()
+    total_value_lookup = dict()
     current_date = datetime.now()
     start_time = current_date - timedelta(days=30)
     lost_items = CountDifference.query.filter(CountDifference.date >= start_time) \
@@ -1275,15 +1278,25 @@ def view_lost_items():
         item_name = item.shop_item.item.item_name
         product = Item.query.filter_by(item_name=item_name).first()
 
+        # Calculate the value of the lost item for this specific entry
+        lost_item_value = item.quantity * product.item_cost_price
+
+        # Update the total value for the shop in the total_value_lookup dictionary
+        if shop_name in total_value_lookup:
+            total_value_lookup[shop_name] += lost_item_value
+        else:
+            total_value_lookup[shop_name] = lost_item_value
+
+        # Update the lost_items_lookup dictionary
         if shop_name in lost_items_lookup:
             if date in lost_items_lookup[shop_name]:
-                if item_name not in lost_items_lookup[shop_name][date]:
-                    lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price]
+                lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price]
             else:
                 lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price]}
         else:
             lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price]}}
-    return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup)
+    return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup,
+                           total_value_lookup=total_value_lookup)
 
 
 # Debtors lent by manager

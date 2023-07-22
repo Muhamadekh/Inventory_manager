@@ -15,6 +15,7 @@
                                         <th>Date</th>
                                         <th>Item Name</th>
                                         <th>Quantity</th>
+                                        <th>Price</th>
                                         <th>Value</th>
                                     </tr>
                                 </thead>
@@ -25,10 +26,15 @@
                                                 <td>{{ date }}</td>
                                                 <td>{{ item_name }}</td>
                                                 <td>{{ values[0] }}</td>
+                                                <td>{{ values[1] }}</td>
                                                 <td>{{ values[1] * values[0] }}</td>
                                             </tr>
                                         {% endfor %}
                                     {% endfor %}
+                                    <tr>
+                                        <td class="text-right" colspan="4">Total Value</td>
+                                        <td >{{ total_value_lookup[shop_name] }}</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
