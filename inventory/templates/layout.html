@@ -42,7 +42,6 @@
                 <div class="header3-wrap">
                     <div class="header__logo">
                         <h1><span style="color: white; font-family: Algerian"><i>JNQ</i></span></h1>
-                        <a href="{{ url_for('register_user' )}}">Register</a>
                     </div>
                      {% if current_user.is_authenticated and current_user.user_role == 'Admin' %}
                         <div class="header__navbar">
