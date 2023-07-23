@@ -1258,7 +1258,6 @@ def void_count_differences(shop_id, item_id):
                         for item in daily_counts:
                             if item.date.strftime("%Y-%m-%d") == date:
                                 item.base_count = item.count
-
                         db.session.commit()
     return redirect(url_for('view_daily_count', shop_id=shop_id))
 
