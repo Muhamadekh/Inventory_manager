@@ -1082,14 +1082,14 @@ def download_reports():
         time_range = request.args.get('time_range')
 
         # Define the start date based on the specified time range
-        if time_range == '7':  # 7 days
-            start_date = datetime.now() - timedelta(days=7)
-        elif time_range == '30':  # 30 days
+        if time_range == '30':  # 30 days
             start_date = datetime.now() - timedelta(days=30)
-        elif time_range == '183':  # 6 months
-            start_date = datetime.now() - timedelta(days=183)
-        elif time_range == '365':  # 6 months
-            start_date = datetime.now() - timedelta(days=365)
+        elif time_range == '13':  # 3 months
+            start_date = datetime.now() - timedelta(weeks=13)
+        elif time_range == '26':  # 6 months
+            start_date = datetime.now() - timedelta(weeks=26)
+        elif time_range == '52':  # 6 months
+            start_date = datetime.now() - timedelta(weeks=52)
         else:
             # Handle invalid time range here, e.g., redirect to an error page or display an error message
             flash("Range does not exist", "warning")

@@ -7,10 +7,10 @@
             Download Sales Report
           </button>
           <div class="dropdown-menu" aria-labelledby="salesDropdown">
-            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='7') }}">7 days</a>
             <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='30') }}">30 days</a>
-            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='183') }}">6 months</a>
-            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='365') }}">1 Year</a>
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='13') }}">3 Months</a>
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='26') }}">6 Months</a>
+            <a class="dropdown-item" href="{{ url_for('download_reports', download=True, time_range='52') }}">1 Year</a>
           </div>
         </div>
         <div class="container mt-4">
