@@ -39,7 +39,6 @@
                         <thead>
                             <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
                             <tr>
-                                <th>Item ID</th>
                                 <th>Item Name</th>
                                 <th>Item Quantity</th>
                                 <th colspan="2">Date Received</th>
@@ -48,7 +47,6 @@
                         <tbody>
                             {% for entry in restock_lookup[date] %}
                             <tr>
-                                <td>{{ entry.id }}</td>
                                 <td>{{ entry.item_name }}</td>
                                 <td>{{ entry.item_quantity }}</td>
                                 <td>{{ entry.date_received.strftime('%H:%M:%S') }}</td>

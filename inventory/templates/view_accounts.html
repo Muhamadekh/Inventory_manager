@@ -12,7 +12,6 @@
         <caption style="caption-side: top">Accounts Summary<span class="ml-4"> Date: {{date}}</span></caption>
         <thead>
             <tr>
-                <th scope="col">Account ID</th>
                 <th scope="col">Account Name</th>
                 <th scope="col">Balance</th>
                 <th></th>
@@ -21,7 +20,6 @@
         <tbody>
             {% for account in accounts %}
             <tr>
-                <td>{{ account.id }}</td>
                 <td>{{ account.account_name }}</td>
                 <td>{{ "{:,}".format(account.balance) }}</td>
                 <td><a href="{{ url_for('update_account', account_id=account.id)}}">Edit</a></td>

@@ -515,17 +515,19 @@ def view_store(store_id):
 def add_items():
     form = StoreNewItemForm()
     if form.validate_on_submit():
-        if form.item_selling_price.data > form.item_cost_price.data:
-            item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
-                        item_selling_price=form.item_selling_price.data)
-            try:
-                db.session.add(item)
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                flash('An error occurred while adding the item.', 'danger')
+        item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
+                    item_selling_price=form.item_selling_price.data)
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('An error occurred while adding the item.', 'danger')
+        if form.item_selling_price.data < form.item_cost_price.data:
+            flash('Item Added successfully', 'success')
+            flash('NOTE: Selling Price is less than Cost Price', 'danger')
         else:
-            flash('Selling price is less than cost price.', 'danger')
+            flash('Item added successfully.', 'success')
         return redirect(url_for('add_items'))
     return render_template('add_items.html', form=form)
 
@@ -1376,3 +1378,70 @@ def edit_stock_from_shop(item_id):
         db.session.commit()
         return redirect(url_for('transfer_stock', shop_id=item.transfer_from.id))
     return render_template('update_transfer_stock.html', form=form, item=item)
+
+
+@app.route('/edit_item/<int:item_id>', methods=['GET', 'POST'])
+def edit_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    form = StoreNewItemForm()
+    if request.method == 'GET':
+        form.item_name.data = item.item_name
+        form.item_cost_price.data = item.item_cost_price
+        form.item_selling_price.data = item.item_selling_price
+    if request.method == 'POST':
+        item.item_name = form.item_name.data
+        item.item_cost_price = form.item_cost_price.data
+        item.item_selling_price = form.item_selling_price.data
+        db.session.commit()
+        return redirect(url_for('view_items'))
+    form.submit.label.text = 'Update Changes'
+    return render_template('edit_item.html', form=form)
+
+
+@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+def edit_user(user_id):
+    user = User.query.get_or_404(user_id)
+    form = UserRegistrationForm()
+    if request.method == 'GET':
+        form.username.data = user.username
+        form.user_role.data = user.user_role
+    if request.method == 'POST':
+        user.username = form.username.data
+        user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user.user_role = form.user_role.data
+        db.session.commit()
+        return redirect(url_for('view_users'))
+    form.submit.label.text = 'Update Changes'
+    return render_template('register_user.html', form=form)
+
+
+@app.route('/edit_store/<int:store_id>', methods=['GET', 'POST'])
+def edit_store(store_id):
+    store = Store.query.get_or_404(store_id)
+    form = StoreRegistrationForm()
+    if request.method == 'GET':
+        form.store_name.data = store.store_name
+        form.location.data = store.location
+    if request.method == 'POST':
+        store.store_name = form.store_name.data
+        store.location = form.location.data
+        db.session.commit()
+        return redirect(url_for('view_stores'))
+    form.submit.label.text = 'Update Changes'
+    return render_template('register_store.html', form=form)
+
+
+@app.route('/edit_shop/<int:shop_id>', methods=['GET', 'POST'])
+def edit_shop(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    form = ShopRegistrationForm()
+    if request.method == 'GET':
+        form.shop_name.data = shop.shop_name
+        form.location.data = shop.location
+    if request.method == 'POST':
+        shop.shop_name = form.shop_name.data
+        shop.location = form.location.data
+        db.session.commit()
+        return redirect(url_for('view_shops'))
+    form.submit.label.text = 'Update Changes'
+    return render_template('register_shop.html', form=form)

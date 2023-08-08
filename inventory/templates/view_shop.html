@@ -28,7 +28,6 @@
         <table class="table table-hover table-condensed col-9 ml-4">
           <thead>
             <tr>
-              <th>Item ID</th>
               <th>Item Name</th>
               {% if current_user.user_role=='Admin' %}
                 <th>Item Quantity</th>
@@ -44,7 +43,6 @@
           <tbody>
             {% for product in ShopItem.query.filter_by(shop_id=shop.id).all() %}
               <tr>
-                  <td>{{ product.id }}</td>
                   <td>{{ product.item.item_name }}</td>
                   {% if current_user.user_role=='Admin' %}
                     <td class="text-center">{{ "{:,}".format(product.item_quantity) }}</td>

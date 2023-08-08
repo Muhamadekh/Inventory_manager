@@ -16,7 +16,6 @@
     <table class="table table-hover table-condensed">
       <thead>
         <tr>
-          <th>Item ID</th>
           <th>Item Name</th>
           <th>Item Quantity</th>
           <th>Cost Price</th>
@@ -29,7 +28,6 @@
       <tbody>
         {% for product in store_items %}
           <tr>
-              <td>{{ product.id }}</td>
               <td>{{ product.item.item_name }}</td>
               <td class="text-right">{{ "{:,}".format(product.item_quantity) }}</td>
               <td class="text-right">{{ "{:,}".format(product.item.item_cost_price) }}</td>
