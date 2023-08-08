@@ -1,4 +1,4 @@
 /venv
 /migrations
 **__pycache__
-/inventory/config.py
+/inventory/inventory/config.py
