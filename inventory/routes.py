@@ -642,21 +642,38 @@ def monthly_sales_data():
     return monthly_sales
 
 
+@app.route('/<int:stock_id>/edit_store_stock', methods=['GET', 'POST'])
+def edit_store_stock(stock_id):
+    stock = StoreItem.query.get_or_404(stock_id)
+    store = Store.query.get_or_404(stock.store.id)
+    form = StoreStockInForm()
+    if request.method == 'GET':
+        form.item_name.data = stock.item.item_name
+        form.item_quantity.data = stock.item_quantity
+    if form.validate_on_submit():
+        stock.item.item_name = form.item_name.data
+        stock.item_quantity = form.item_quantity.data
+        db.session.commit()
+        return redirect(url_for('view_store', store_id=stock.store.id))
+    form.submit.label.text = 'Update Changes'
+    return render_template('stock_in.html', form=form, store=store)
+
+
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
 def edit_shop_stock(stock_id):
     stock = ShopItem.query.get_or_404(stock_id)
-    form = ShopNewItemForm()
+    shop = Shop.query.get_or_404(stock.shop.id)
+    form = ShopStockReceivedForm()
     if request.method == 'GET':
-        form.item_name.data = stock.item_name
+        form.item_name.data = stock.item.item_name
         form.item_quantity.data = stock.item_quantity
-        form.item_price.data = stock.item_price
     if form.validate_on_submit():
-        stock.item_name = form.item_name.data
+        stock.item.item_name = form.item_name.data
         stock.item_quantity = form.item_quantity.data
-        stock.item_price = form.item_price.data
         db.session.commit()
         return redirect(url_for('view_shop', shop_id=stock.shop.id))
-    return render_template('edit_shop_stock.html', form=form)
+    form.submit.label.text = 'Update Changes'
+    return render_template('stock_received.html', form=form, shop=shop)
 
 
 @app.route('/<int:stock_sold_id>/edit_shop_sale', methods=['GET', 'POST'])
