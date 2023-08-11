@@ -46,7 +46,7 @@
                 let shop_id = "{{ item.transfer_from.id}}";
                 console.log(item_name);
 
-                fetchData(`http://${window.location.hostname}:5000/get_item_name`, "POST", {
+                fetchData(`http://asirtrading.com/get_item_name`, "POST", {
                     "item_name": item_name,
                     "shop_id": shop_id
                 }, (data) => {

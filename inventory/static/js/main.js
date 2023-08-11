@@ -1743,7 +1743,7 @@ $("#searchDebtor").on("input",(e)=>{
    let balanceDiv = document.getElementById("ShowBalance");
     console.log(phoneNumber)
     if (phoneNumber.length === 10){
-      getData(`http://${window.location.hostname}:5000/search_debtor`,"POST",{"phone_number" : phoneNumber},(data)=>{
+      getData(`http://asirtrading.com/search_debtor`,"POST",{"phone_number" : phoneNumber},(data)=>{
       console.log(data);
       if (Object.keys(data).length !== 0){
         name.value = data["name"];
@@ -1780,7 +1780,7 @@ $(document).ready(function () {
     $("#searchShops").on("input", (e) => {
         let searched_term = $("#searchShops").val();
         console.log(searched_term);
-        grabData(`http://${window.location.hostname}:5000/get_shops_stock`, "POST", {
+        grabData(`http://asirtrading.com/get_shops_stock`, "POST", {
             "searched_term": searched_term
         }, (data) => {
             console.log(data);
@@ -1805,7 +1805,7 @@ $("#searchPayee").on("input",(e)=>{
    let phone_number = document.getElementById("phone_number");
     console.log(phoneNumber)
     if (phoneNumber.length === 10){
-      getData(`http://${window.location.hostname}:5000/search_payee`,"POST",{"phone_number" : phoneNumber},(data)=>{
+      getData(`http://asirtrading.com/search_payee`,"POST",{"phone_number" : phoneNumber},(data)=>{
       console.log(data);
       if (Object.keys(data).length !== 0){
         name.value = data["name"];
