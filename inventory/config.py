@@ -10,6 +10,7 @@ class Config:
     SECRET_KEY = config.get("SECRET_KEY")
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
     SQLALCHEMY_DATABASE_URI = config.get("SQLALCHEMY_DATABASE_URI")
+    URL = 'http://www.asirtrading.com'
 
 
 # # Development
@@ -17,6 +18,4 @@ class Config:
 #     SECRET_KEY = os.environ.get("SECRET_KEY")
 #     # SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
 #     SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI")
-
-
-## url_for endpoints in developmet: ${window.location.hostname}:5000
+#     URL = 'http://${window.location.hostname}:5000'

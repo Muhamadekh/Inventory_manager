@@ -82,7 +82,7 @@
                 let storeId = "{{ store.id}}";
                 console.log(item_name);
 
-                fetchData(`http://asirtrading.com/get_store_items`, "POST", {
+                fetchData(`{{config.URL}}/get_store_items`, "POST", {
                     "item_name": item_name,
                     "store_id": storeId
                 }, (data) => {
