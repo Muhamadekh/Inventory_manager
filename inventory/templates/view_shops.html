@@ -34,7 +34,7 @@
                 <!-- Total Stock Value column -->
                 <td>
                   {% if shop_stock_lookup %}
-                    {{ shop_stock_lookup[shop.id] }}
+                    {{ "{:,}".format(shop_stock_lookup[shop.id]) }}
                   {% else %}
                     0 Items
                   {% endif %}

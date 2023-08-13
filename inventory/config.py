@@ -13,7 +13,7 @@ class Config:
     URL = 'http://www.asirtrading.com'
 
 
-# # Development
+# Development
 # class Config:
 #     SECRET_KEY = os.environ.get("SECRET_KEY")
 #     # SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'

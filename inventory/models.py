@@ -134,8 +134,8 @@ class StoreItem(db.Model):
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False)
-    item_cost_price = db.Column(db.Integer, nullable=False)
-    item_selling_price = db.Column(db.Integer, nullable=False)
+    item_cost_price = db.Column(db.Float, nullable=False)
+    item_selling_price = db.Column(db.Float, nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.now)
     stores = db.relationship('StoreItem', back_populates='item')
     shops = db.relationship('ShopItem', back_populates='item')

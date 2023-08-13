@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, SearchField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, \
+    SearchField, FloatField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional
 from inventory.models import User, Shop, Account, Sale
 from flask import session
@@ -68,14 +69,15 @@ class StoreRegistrationForm(FlaskForm):
 
 class StoreNewItemForm(FlaskForm):
     item_name = StringField('Item Name', validators=[DataRequired()])
-    item_cost_price = IntegerField('Cost Price', validators=[DataRequired()])
-    item_selling_price = IntegerField('Selling Price', validators=[DataRequired()])
+    item_cost_price = FloatField('Cost Price', validators=[DataRequired()])
+    item_selling_price = FloatField('Selling Price', validators=[DataRequired()])
     submit = SubmitField('Add Item')
 
 
 class StoreStockInForm(FlaskForm):
     item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    new_price = FloatField('New Price', validators=[DataRequired()])
     submit = SubmitField('Receive Stock')
 
 

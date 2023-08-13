@@ -222,7 +222,7 @@ def stock_received(shop_id):
             shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
             shop_item.item_quantity = shop_item.item_quantity + item_received.item_quantity
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
-            if shop_item.item_quantity < 500:
+            if shop_item.item_quantity < 40:
                 shop_item.item_status = 'Running Out'
             db.session.commit()
         else:
@@ -230,7 +230,7 @@ def stock_received(shop_id):
             shop_item.item_value = form.item_quantity.data * item.item_cost_price
             db.session.add(shop_item)
             db.session.commit()
-            if shop_item.item_quantity < 500:
+            if shop_item.item_quantity < 40:
                 shop_item.stock_status = 'Running Out'
             db.session.commit()
 
@@ -395,7 +395,7 @@ def stock_from_shop(shop_id):
             shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
             shop_item.item_quantity = shop_item.item_quantity + item_received.item_quantity
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
-            if shop_item.item_quantity < 500:
+            if shop_item.item_quantity < 40:
                 shop_item.item_status = 'Running Out'
             db.session.commit()
         else:
@@ -403,7 +403,7 @@ def stock_from_shop(shop_id):
             shop_item.item_value = form.item_quantity.data * item.item_cost_price
             db.session.add(shop_item)
             db.session.commit()
-            if shop_item.item_quantity < 500:
+            if shop_item.item_quantity < 40:
                 shop_item.stock_status = 'Running Out'
             db.session.commit()
 
@@ -549,9 +549,45 @@ def stock_in(store_id):
         db.session.commit()
         if item in store.items:
             store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
-            store_item.item_quantity = store_item.item_quantity + item_received.item_quantity
-            store_item.item_value = store_item.item_quantity * item.item_cost_price
-            if store_item.item_quantity < 500:
+            store_item.item_quantity += item_received.item_quantity
+
+
+            # Calculate new cost price when new items are received
+            item_quantity_list = []  # A list to store quantities of the item in different locations
+            for store in Store.query.all():  # Quantity of the item in stores
+                store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
+                if store_item:
+                    item_quantity_list.append(store_item.item_quantity)
+            for shop in Shop.query.all():  # Quantity of the item in shops
+                shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+                if shop_item:
+                    item_quantity_list.append(shop_item.item_quantity)
+
+            # Check if this item has been transferred between shops and not yet received
+            item_from_shop = TransferStock.query.filter_by(is_received=False, item_name=item.item_name).first()
+            if item_from_shop:
+                item_quantity_list.append(item_from_shop.item_quantity)
+
+            # Check if this item has been transferred from a store and not yet received
+            item_from_store = StockOut.query.filter_by(is_received=False, item_name=item.item_name).first()
+            if item_from_store:
+                item_quantity_list.append(item_from_store.item_quantity)
+
+            total_item_stock = sum(item_quantity_list)  # sum up all the item quantities in different places
+
+            # Calculate new cost price
+            old_item_cost_price = item.item_cost_price
+            total_old_cost = old_item_cost_price * total_item_stock
+            new_item_cost_price = form.new_price.data
+            total_new_cost = new_item_cost_price * form.item_quantity.data
+            total_cost = total_old_cost + total_new_cost
+            total_quantity = total_item_stock + form.item_quantity.data
+
+            item.item_cost_price = total_cost / total_quantity  # Update item cost price in db
+            store_item.item_value = store_item.item_quantity * item.item_cost_price # Update item value
+
+            # Checking item quantity status
+            if store_item.item_quantity < 100:
                 store_item.stock_status = 'Running Out'
             db.session.commit()
         else:
@@ -559,7 +595,7 @@ def stock_in(store_id):
             store_item.item_value = form.item_quantity.data * item.item_cost_price
             db.session.add(store_item)
             db.session.commit()
-            if store_item.item_quantity < 500:
+            if store_item.item_quantity < 100:
                 store_item.stock_status = 'Running Out'
             db.session.commit()
         return redirect(url_for('stock_in', store_id=store.id))
@@ -1462,3 +1498,18 @@ def edit_shop(shop_id):
         return redirect(url_for('view_shops'))
     form.submit.label.text = 'Update Changes'
     return render_template('register_shop.html', form=form)
+
+
+@app.route('/<int:store_id>/delete_store_stock/<int:item_id>', methods=['GET', 'POST'])
+def delete_store_stock(store_id, item_id):
+    store_item = StoreItem.query.get_or_404(item_id)
+    db.session.delete(store_item)
+    db.session.commit()
+    return redirect(url_for('view_store', store_id=store_id))
+
+@app.route('/<int:shop_id>/delete_shop_stock/<int:item_id>', methods=['GET', 'POST'])
+def delete_shop_stock(shop_id, item_id):
+    shop_item = ShopItem.query.get_or_404(item_id)
+    db.session.delete(shop_item)
+    db.session.commit()
+    return redirect(url_for('view_shop', shop_id=shop_id))
