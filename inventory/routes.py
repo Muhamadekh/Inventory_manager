@@ -56,7 +56,7 @@ def home():
             discount_list.append(sale.sales_discount)
             for item in sale.sale_items:
                 if item.item_discount > 0:
-                    discount_list.append(item.item_discount)
+                    discount_list.append(item.item_discount * item.item_quantity)
     total_sales_value = sum(sales_value_list)
     total_discount = sum(discount_list)
 
@@ -233,7 +233,7 @@ def stock_received(shop_id):
             if shop_item.item_quantity < 40:
                 shop_item.stock_status = 'Running Out'
             db.session.commit()
-
+        flash("Item added to stock", "success")
         return redirect(url_for('stock_received', shop_id=shop.id))
 
     restock_lookup = {}
@@ -271,14 +271,13 @@ def stock_sold(shop_id):
         item = Item.query.filter_by(item_name=item_name).first()  # query the item class using the item name selected
         shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0  # get the item discount
-        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:  # Check whether quantity in stock
+        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                                   item_discount=discount)
             item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
             shop_item.item_quantity = shop_item.item_quantity - item_sold.item_quantity
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             db.session.add(item_sold)
-            db.session.commit()
             db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
     cart_items = StockSold.query.filter_by(sale_id=None).all()  # Grab cart items
@@ -308,7 +307,6 @@ def stock_sold(shop_id):
             item.sale_id = sale.id
             db.session.commit()
         return redirect(url_for('stock_sold', shop_id=shop.id))
-
     sales_lookup = {}
     total_discount = {}
     Date = today_date()
@@ -351,6 +349,7 @@ def transfer_stock(shop_id):
                 db.session.add(stock_sent)
                 db.session.commit()
                 db.session.commit()
+                flash("Stock transferred successfully", "success")
                 return redirect(url_for('transfer_stock', shop_id=shop_from.id))
             else:
                 flash("Please select the right shop.", "warning")
@@ -406,7 +405,7 @@ def stock_from_shop(shop_id):
             if shop_item.item_quantity < 40:
                 shop_item.stock_status = 'Running Out'
             db.session.commit()
-
+        flash("Item added to stock", "success")
         return redirect(url_for('stock_from_shop', shop_id=shop.id))
 
     restock_lookup = {}
@@ -598,6 +597,7 @@ def stock_in(store_id):
             if store_item.item_quantity < 100:
                 store_item.stock_status = 'Running Out'
             db.session.commit()
+        flash("Item added to stock", "success")
         return redirect(url_for('stock_in', store_id=store.id))
 
     restock_lookup = {}
@@ -635,6 +635,7 @@ def stock_out(store_id):
             db.session.add(stock_out)
             db.session.commit()
             db.session.commit()
+            flash("Stock sent successfully", "success")
             return redirect(url_for('stock_out', store_id=store.id))
         else:
             flash("Quantity is more than available.", "warning")
@@ -926,6 +927,8 @@ def get_stock_sent_items():
 @app.route('/<int:shop_id>/remove_cart_item/<int:item_id>', methods=['GET', 'POST'])
 def remove_cart_item(shop_id, item_id):
     item = StockSold.query.filter_by(sale_id=None, id=item_id).first()
+    shop_item = ShopItem.query.filter(ShopItem.item.item_name==item.item_name).first()
+    shop_item.item_quantity += item.item_quantity
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('stock_sold', shop_id=shop_id))
@@ -1103,19 +1106,20 @@ def get_daily_count(shop_id):
     start_date = date_today - timedelta(days=7)
     daily_counts = DailyCount.query.filter(DailyCount.date >= start_date, DailyCount.shop_id == shop_id).order_by(
         DailyCount.date.desc()).all()
+    if daily_counts:
+        for item in daily_counts:
+            print(item.daily_count_item.item.item_name)
+            item_name = item.daily_count_item.item.item_name
+            item_id = item.daily_count_item.item.id
+            shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
+            date = item.date.strftime("%Y-%m-%d")
 
-    for item in daily_counts:
-        item_name = item.daily_count_item.item.item_name
-        item_id = item.daily_count_item.item.id
-        shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
-        date = item.date.strftime("%Y-%m-%d")
-
-        if shop_item:
-            if date in count_comparison_lookup:
-                if item_name not in count_comparison_lookup[date]:
-                    count_comparison_lookup[date][item_name] = [item.base_count, item.count, item_id]
-            else:
-                count_comparison_lookup[date] = {item_name: [item.base_count, item.count, item_id]}
+            if shop_item:
+                if date in count_comparison_lookup:
+                    if item_name not in count_comparison_lookup[date]:
+                        count_comparison_lookup[date][item_name] = [item.base_count, item.count, item_id]
+                else:
+                    count_comparison_lookup[date] = {item_name: [item.base_count, item.count, item_id]}
     return count_comparison_lookup
 
 
