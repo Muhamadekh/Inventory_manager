@@ -28,6 +28,8 @@
                                                 <td>{{ values[0] }}</td>
                                                 <td>{{ values[1] }}</td>
                                                 <td>{{ values[1] * values[0] }}</td>
+                                                <td class="text-center">
+                                                    <a href="{{ url_for('update_lost_items', item_id=values[2] )}}" class="text-danger">Edit</a></td>
                                             </tr>
                                         {% endfor %}
                                     {% endfor %}

@@ -275,8 +275,6 @@ def stock_sold(shop_id):
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                                   item_discount=discount)
             item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
-            shop_item.item_quantity = shop_item.item_quantity - item_sold.item_quantity
-            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             db.session.add(item_sold)
             db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
@@ -303,8 +301,12 @@ def stock_sold(shop_id):
                 db.session.add(balance_log)
         db.session.add(sale)
         db.session.commit()
-        for item in cart_items:
-            item.sale_id = sale.id
+        for cart_item in cart_items:
+            cart_item.sale_id = sale.id
+            item = Item.query.filter_by(item_name=cart_item.item_name).first()
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
+            shop_item.item_quantity -= cart_item.item_quantity # Deduct the quantity if item is sold/assigned sale id
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             db.session.commit()
         return redirect(url_for('stock_sold', shop_id=shop.id))
     sales_lookup = {}
@@ -927,8 +929,6 @@ def get_stock_sent_items():
 @app.route('/<int:shop_id>/remove_cart_item/<int:item_id>', methods=['GET', 'POST'])
 def remove_cart_item(shop_id, item_id):
     item = StockSold.query.filter_by(sale_id=None, id=item_id).first()
-    shop_item = ShopItem.query.filter(ShopItem.item.item_name==item.item_name).first()
-    shop_item.item_quantity += item.item_quantity
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('stock_sold', shop_id=shop_id))
@@ -1108,7 +1108,6 @@ def get_daily_count(shop_id):
         DailyCount.date.desc()).all()
     if daily_counts:
         for item in daily_counts:
-            print(item.daily_count_item.item.item_name)
             item_name = item.daily_count_item.item.item_name
             item_id = item.daily_count_item.item.id
             shop_item = ShopItem.query.filter_by(item_id=item_id, shop_id=shop_id).first()
@@ -1303,7 +1302,7 @@ def void_count_differences(shop_id, item_id):
                         item = CountDifference.query.filter_by(shop_id=shop_id,
                                                                shop_item_id=shop_item.id).first()
                         if item:
-                            item.count += difference
+                            item.quantity += difference
                         else:
                             count_difference = CountDifference(quantity=difference, shop_id=shop_id,
                                                                shop_item_id=shop_item.id)
@@ -1348,11 +1347,11 @@ def view_lost_items():
         # Update the lost_items_lookup dictionary
         if shop_name in lost_items_lookup:
             if date in lost_items_lookup[shop_name]:
-                lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price]
+                lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price, product.id]
             else:
-                lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price]}
+                lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price, product.id]}
         else:
-            lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price]}}
+            lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price, product.id]}}
     return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup,
                            total_value_lookup=total_value_lookup)
 
@@ -1511,9 +1510,39 @@ def delete_store_stock(store_id, item_id):
     db.session.commit()
     return redirect(url_for('view_store', store_id=store_id))
 
+
 @app.route('/<int:shop_id>/delete_shop_stock/<int:item_id>', methods=['GET', 'POST'])
 def delete_shop_stock(shop_id, item_id):
     shop_item = ShopItem.query.get_or_404(item_id)
     db.session.delete(shop_item)
     db.session.commit()
     return redirect(url_for('view_shop', shop_id=shop_id))
+
+
+@app.route('/update_lost_items/<int:item_id>', methods=['GET', 'POST'])
+def update_lost_items(item_id):
+    form = StockFromShopForm()
+    item = Item.query.get_or_404(item_id)
+    print(item.item_name)
+    shop_item = ShopItem.query.filter_by(item_id=item.id).first()
+    print(shop_item.id)
+    shop_id = shop_item.shop_id
+    shop = Shop.query.get_or_404(shop_id)
+    print(shop.shop_name)
+    count_difference = CountDifference.query.filter_by(shop_item_id=shop_item.id, shop_id=shop.id).first()
+    print(count_difference.quantity)
+    if request.method == 'GET':
+        form.item_name.data = item.item_name
+        form.item_quantity.data = count_difference.quantity
+
+    if request.method == 'POST':
+        count_difference.quantity = form.item_quantity.data
+        count_difference.shop_id = shop.id
+        count_difference.shop_item_id = shop_item.id
+        db.session.commit()
+        return redirect(url_for('view_lost_items'))
+    form.item_quantity.label.text = 'Count'
+    form.submit.label.text = 'Update Changes'
+    return render_template('update_lost_items.html', form=form, shop=shop, item=item)
+
+

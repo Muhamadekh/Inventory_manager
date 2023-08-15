@@ -1,7 +1,7 @@
 import os
 import json
 
-# Production
+# # Production
 with open("/etc/config.json") as config_file:
         config = json.load(config_file)
 
@@ -13,9 +13,9 @@ class Config:
     URL = 'http://www.asirtrading.com'
 
 
-# Development
+# # Development
 # class Config:
 #     SECRET_KEY = os.environ.get("SECRET_KEY")
 #     # SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
 #     SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI")
-#     URL = 'http://${window.location.hostname}:5000'
+#     URL = 'http://127.0.0.1:5000'

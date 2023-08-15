@@ -10,7 +10,7 @@
     <meta name="keywords" content="au theme template">
 
     <!-- Title Page-->
-    <title>Dashboard</title>
+    <title>JNQ</title>
 
     <!-- Fontfaces CSS-->
     <link href="{{ url_for('static', filename='css/font-face.css') }}" rel="stylesheet" media="all">
@@ -278,6 +278,10 @@
         <script src="{{ url_for('static', filename='vendor/select2/select2.min.js') }}"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+        <script>
+            let url = '{{config.URL | safe}}'
+            console.log(url)
+        </script>
         <!-- Main JS-->
         <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
