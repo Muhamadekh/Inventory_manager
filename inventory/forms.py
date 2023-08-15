@@ -213,3 +213,9 @@ class UpdateTransferStockForm(FlaskForm):
 
     def get_selected_shop_id(self):
         return self.shop.data
+
+
+class UpdateStoreStockForm(FlaskForm):
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
+    item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
+    submit = SubmitField('Update Changes')

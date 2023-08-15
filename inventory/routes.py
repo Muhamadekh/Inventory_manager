@@ -8,7 +8,8 @@ from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginFo
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
                              ShopKeeperRegistrationForm,
                              AccountRegistrationForm, PaymentForm, UpdateDebtorForm, TransferStockForm,
-                             StockFromShopForm, UpdateAccountForm, UpdateStoreStockOutForm, UpdateTransferStockForm)
+                             StockFromShopForm, UpdateAccountForm, UpdateStoreStockOutForm,
+                             UpdateTransferStockForm, UpdateStoreStockForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -685,7 +686,7 @@ def monthly_sales_data():
 def edit_store_stock(stock_id):
     stock = StoreItem.query.get_or_404(stock_id)
     store = Store.query.get_or_404(stock.store.id)
-    form = StoreStockInForm()
+    form = UpdateStoreStockForm()
     if request.method == 'GET':
         form.item_name.data = stock.item.item_name
         form.item_quantity.data = stock.item_quantity
@@ -694,8 +695,7 @@ def edit_store_stock(stock_id):
         stock.item_quantity = form.item_quantity.data
         db.session.commit()
         return redirect(url_for('view_store', store_id=stock.store.id))
-    form.submit.label.text = 'Update Changes'
-    return render_template('stock_in.html', form=form, store=store)
+    return render_template('update_store_stock.html', form=form, store=store)
 
 
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
