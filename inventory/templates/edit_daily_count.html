@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="container form-group">
+        <form action="" method="POST">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mt-2 mb-4">Edit Item Count Submitted</legend>
+                <div class="row" id="registerForm">
+                    <div class="form-group">
+                        <div class="col-md-12">
+                            {{ form.item_name.label (class="form-control-label")}}
+                                {% if form.item_name.errors %}
+                                    {{ form.item_name (class="form-control form-control-lg is-invalid")}}
+                                    <ul class="invalid-feedback">
+                                        {% for error in form.item_name.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    {{ form.item_name (class="form-control form-control-lg")}}
+                                {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-12">
+                            {{ form.count.label (class="form-control-label")}}
+                            {% if form.count.errors %}
+                                {{ form.count (class="form-control form-control-lg is-invalid")}}
+                                <ul class="invalid-feedback">
+                                    {% for error in form.count.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                {{ form.count (class="form-control form-control-lg")}}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="col-md-12">
+                            {{ form.submit (class="btn btn-outline-info", style="background-color: #008CBA; color: white;")}}
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+{% endblock %}

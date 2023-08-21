@@ -9,7 +9,7 @@ from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginFo
                              ShopKeeperRegistrationForm,
                              AccountRegistrationForm, PaymentForm, UpdateDebtorForm, TransferStockForm,
                              StockFromShopForm, UpdateAccountForm, UpdateStoreStockOutForm,
-                             UpdateTransferStockForm, UpdateStoreStockForm)
+                             UpdateTransferStockForm, UpdateStoreStockForm, UpdateDailyCountForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -225,6 +225,8 @@ def stock_received(shop_id):
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             if shop_item.item_quantity < 40:
                 shop_item.item_status = 'Running Out'
+            else:
+                shop_item.item_status = 'In Stock'
             db.session.commit()
         else:
             shop_item = ShopItem(shop=shop, item=item, item_quantity=form.item_quantity.data)
@@ -233,6 +235,8 @@ def stock_received(shop_id):
             db.session.commit()
             if shop_item.item_quantity < 40:
                 shop_item.stock_status = 'Running Out'
+            else:
+                shop_item.item_status = 'In Stock'
             db.session.commit()
         flash("Item added to stock", "success")
         return redirect(url_for('stock_received', shop_id=shop.id))
@@ -279,6 +283,8 @@ def stock_sold(shop_id):
             db.session.add(item_sold)
             db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
+        else:
+            flash("No enough quantity is stock", "warning")
     cart_items = StockSold.query.filter_by(sale_id=None).all()  # Grab cart items
     total_amount = 0
     for item in cart_items:
@@ -306,7 +312,7 @@ def stock_sold(shop_id):
             cart_item.sale_id = sale.id
             item = Item.query.filter_by(item_name=cart_item.item_name).first()
             shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
-            shop_item.item_quantity -= cart_item.item_quantity # Deduct the quantity if item is sold/assigned sale id
+            shop_item.item_quantity -= cart_item.item_quantity  # Deduct the quantity if item is sold/assigned sale id
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             db.session.commit()
         return redirect(url_for('stock_sold', shop_id=shop.id))
@@ -399,6 +405,8 @@ def stock_from_shop(shop_id):
             shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             if shop_item.item_quantity < 40:
                 shop_item.item_status = 'Running Out'
+            else:
+                shop_item.item_status = 'In Stock'
             db.session.commit()
         else:
             shop_item = ShopItem(shop=shop, item=item, item_quantity=form.item_quantity.data)
@@ -407,6 +415,8 @@ def stock_from_shop(shop_id):
             db.session.commit()
             if shop_item.item_quantity < 40:
                 shop_item.stock_status = 'Running Out'
+            else:
+                shop_item.item_status = 'In Stock'
             db.session.commit()
         flash("Item added to stock", "success")
         return redirect(url_for('stock_from_shop', shop_id=shop.id))
@@ -591,6 +601,8 @@ def stock_in(store_id):
             # Checking item quantity status
             if store_item.item_quantity < 100:
                 store_item.stock_status = 'Running Out'
+            else:
+                store_item.item_status = 'In Stock'
             db.session.commit()
         else:
             store_item = StoreItem(store=store, item=item, item_quantity=form.item_quantity.data)
@@ -599,6 +611,8 @@ def stock_in(store_id):
             db.session.commit()
             if store_item.item_quantity < 100:
                 store_item.stock_status = 'Running Out'
+            else:
+                store_item.item_status = 'In Stock'
             db.session.commit()
         flash("Item added to stock", "success")
         return redirect(url_for('stock_in', store_id=store.id))
@@ -713,25 +727,6 @@ def edit_shop_stock(stock_id):
         return redirect(url_for('view_shop', shop_id=stock.shop.id))
     form.submit.label.text = 'Update Changes'
     return render_template('stock_received.html', form=form, shop=shop)
-
-
-@app.route('/<int:stock_sold_id>/edit_shop_sale', methods=['GET', 'POST'])
-def edit_stock_sold(stock_sold_id):
-    stock_sold = StockSold.query.get_or_404(stock_sold_id)
-    form = ShopStockSoldForm()
-    if request.method == 'GET':
-        form.item_name.data = stock_sold.item_name
-        form.item_quantity.data = stock_sold.item_quantity
-        form.item_discount.data = stock_sold.item_discount
-        form.payment_method.data = stock_sold.payment_method
-    if form.validate_on_submit():
-        stock_sold.item_name = form.item_name.data
-        stock_sold.item_quantity = form.item_quantity.data
-        stock_sold.item_discount = form.item_discount.data
-        stock_sold.payment_method = form.payment_method.data
-        db.session.commit()
-        return redirect(url_for('view_shop', shop_id=stock_sold.shop.id))
-    return render_template('edit_shop_sales.html', form=form)
 
 
 @app.route('/<int:shop_id>/shop/daily_count', methods=['GET', 'POST'])
@@ -1546,3 +1541,76 @@ def update_lost_items(item_id):
     return render_template('update_lost_items.html', form=form, shop=shop, item=item)
 
 
+# View items in a sale
+@app.route('/<sale_id>/view_sale_items', methods=['GET'])
+def view_sale_items(sale_id):
+    sale = Sale.query.get_or_404(sale_id)
+    return render_template('view_sale_items.html', sale=sale)
+
+
+# Edit items in a sale
+@app.route('/<int:item_id>/edit_sale_item/<int:shop_id>', methods=['GET', 'POST'])
+def edit_sale_item(item_id, shop_id):
+    item_sold = StockSold.query.get_or_404(item_id)
+    # get item sold cost price by getting the item
+    item = Item.query.filter_by(item_name=item_sold.item_name).first()
+    shop = Shop.query.get_or_404(shop_id)
+    form = ShopStockSoldForm()
+    if request.method == 'GET':
+        form.item_name.data = item_sold.item_name
+        form.item_quantity.data = item_sold.item_quantity
+        form.item_discount.data = item_sold.item_discount
+
+    if request.method == 'POST':
+        # First remove the item from sale, shop item quantity, account balance and account balance log
+        sale = Sale.query.get_or_404(item_sold.sale_id)
+        sale.sales_value -= item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+
+        # Update shop item quantity
+        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+        shop_item.item_quantity += item_sold.item_quantity
+
+        # Update account and balance log
+        account = Account.query.filter_by(account_name=sale.payment_method).first()
+        account.balance -= item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+
+        item_sold.item_name = form.item_name.data
+        item_sold.item_quantity = form.item_quantity.data
+        item_sold.item_discount = form.item_discount.data
+        item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+        db.session.commit()
+
+        # Then update sale, shop item quantity, account balance and account balance log
+        item = Item.query.filter_by(item_name=item_sold.item_name).first()
+        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+
+        sale.sales_value += item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+        shop_item.item_quantity -= item_sold.item_quantity
+        account.balance += item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+        balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+        db.session.add(balance_log)
+        db.session.commit()
+        return redirect(url_for('stock_sold', shop_id=shop.id))
+    return render_template('edit_sale_item.html', form=form, shop=shop)
+
+
+# Edit daily count from shops
+@app.route('/<int:item_id>/edit_daily_count/<int:shop_id>', methods=['GET', 'POST'])
+def edit_daily_count(item_id, shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    item = Item.query.get_or_404(item_id)
+    shop_item = ShopItem.query.filter_by(item_id=item.id).first()
+    daily_count = DailyCount.query.filter_by(shop_item_id=shop_item.id, shop_id=shop.id)\
+        .order_by(DailyCount.date.desc()).first()
+
+    form = UpdateDailyCountForm()
+    if request.method == 'GET':
+        form.item_name.data = item.item_name
+        form.count.data = daily_count.count
+
+    if request.method == 'POST':
+        item.item_name = item.item_name
+        daily_count.count = form.count.data
+        db.session.commit()
+        return redirect(url_for('view_daily_count', shop_id=shop.id))
+    return render_template('edit_daily_count.html', form=form)

@@ -219,3 +219,9 @@ class UpdateStoreStockForm(FlaskForm):
     item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Received', validators=[DataRequired()])
     submit = SubmitField('Update Changes')
+
+
+class UpdateDailyCountForm(FlaskForm):
+    item_name = StringField('Item Name', validators=[DataRequired()])
+    count = IntegerField('Item Count', validators=[DataRequired()])
+    submit = SubmitField('Update Count')
