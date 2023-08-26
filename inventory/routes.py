@@ -212,7 +212,7 @@ def stock_received(shop_id):
         item = Item.query.filter_by(item_name=item_name).first()
         item_received = StockReceived(item_name=item.item_name, item_quantity=form.item_quantity.data, shop_id=shop.id)
         item_sent = StockOut.query.filter_by(is_received=False, item_name=item.item_name,
-                                             item_quantity=form.item_quantity.data).first()
+                                             item_quantity=form.item_quantity.data, shop_id=shop.id).first()
         if item_sent and not item_sent.is_received:
             item_sent.is_received = True
             db.session.add(item_received)
@@ -332,10 +332,19 @@ def stock_sold(shop_id):
         else:
             sales_lookup[date] = [entry]
 
+    # Getting today's total sales
+    today_sales = []
+    sales = Sale.query.all()
+    for sale in sales:
+        today = today_date()
+        if sale.date_sold.strftime("%Y-%m-%d") == today:
+            today_sales.append(sale.sales_value)
+    today_total_sales = sum(today_sales)
+
     return render_template('stock_sold.html', selection_form=selection_form, sales_lookup=sales_lookup, Date=Date,
                            shop=shop,
                            sales_form=sales_form, cart_items=cart_items, total_amount=total_amount,
-                           sales_entries=sales_entries, total_discount=total_discount)
+                           sales_entries=sales_entries, total_discount=total_discount, today_total_sales=today_total_sales)
 
 
 @app.route('/<int:shop_id>/transfer_stock', methods=['GET', 'POST'])
@@ -568,24 +577,25 @@ def stock_in(store_id):
             for warehouse in Store.query.all():  # Quantity of the item in stores
                 product = StoreItem.query.filter_by(item_id=item.id, store_id=warehouse.id).first()
                 if product:
-                    item_quantity_list.append(product.item_quantity)
+                    item_quantity_list.append(product.item_quantity - form.item_quantity.data)
             for shop in Shop.query.all():  # Quantity of the item in shops
                 shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
                 if shop_item:
                     item_quantity_list.append(shop_item.item_quantity)
 
             # Check if this item has been transferred between shops and not yet received
-            item_from_shop = TransferStock.query.filter_by(is_received=False, item_name=item.item_name).first()
-            if item_from_shop:
-                item_quantity_list.append(item_from_shop.item_quantity)
+            item_from_shops = TransferStock.query.filter_by(is_received=False, item_name=item.item_name).all()
+            if item_from_shops:
+                for item_from_shop in item_from_shops:
+                    item_quantity_list.append(item_from_shop.item_quantity)
 
             # Check if this item has been transferred from a store and not yet received
-            item_from_store = StockOut.query.filter_by(is_received=False, item_name=item.item_name).first()
-            if item_from_store:
-                item_quantity_list.append(item_from_store.item_quantity)
+            item_from_stores = StockOut.query.filter_by(is_received=False, item_name=item.item_name).all()
+            if item_from_stores:
+                for item_from_store in item_from_stores:
+                    item_quantity_list.append(item_from_store.item_quantity)
 
             total_item_stock = sum(item_quantity_list)  # sum up all the item quantities in different places
-
             # Calculate new cost price
             old_item_cost_price = item.item_cost_price
             total_old_cost = old_item_cost_price * total_item_stock
@@ -593,8 +603,8 @@ def stock_in(store_id):
             total_new_cost = new_item_cost_price * form.item_quantity.data
             total_cost = total_old_cost + total_new_cost
             total_quantity = total_item_stock + form.item_quantity.data
-
             item.item_cost_price = total_cost / total_quantity  # Update item cost price in db
+            store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
             store_item.item_value = store_item.item_quantity * item.item_cost_price # Update item value
 
             # Checking item quantity status
