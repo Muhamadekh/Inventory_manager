@@ -596,14 +596,16 @@ def stock_in(store_id):
             total_quantity = total_item_stock + form.item_quantity.data
 
             item.item_cost_price = total_cost / total_quantity  # Update item cost price in db
-            store_item.item_value = store_item.item_quantity * item.item_cost_price # Update item value
+            store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
+            if store_item:
+                store_item.item_value = store_item.item_quantity * item.item_cost_price # Update item value
 
-            # Checking item quantity status
-            if store_item.item_quantity < 100:
-                store_item.stock_status = 'Running Out'
-            else:
-                store_item.item_status = 'In Stock'
-            db.session.commit()
+                # Checking item quantity status
+                if store_item.item_quantity < 100:
+                    store_item.stock_status = 'Running Out'
+                else:
+                    store_item.item_status = 'In Stock'
+                db.session.commit()
         else:
             store_item = StoreItem(store=store, item=item, item_quantity=form.item_quantity.data)
             store_item.item_value = form.item_quantity.data * item.item_cost_price
