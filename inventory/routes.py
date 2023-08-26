@@ -334,7 +334,7 @@ def stock_sold(shop_id):
 
     # Getting today's total sales
     today_sales = []
-    sales = Sale.query.all()
+    sales = Sale.query.filter_by(shop_id=shop.id).all()
     for sale in sales:
         today = today_date()
         if sale.date_sold.strftime("%Y-%m-%d") == today:
