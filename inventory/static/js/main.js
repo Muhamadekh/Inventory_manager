@@ -1804,7 +1804,7 @@ $("#searchPayee").on("input",(e)=>{
    let name = document.getElementById("name");
    let phone_number = document.getElementById("phone_number");
     console.log(phoneNumber)
-    if (phoneNumber.length === 10){
+    if (phoneNumber.length === 9){
       getData(url + '/search_payee',"POST",{"phone_number" : phoneNumber},(data)=>{
       console.log(data);
       if (Object.keys(data).length !== 0){
