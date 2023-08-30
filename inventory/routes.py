@@ -708,6 +708,7 @@ def monthly_sales_data():
 @app.route('/<int:stock_id>/edit_store_stock', methods=['GET', 'POST'])
 def edit_store_stock(stock_id):
     stock = StoreItem.query.get_or_404(stock_id)
+    item = Item.query.get_or_404(stock.item_id)
     store = Store.query.get_or_404(stock.store.id)
     form = UpdateStoreStockForm()
     if request.method == 'GET':
@@ -716,6 +717,7 @@ def edit_store_stock(stock_id):
     if form.validate_on_submit():
         stock.item.item_name = form.item_name.data
         stock.item_quantity = form.item_quantity.data
+        stock.item_value = stock.item_quantity * item.item_cost_price
         db.session.commit()
         return redirect(url_for('view_store', store_id=stock.store.id))
     return render_template('update_store_stock.html', form=form, store=store)
@@ -724,6 +726,7 @@ def edit_store_stock(stock_id):
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
 def edit_shop_stock(stock_id):
     stock = ShopItem.query.get_or_404(stock_id)
+    item = Item.query.get_or_404(stock.item_id)
     shop = Shop.query.get_or_404(stock.shop.id)
     form = ShopStockReceivedForm()
     if request.method == 'GET':
@@ -732,6 +735,7 @@ def edit_shop_stock(stock_id):
     if form.validate_on_submit():
         stock.item.item_name = form.item_name.data
         stock.item_quantity = form.item_quantity.data
+        stock.item_value = stock.item_quantity * item.item_cost_price
         db.session.commit()
         return redirect(url_for('view_shop', shop_id=stock.shop.id))
     form.submit.label.text = 'Update Changes'
@@ -1452,6 +1456,16 @@ def edit_item(item_id):
         item.item_name = form.item_name.data
         item.item_cost_price = form.item_cost_price.data
         item.item_selling_price = form.item_selling_price.data
+
+        # Update item ivalue in stores and shops
+        for store in Store.query.all():
+            store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
+            if store_item:
+                store_item.item_value = store_item.item_quantity * item.item_cost_price
+        for shop in Shop.query.all():
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+            if shop_item:
+                shop_item.item_value = shop_item.item_quantity * item.item_cost_price
         db.session.commit()
         return redirect(url_for('view_items'))
     form.submit.label.text = 'Update Changes'
