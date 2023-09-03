@@ -2,6 +2,7 @@
 {% block content %}
     <section class="p-t-20">
         <div class="d-flex float-right">
+            <a class="mr-2" href="{{ url_for('trash') }}"><button class="btn btn-danger">View Trash</button></a>
             <a class="mr-2" href="{{ url_for('view_lost_items') }}"><button class="btn btn-secondary">Lost Items</button></a>
           <button class="btn btn-primary dropdown-toggle" type="button" id="salesDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Download Sales Report

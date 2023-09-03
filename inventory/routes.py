@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect, session, request, j
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
                               StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, AccountMovement,
-                              AccountBalanceLog, Payment, TransferStock, CountDifference)
+                              AccountBalanceLog, Payment, TransferStock, CountDifference, TrashLog, PriceLog)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
@@ -278,7 +278,8 @@ def stock_sold(shop_id):
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0  # get the item discount
         if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
-                                  item_discount=discount)
+                                  item_discount=discount, item_cost_price=item.item_cost_price,
+                                  item_selling_price=item.item_selling_price)
             item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
             db.session.add(item_sold)
             db.session.commit()
@@ -824,8 +825,12 @@ def debt_registration():
                 balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
                 db.session.add(balance_log)
         db.session.commit()
-        for item in cart_items:
+        for cart_item in cart_items:
             item.sale_id = sale.id
+            item = Item.query.filter_by(item_name=cart_item.item_name).first()
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
+            shop_item.item_quantity -= cart_item.item_quantity  # Deduct the quantity if item is sold/assigned sale id
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
             db.session.commit()
         return redirect(url_for('stock_sold', shop_id=shop_id))
     return render_template('debt_registration.html', form=form)
@@ -900,9 +905,7 @@ def shop_daily_report():
                     payment_method = sale.payment_method
                     stock_sold = StockSold.query.filter_by(sale_id=sale.id).all()
                     for item in stock_sold:
-                        product = Item.query.filter_by(item_name=item.item_name).first()
-                        cost_price = product.item_cost_price
-                        item_cost = item.item_quantity * cost_price
+                        item_cost = item.item_quantity * item.item_cost_price
 
                         sales_cost_lookup[date][shop_name] += item_cost
                         discount_lookup[date][shop_name] += item.item_discount * item.item_quantity
@@ -1224,9 +1227,7 @@ def download_reports():
                 for sale in sales:
                     stock_sold = StockSold.query.filter_by(sale_id=sale.id).all()
                     for item in stock_sold:
-                        product = Item.query.filter_by(item_name=item.item_name).first()
-                        cost_price = product.item_cost_price
-                        item_cost = item.item_quantity * cost_price
+                        item_cost = item.item_quantity * item.item_cost_price
 
                         sales_cost += item_cost
                         discount += item.item_discount * item.item_quantity
@@ -1492,6 +1493,11 @@ def edit_item(item_id):
         item.item_cost_price = form.item_cost_price.data
         item.item_selling_price = form.item_selling_price.data
 
+        # Keep track of edited price
+        price_log = PriceLog(item_name=item.item_name, item_cost_price=item.item_cost_price,
+                             item_selling_price=item.item_selling_price)
+        db.session.add(price_log)
+
         # Update item ivalue in stores and shops
         for store in Store.query.all():
             store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
@@ -1559,6 +1565,10 @@ def edit_shop(shop_id):
 @app.route('/<int:store_id>/delete_store_stock/<int:item_id>', methods=['GET', 'POST'])
 def delete_store_stock(store_id, item_id):
     store_item = StoreItem.query.get_or_404(item_id)
+    item = Item.query.filter_by(id=store_item.item_id).first()
+    trash_log = TrashLog(item_name=item.item_name, item_cost_price=item.item_cost_price,
+                         item_selling_price=item.item_selling_price, item_quantity=store_item.item_quantity)
+    db.session.add(trash_log)
     db.session.delete(store_item)
     db.session.commit()
     return redirect(url_for('view_store', store_id=store_id))
@@ -1672,3 +1682,20 @@ def edit_daily_count(item_id, shop_id):
         db.session.commit()
         return redirect(url_for('view_daily_count', shop_id=shop.id))
     return render_template('edit_daily_count.html', form=form)
+
+
+@app.route('/price_change_log', methods=['GET'])
+def price_change_log():
+    current_date = datetime.now()
+    start_time = current_date - timedelta(days=60)
+    price_changes = PriceLog.query.filter(PriceLog.date >= start_time).all()
+    return render_template('price_change.html', price_changes=price_changes)
+
+
+@app.route('/trash', methods=['GET'])
+def trash():
+    current_date = datetime.now()
+    start_time = current_date - timedelta(days=60)
+    trash_items = TrashLog.query.filter(TrashLog.date >= start_time).all()
+    return render_template('trash.html', trash_items=trash_items)
+

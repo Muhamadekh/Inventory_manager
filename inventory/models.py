@@ -100,6 +100,8 @@ class StockSold(db.Model):
     item_quantity = db.Column(db.Integer, nullable=False)
     item_discount = db.Column(db.Integer, nullable=False)
     item_value = db.Column(db.Integer, nullable=False)
+    item_cost_price = db.Column(db.Float, nullable=False)
+    item_selling_price = db.Column(db.Float, nullable=False)
     sale_id = db.Column(db.Integer, db.ForeignKey('sale.id'))
 
 
@@ -238,4 +240,21 @@ class CountDifference(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     shop_item_id = db.Column(db.Integer, db.ForeignKey('shop_item.id'))
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
+    date = db.Column(db.DateTime, default=datetime.now)
+
+
+class TrashLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    item_cost_price = db.Column(db.Float, nullable=False)
+    item_selling_price = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.now)
+
+
+class PriceLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_cost_price = db.Column(db.Float, nullable=False)
+    item_selling_price = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
