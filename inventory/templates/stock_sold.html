@@ -3,6 +3,7 @@
     <!-- Buttons -->
     {% if current_user.user_role == 'Admin' %}
     <a href="{{ url_for('view_shop', shop_id = shop.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Shop</a>
+    <a href="{{ url_for('view_sales', shop_id = shop.id) }}" class="btn btn-info ml-2 mb-2">View Sales</a>
     {% else %}
     <div class="button-container">
         <a href="{{ url_for('stock_sold', shop_id=shop.id)}}" class="button active">Sales</a>
@@ -118,6 +119,7 @@
                         <thead>
                             <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
                             <tr>
+                                <th class="text-center">Sale ID</th>
                                 <th class="text-center">Sale Value</th>
                                 <th class="text-center">Sale Discount</th>
                                 <th class="text-center">Credit Option </th>
@@ -128,6 +130,7 @@
                         <tbody>
                             {% for entry in sales_lookup[date] %}
                             <tr>
+                                <td class="text-center">{{ entry.id }}</td>
                                 <td class="text-center">{{ "{:,}".format (entry.sales_value) }}</td>
                                 <td class="text-center">{{ "{:,}".format (total_discount[entry.id]) }}</td>
                                 {% if entry.credit_option %}

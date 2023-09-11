@@ -1699,3 +1699,11 @@ def trash():
     trash_items = TrashLog.query.filter(TrashLog.date >= start_time).all()
     return render_template('trash.html', trash_items=trash_items)
 
+
+@app.route('/<int:shop_id>/view_sales', methods=['GET'])
+def view_sales(shop_id):
+    current_date = datetime.now()
+    start_time = current_date - timedelta(days=7)
+    sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).all()
+    return render_template('view_sales.html', sales=sales)
+
