@@ -1704,6 +1704,6 @@ def trash():
 def view_sales(shop_id):
     current_date = datetime.now()
     start_time = current_date - timedelta(days=7)
-    sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).all()
+    sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).order_by(Sale.date_sold.desc()).all()
     return render_template('view_sales.html', sales=sales)
 
