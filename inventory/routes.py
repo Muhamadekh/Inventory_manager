@@ -2,8 +2,8 @@ from flask import render_template, url_for, flash, redirect, session, request, j
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
                               StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, AccountMovement,
-                              AccountBalanceLog, Payment, TransferStock, CountDifference, TrashLog, PriceLog)
-from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ShopNewItemForm,
+                              AccountBalanceLog, Payment, TransferStock, CountDifference, TrashLog, PriceLog, Expense)
+from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ExpenseForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
                              ShopKeeperRegistrationForm,
@@ -1707,3 +1707,33 @@ def view_sales(shop_id):
     sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).order_by(Sale.date_sold.desc()).all()
     return render_template('view_sales.html', sales=sales)
 
+
+@app.route('/expenses', methods=['GET', 'POST'])
+def record_expense():
+    form = ExpenseForm()
+    form.populate_account_choices()
+    selected_account_name = form.get_selected_account_name()
+    selected_account = Account.query.filter_by(account_name=selected_account_name).first()
+    if form.validate_on_submit():
+        expense = Expense(amount=form.amount.data, account=selected_account.account_name,
+                          description=form.description.data)
+        selected_account.balance -= expense.amount
+        balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
+        db.session.add(expense)
+        db.session.add(balance_log)
+        db.session.commit()
+        return redirect(url_for('record_expense'))
+
+    date_today = datetime.now().date()
+    start_date = date_today - timedelta(days=60)
+
+    expense_lookup = {}
+    expenses = Expense.query.filter(Expense.date >= start_date).order_by(Expense.date.desc()).all()
+    for expense in expenses:
+        date = expense.date.strftime("%Y-%m-%d")  # date of payment
+        if date in expense_lookup:
+            expense_lookup[date].append(expense)
+        else:
+            expense_lookup[date] = [expense]
+
+    return render_template('expenses.html', form=form, expense_lookup=expense_lookup)

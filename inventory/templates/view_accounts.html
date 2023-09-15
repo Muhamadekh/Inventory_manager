@@ -3,9 +3,10 @@
 {% block content %}
 <div class="mb-4 mr-4 ml-4">
     <div class="d-flex justify-content-end">
-        <a href="{{ url_for('view_payments') }}"><button class="btn btn-primary mr-2">View Payments</button></a>
-        <a href="{{ url_for('make_payment') }}"><button class="btn btn-primary mr-2">Make Payment</button></a>
-        <a href="{{ url_for('account_transfer') }}"><button class="btn btn-primary mr-2">Transfer</button></a>
+        <a href="{{ url_for('view_payments') }}"><button class="btn btn-info mr-2">View Payments</button></a>
+        <a href="{{ url_for('make_payment') }}"><button class="btn btn-info mr-2">Make Payment</button></a>
+        <a href="{{ url_for('account_transfer') }}"><button class="btn btn-info mr-2">Transfer</button></a>
+        <a href="{{ url_for('record_expense') }}"><button class="btn btn-info mr-2">Expenses</button></a>
     </div>
     <!--  Table to display the accounts  -->
     <table class="table">

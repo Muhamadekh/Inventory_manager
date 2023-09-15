@@ -258,3 +258,11 @@ class PriceLog(db.Model):
     item_cost_price = db.Column(db.Float, nullable=False)
     item_selling_price = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
+
+
+class Expense(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account = db.Column(db.String(40), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(140), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.now)

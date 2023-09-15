@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, \
-    SearchField, FloatField
+    SearchField, FloatField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional
 from inventory.models import User, Shop, Account, Sale
 from flask import session
@@ -225,3 +225,20 @@ class UpdateDailyCountForm(FlaskForm):
     item_name = StringField('Item Name', validators=[DataRequired()])
     count = IntegerField('Item Count', validators=[DataRequired()])
     submit = SubmitField('Update Count')
+
+
+class ExpenseForm(FlaskForm):
+    account = SelectField('Choose Account', choices=[])
+    amount = IntegerField('Amount', validators=[Optional()])
+    description = TextAreaField('Expense Description', validators=[DataRequired()])
+    submit = SubmitField('Pay')
+
+    def populate_account_choices(self):
+        self.account.choices = [account.account_name for account in Account.query.filter(Account.balance > 0).all()]
+
+    def get_selected_account_name(self):
+        selected_account = self.account.data
+        if selected_account is not None:
+            return selected_account
+        else:
+            return None

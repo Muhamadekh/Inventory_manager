@@ -1742,7 +1742,7 @@ $("#searchDebtor").on("input",(e)=>{
    let balance = document.getElementById("balance");
    let balanceDiv = document.getElementById("ShowBalance");
     console.log(phoneNumber)
-    if (phoneNumber.length === 10){
+    if (phoneNumber.length === 9){
       getData(url + '/search_debtor',"POST",{"phone_number" : phoneNumber},(data)=>{
       console.log(data);
       if (Object.keys(data).length !== 0){
