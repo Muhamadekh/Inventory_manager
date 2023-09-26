@@ -184,7 +184,7 @@ class StockFromShopForm(FlaskForm):
 
 class UpdateAccountForm(FlaskForm):
     account_name = StringField('Account Name', validators=[DataRequired()])
-    balance = IntegerField('Account Balance', validators=[DataRequired()])
+    balance = FloatField('Account Balance', validators=[DataRequired()])
     submit = SubmitField('Add')
 
 
