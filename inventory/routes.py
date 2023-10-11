@@ -279,14 +279,14 @@ def stock_sold(shop_id):
         if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                                   item_discount=discount, item_cost_price=item.item_cost_price,
-                                  item_selling_price=item.item_selling_price)
+                                  item_selling_price=item.item_selling_price, shop_id=shop_id)
             item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
             db.session.add(item_sold)
             db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
         else:
             flash("No enough quantity is stock", "warning")
-    cart_items = StockSold.query.filter_by(sale_id=None).all()  # Grab cart items
+    cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id).all()  # Grab cart items
     total_amount = 0
     for item in cart_items:
         total_amount += item.item_value
@@ -790,13 +790,13 @@ def daily_count(shop_id):
 def debt_registration():
     form = DebtorRegistrationForm()
     if form.validate_on_submit():
-        total_amount = 0
-        cart_items = StockSold.query.filter_by(sale_id=None)
-        for item in cart_items:
-            total_amount += item.item_value
         shop_id = session.get("shop_id")
         discount = session.get("sales_discount")
         payment_method = session.get("payment_method")
+        total_amount = 0
+        cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id).all()
+        for item in cart_items:
+            total_amount += item.item_value
         sale = Sale(sales_discount=discount, payment_method=payment_method,
                     shop_id=shop_id)
         sale.sales_value = total_amount - discount
@@ -974,7 +974,7 @@ def get_stock_sent_items():
 # Remove unwanted item s from cart items list
 @app.route('/<int:shop_id>/remove_cart_item/<int:item_id>', methods=['GET', 'POST'])
 def remove_cart_item(shop_id, item_id):
-    item = StockSold.query.filter_by(sale_id=None, id=item_id).first()
+    item = StockSold.query.filter_by(sale_id=None, id=item_id, shop_id=shop_id).first()
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('stock_sold', shop_id=shop_id))

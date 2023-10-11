@@ -30,6 +30,7 @@ class Shop(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     sale = db.relationship('Sale', backref='shop', lazy=True)
     stock_received = db.relationship('StockReceived', backref='shop', lazy=True)
+    stock_sold = db.relationship('StockSold', backref='shop', lazy=True)
     stock_in = db.relationship('StockOut', backref='shop', lazy=True)
     item_association = db.relationship('ShopItem', back_populates='shop')
     items = association_proxy("item_association", "item")
@@ -103,6 +104,7 @@ class StockSold(db.Model):
     item_cost_price = db.Column(db.Float, nullable=False)
     item_selling_price = db.Column(db.Float, nullable=False)
     sale_id = db.Column(db.Integer, db.ForeignKey('sale.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
 
 
 # Model for store
