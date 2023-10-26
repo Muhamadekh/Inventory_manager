@@ -938,7 +938,7 @@ def assign_shopkeeper(shop_id):
     if form.validate_on_submit():
         shopkeeper = Shopkeeper.query.filter_by(user_id=user.id, shop_id=shop.id).first()
         if shopkeeper:
-            flash("This staff is already attached to thi shop.", "danger")
+            flash("This staff is already attached to this shop.", "danger")
         else:
             shopkeeper = Shopkeeper(user_id=user.id, shop_id=shop.id)
             db.session.add(shopkeeper)
@@ -1737,3 +1737,35 @@ def record_expense():
             expense_lookup[date] = [expense]
 
     return render_template('expenses.html', form=form, expense_lookup=expense_lookup)
+
+
+@app.route('/<int:expense_id>/edit_expense', methods=['GET', 'POST'])
+def edit_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    form = ExpenseForm()
+    form.populate_account_choices()
+    selected_account_name = form.get_selected_account_name()
+    selected_account = Account.query.filter_by(account_name=selected_account_name).first()
+
+    if request.method == 'GET':
+        form.amount.data = expense.amount
+        form.account.data = expense.account
+        form.description.data = expense.description
+
+    if form.validate_on_submit():
+        # First, return the money in this expense to the account
+        selected_account.balance += expense.amount
+
+        # Update the form with the expense details
+        expense.amount = form.amount.data
+        expense.account = form.account.data
+        expense.description = form.description.data
+
+        # Updating the account balance and balance log
+        selected_account.balance -= form.amount.data
+        balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
+        db.session.add(balance_log)
+        db.session.commit()
+        return redirect(url_for('record_expense'))
+    form.submit.label.text = 'Save Changes'
+    return render_template('edit_expenses.html', form=form)

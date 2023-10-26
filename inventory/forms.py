@@ -229,7 +229,7 @@ class UpdateDailyCountForm(FlaskForm):
 
 class ExpenseForm(FlaskForm):
     account = SelectField('Choose Account', choices=[])
-    amount = IntegerField('Amount', validators=[Optional()])
+    amount = FloatField('Amount', validators=[Optional()])
     description = TextAreaField('Expense Description', validators=[DataRequired()])
     submit = SubmitField('Pay')
 

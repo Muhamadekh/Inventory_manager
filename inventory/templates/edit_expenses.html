@@ -1,11 +1,10 @@
 {% extends 'layout.html' %}
 {% block content %}
     <div class="container justify-content-center">
-        <a href="{{ url_for('view_accounts') }}" class="btn btn-secondary d-flex float-right mb-4">BACK</a>
         <form action="" method="POST">
             {{ form.hidden_tag() }}
             <fieldset class="form-group">
-                <legend class="border-bottom mt-2 mb-4">Expenses</legend>
+                <legend class="border-bottom mt-2 mb-4">Edit Expense</legend>
                 <div class="row" id="registerForm">
                     <div class="form-group">
                         <div class="col-md-12">
@@ -61,42 +60,4 @@
             </fieldset>
         </form>
     </div>
-    <section class="p-t-20">
-        <div class="container">
-            {% for date in expense_lookup.keys() %}
-                <caption style="caption-side: top"><span class="d-flex justify-content-center border-bottom"><strong>{{date}}</strong></span></caption>
-                <div class="row" id="usersTableRow">
-                    <div class="col-md-12">
-                        <div class="table-responsive table-responsive-data2">
-                            <table class="table table-data2">
-                                <thead>
-                                    <tr>
-                                        <th >Amount Paid</th>
-                                        <th>Account Paid From</th>
-                                        <th>Description</th>
-                                        <th>Date paid</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                {% for expense in expense_lookup[date] %}
-                                    <tr>
-                                        <td>{{ "{:,}".format(expense.amount) }}</td>
-                                        <td>{{ expense.account }}</td>
-                                        <td>{{ expense.description }}</td>
-                                        <td>{{ expense.date.strftime("%Y-%m-%d") }}</td>
-                                        <td><a href="{{ url_for('edit_expense', expense_id=expense.id)}}">Edit</a></td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            {% else %}
-                <div class="d-flex justify-content-center font-weight-bold">
-                    <h5> No expenses yet</h5>
-                </div>
-            {% endfor %}
-        </div>
-    </section>
 {% endblock %}
