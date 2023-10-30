@@ -46,8 +46,8 @@
 
 <!-- Track funds movement between accounts -->
 <div class="mb-4 mr-4 ml-4">
+    {% for date, entries in account_movement_lookup.items() %}
     <table class="table mt-5">
-        {% for date, entries in account_movement_lookup.items() %}
         <caption style="caption-side: top"><span class="d-flex justify-content-center font-weight-bold">{{ date }}</span></caption>
         <thead>
             <tr>
@@ -69,8 +69,8 @@
             </tr>
             {% endfor %}
         </tbody>
-        {% endfor %}
     </table>
+    {% endfor %}
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>

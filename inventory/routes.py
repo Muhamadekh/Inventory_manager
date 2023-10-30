@@ -1058,10 +1058,14 @@ def account_transfer():
             flash('Insufficient funds in the transfer_from account.', 'error')
 
     # Retrieve all account movements
+    date_today = datetime.now().date()
+    start_date = date_today - timedelta(days=60)
+
     account_movement_lookup = {}
-    account_movements = AccountMovement.query.all()
+    account_movements = AccountMovement.query.filter(AccountMovement.timestamp >= start_date)\
+        .order_by(AccountMovement.timestamp.desc()).all()
     for movement in account_movements:
-        date = movement.timestamp.date()
+        date = movement.timestamp.strftime("%Y-%m-%d")  # date of account movement
         if date in account_movement_lookup:
             account_movement_lookup[date].append(movement)
         else:
