@@ -143,7 +143,7 @@ class AccountRegistrationForm(FlaskForm):
 
 class PaymentForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
-    phone_number = StringField('Phone Number', validators=[DataRequired()])
+    phone_number = IntegerField('Phone Number', validators=[DataRequired()])
     amount = IntegerField('Amount', validators=[Optional()])
     account = SelectField('Choose Account', choices=[])
     submit = SubmitField('Save')

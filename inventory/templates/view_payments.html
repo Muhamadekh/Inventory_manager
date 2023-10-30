@@ -17,15 +17,15 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                {% for payee in payee_lookup[date] %}
                                     <tr>
-                                        {% for payee in payee_lookup[date] %}
-                                            <td>{{ payee.name }}</td>
-                                            <td>{{ payee.phone_number }}</td>
-                                            <td>{{ "{:,}".format(payee.amount) }}</td>
-                                            <td>{{ payee.timestamp.strftime("%Y-%m-%d") }}</td>
-                                            <td><button>Edit</button></td>
-                                        {% endfor %}
+                                        <td>{{ payee.name }}</td>
+                                        <td>{{ payee.phone_number }}</td>
+                                        <td>{{ "{:,}".format(payee.amount) }}</td>
+                                        <td>{{ payee.timestamp.strftime("%Y-%m-%d") }}</td>
+                                        <td><button>Edit</button></td>
                                     </tr>
+                                {% endfor %}
                             </tbody>
                             </table>
                         </div>

@@ -1091,14 +1091,18 @@ def make_payment():
     selected_account_name = form.get_selected_account_name()
     selected_account = Account.query.filter_by(account_name=selected_account_name).first()
     if form.validate_on_submit():
-        payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data,
-                          account=selected_account.account_name)
-        selected_account.balance -= payment.amount
-        balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
-        db.session.add(payment)
-        db.session.add(balance_log)
-        db.session.commit()
-        return redirect(url_for('view_payments'))
+        if selected_account.balance > form.amount.data:
+            payment = Payment(name=form.name.data, phone_number=form.phone_number.data, amount=form.amount.data,
+                              account=selected_account.account_name)
+            selected_account.balance -= payment.amount
+            balance_log = AccountBalanceLog(account_id=selected_account.id, balance=selected_account.balance)
+            db.session.add(payment)
+            db.session.add(balance_log)
+            db.session.commit()
+            return redirect(url_for('view_payments'))
+        else:
+            flash(f"No enough balance in the {selected_account.account_name} account", "danger")
+            return redirect(url_for('make_payment'))
     return render_template('make_payments.html', form=form)
 
 
@@ -1109,7 +1113,7 @@ def view_payments():
     start_date = date_today - timedelta(days=30)
     # Store date of payment as the key and the payee objects as a list of values
     payee_lookup = {}
-    payees = Payment.query.filter(func.date(Payment.timestamp >= start_date)).order_by(Payment.timestamp.desc()).all()
+    payees = Payment.query.filter(Payment.timestamp >= start_date).order_by(Payment.timestamp.desc()).all()
     for payee in payees:
         date = payee.timestamp.strftime("%Y-%m-%d")  # date of payment
         if date in payee_lookup:
