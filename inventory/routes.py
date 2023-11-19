@@ -826,7 +826,7 @@ def debt_registration():
                 db.session.add(balance_log)
         db.session.commit()
         for cart_item in cart_items:
-            item.sale_id = sale.id
+            cart_item.sale_id = sale.id
             item = Item.query.filter_by(item_name=cart_item.item_name).first()
             shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
             shop_item.item_quantity -= cart_item.item_quantity  # Deduct the quantity if item is sold/assigned sale id
