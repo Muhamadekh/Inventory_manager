@@ -158,9 +158,11 @@
                     </div>
                 </div>
             </div>
+
             <nav class="navbar-mobile">
                 <div class="container-fluid">
                     <ul class="navbar-mobile__list list-unstyled">
+                        {% if current_user.is_authenticated and current_user.user_role == 'Admin' %}
                         <li class="has-sub">
                             <a class="js-arrow" href="{{ url_for('home') }}">
                                 <i class="fas fa-tachometer-alt"></i>Dashboard</a>
@@ -233,10 +235,15 @@
                                 </li>
                             </ul>
                         </li>
+                        {% elif current_user.is_authenticated and current_user.user_role != 'Admin' %}
                         <li>
                             <a href="{{ url_for('logout') }}">
                                 <i class="fas fa-calendar-alt"></i>Logout</a>
                         </li>
+                        {% else %}
+                         <a href="{{ url_for('login') }}"><h2 style="color: white; font-family: Verdana">
+                             Inventory & Stock Control System</h2></a>
+                        {% endif %}
                     </ul>
                 </div>
             </nav>
