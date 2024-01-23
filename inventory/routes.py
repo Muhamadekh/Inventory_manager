@@ -1040,10 +1040,12 @@ def account_transfer():
             db.session.add(balance_log)
             db.session.commit()
             # Add amount to transfer_to account
-            if transfer_from != "Dollae Account":
+            if transfer_from.account_name != "Dollar Account" and transfer_to.account_name == "Dollar Account":
                 transfer_to.balance += amount / rate
-            else:
+            elif transfer_from.account_name == "Dollar Account" and transfer_to.account_name != "Dollar Account":
                 transfer_to.balance += amount * rate
+            else:
+                transfer_to.balance += amount
             balance_log = AccountBalanceLog(account_id=transfer_to.id, balance=transfer_to.balance)
             db.session.add(balance_log)
             db.session.commit()
