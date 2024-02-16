@@ -19,13 +19,20 @@
                             </thead>
                             <tbody>
                                 {% for debtor in debtors %}
-                                    <tr>
-                                        <td>{{ debtor.name }}</td>
-                                        <td>{{ debtor.company_name }}</td>
-                                        <td>{{ debtor.phone_number }}</td>
-                                        <td>{{ "{:,}".format(debtor.unpaid_amount) }}</td>
-                                        <td><a href="{{ url_for ('update_debtor', debtor_id=debtor.id) }}"><button>Edit</button></a></td>
-                                    </tr>
+                                    {% if debtor.unpaid_amount > 0 %}
+                                        <tr>
+                                            <td>{{ debtor.name }}</td>
+                                            <td>{{ debtor.company_name }}</td>
+                                            <td>{{ debtor.phone_number }}</td>
+                                            {% if debtor.account_symbol == 'GNF' or debtor.account_symbol == 'USD'%}
+                                                <td><strong>{{ debtor.account_symbol }}</strong>&nbsp{{ "{:,}".format(debtor.unpaid_amount) }}
+                                                </td>
+                                            {% else %}
+                                                <td>{{ "{:,}".format(debtor.unpaid_amount) }}</td>
+                                            {% endif %}
+                                            <td><a href="{{ url_for ('update_debtor', debtor_id=debtor.id) }}"><button>Edit</button></a></td>
+                                        </tr>
+                                    {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>

@@ -173,6 +173,7 @@ class Debtor(db.Model):
     phone_number = db.Column(db.String(80), nullable=False, unique=True)
     amount_paid = db.Column(db.Integer, nullable=False)
     unpaid_amount = db.Column(db.Integer, nullable=False)
+    account_symbol = db.Column(db.String(20), nullable=False, default='GNF')
     purchases = db.relationship('Sale', backref='debtor', lazy=True)
 
 

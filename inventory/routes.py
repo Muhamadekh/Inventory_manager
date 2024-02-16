@@ -813,8 +813,9 @@ def debt_registration():
             phone_number = form.phone_number.data
             amount_paid = amount_paid
             unpaid_amount = sale.sales_value - amount_paid
+            account_symbol = 'GNF'
             debtor = Debtor(name=name, company_name=company_name, phone_number=phone_number,
-                            amount_paid=amount_paid, unpaid_amount=unpaid_amount)
+                            amount_paid=amount_paid, unpaid_amount=unpaid_amount, account_symbol=account_symbol)
         sale.debtor_id = debtor.id
         sale.amount_paid = amount_paid
         sale.credit_option = True
@@ -1134,6 +1135,7 @@ def view_payments():
 def update_debtor(debtor_id):
     debtor = Debtor.query.get_or_404(debtor_id)
     form = UpdateDebtorForm()
+    form.populate_account_choices()
     if request.method == 'GET':
         form.name.data = debtor.name
         form.company_name.data = debtor.company_name
@@ -1142,6 +1144,10 @@ def update_debtor(debtor_id):
         debtor.name = form.name.data
         debtor.company_name = form.company_name.data
         debtor.phone_number = form.phone_number.data
+        if form.payment_method.data == 'Dollar Account':
+            debtor.account_symbol = 'USD'
+        else:
+            debtor.account_symbol = 'GNF'
         if form.amount_paid.data <= debtor.unpaid_amount:
             debtor.unpaid_amount -= form.amount_paid.data
         else:
@@ -1416,13 +1422,16 @@ def borrowers():
     form = PaymentForm()
     form.populate_account_choices()
     selected_account_name = form.get_selected_account_name()
+    account_symbol = 'GNF'
+    if selected_account_name == 'Dollar Account':
+        account_symbol = 'USD'
     if form.validate_on_submit():
         debtor = Debtor.query.filter_by(phone_number=form.phone_number.data).first()
         if debtor:
             debtor.unpaid_amount += form.amount.data
         else:
             debtor = Debtor(name=form.name.data, company_name='--', phone_number=form.phone_number.data,
-                            unpaid_amount=form.amount.data, amount_paid=0)
+                            unpaid_amount=form.amount.data, amount_paid=0, account_symbol=account_symbol)
             db.session.add(debtor)
         account = Account.query.filter_by(account_name=selected_account_name).first()
         account.balance -= form.amount.data

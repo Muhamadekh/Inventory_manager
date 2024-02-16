@@ -111,8 +111,11 @@ class UpdateDebtorForm(FlaskForm):
     company_name = StringField('Company Name', validators=[DataRequired(), Length(min=4)])
     phone_number = StringField('Phone Number', validators=[DataRequired()])
     amount_paid = IntegerField('Amount Paid', validators=[Optional()])
-    payment_method = SelectField('Payment Method', choices=payment_methods_list)
+    payment_method = SelectField('Payment Method', choices=[])
     submit = SubmitField('Save')
+
+    def populate_account_choices(self):
+        self.payment_method.choices = [account.account_name for account in Account.query.all()]
 
 
 class ShopKeeperRegistrationForm(FlaskForm):
