@@ -42,6 +42,7 @@
           </thead>
           <tbody>
             {% for product in ShopItem.query.filter_by(shop_id=shop.id).all() %}
+              {% if product.item_quantity > 0 %}
               <tr>
                   <td>{{ product.item.item_name }}</td>
                   {% if current_user.user_role=='Admin' %}
@@ -57,8 +58,8 @@
                     <td class="text-center"><a href="{{ url_for ('edit_shop_stock', stock_id=product.id) }}">Edit</a></td>
 <!--                    <td class="text-center"><a href="{{ url_for('delete_shop_stock', item_id=product.id, shop_id=shop.id)}}"><span class="text-danger">DELETE</span></a></td>-->
                   {% endif %}
-
               </tr>
+              {% endif %}
             {% endfor %}
               <tr>
                   {% if current_user.user_role=='Admin' %}
