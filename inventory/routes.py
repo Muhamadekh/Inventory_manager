@@ -782,7 +782,7 @@ def edit_shop_stock(stock_id):
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     session["shop_id"] = shop.id
-    all_stock = [item for item in ShopItem.query.filter_by(shop_id=shop.id).all()]
+    all_stock = [item for item in ShopItem.query.filter_by(shop_id=shop.id).all() if item.item_quantity > 0]
     return render_template('daily_count.html', all_stock=all_stock, shop=shop)
 
 
