@@ -1041,9 +1041,9 @@ def account_transfer():
             db.session.add(balance_log)
             db.session.commit()
             # Add amount to transfer_to account
-            if transfer_from.account_name != "Dollar Account" and transfer_to.account_name == "Dollar Account":
+            if "Dollar" not in transfer_from.account_name and "Dollar" in transfer_to.account_name:
                 transfer_to.balance += amount / rate
-            elif transfer_from.account_name == "Dollar Account" and transfer_to.account_name != "Dollar Account":
+            elif "Dollar" in transfer_from.account_name and "Dollar" not in transfer_to.account_name:
                 transfer_to.balance += amount * rate
             else:
                 transfer_to.balance += amount
@@ -1144,7 +1144,7 @@ def update_debtor(debtor_id):
         debtor.name = form.name.data
         debtor.company_name = form.company_name.data
         debtor.phone_number = form.phone_number.data
-        if form.payment_method.data == 'Dollar Account':
+        if "Dollar" in form.payment_method.data:
             debtor.account_symbol = 'USD'
         else:
             debtor.account_symbol = 'GNF'
@@ -1423,7 +1423,7 @@ def borrowers():
     form.populate_account_choices()
     selected_account_name = form.get_selected_account_name()
     account_symbol = 'GNF'
-    if selected_account_name == 'Dollar Account':
+    if selected_account_name and "Dollar" in selected_account_name:
         account_symbol = 'USD'
     if form.validate_on_submit():
         debtor = Debtor.query.filter_by(phone_number=form.phone_number.data).first()
