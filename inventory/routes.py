@@ -1117,7 +1117,7 @@ def make_payment():
 @app.route('/view_payments', methods=['GET', 'POST'])
 def view_payments():
     date_today = datetime.now().date()
-    start_date = date_today - timedelta(days=30)
+    start_date = date_today - timedelta(days=365)
     # Store date of payment as the key and the payee objects as a list of values
     payee_lookup = {}
     payees = Payment.query.filter(Payment.timestamp >= start_date).order_by(Payment.timestamp.desc()).all()
