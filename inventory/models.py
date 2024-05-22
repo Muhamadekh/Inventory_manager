@@ -19,6 +19,8 @@ class User(db.Model, UserMixin):
     shops = db.relationship('Shop', backref='staff', lazy=True)
     stores = db.relationship('Store', backref='staff', lazy=True)
     shopkeepers = db.relationship('Shopkeeper', backref='user_details', lazy=True)
+    stock_selected = db.relationship('StockSold', backref='seller_details', lazy=True)
+    sale = db.relationship('Sale', backref='seller_details', lazy=True)
 
 
 # Shop Model
@@ -92,6 +94,7 @@ class Sale(db.Model):
     credit_option = db.Column(db.Boolean)
     amount_paid = db.Column(db.Integer)
     sale_items = db.relationship('StockSold', backref='sale_group', lazy=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
 # Model for items added to cart
@@ -105,6 +108,7 @@ class StockSold(db.Model):
     item_selling_price = db.Column(db.Float, nullable=False)
     sale_id = db.Column(db.Integer, db.ForeignKey('sale.id'))
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
 # Model for store

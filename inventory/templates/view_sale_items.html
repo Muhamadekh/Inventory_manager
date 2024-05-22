@@ -5,6 +5,7 @@
     <table class="table table-hover table-condensed">
       <thead>
         <tr>
+          <th>Seller Name</th>
           <th>Item Name</th>
           <th>Item Quantity</th>
           <th>Item Discount</th>
@@ -15,6 +16,7 @@
       <tbody>
         {% for item in sale.sale_items %}
           <tr>
+              <td>{{ sale.seller_details.username }}</td>
               <td>{{ item.item_name }}</td>
               <td>{{ "{:,.2f}".format(item.item_quantity) }}</td>
               <td>{{ "{:,}".format(item.item_discount) }}</td>

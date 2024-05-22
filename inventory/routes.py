@@ -279,14 +279,14 @@ def stock_sold(shop_id):
         if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                                   item_discount=discount, item_cost_price=item.item_cost_price,
-                                  item_selling_price=item.item_selling_price, shop_id=shop_id)
+                                  item_selling_price=item.item_selling_price, shop_id=shop_id, user_id=current_user.id)
             item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
             db.session.add(item_sold)
             db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
         else:
             flash("No enough quantity is stock", "warning")
-    cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id).all()  # Grab cart items
+    cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id, user_id=current_user.id).all()  # Grab cart items
     total_amount = 0
     for item in cart_items:
         total_amount += item.item_value
@@ -296,9 +296,10 @@ def stock_sold(shop_id):
             session["payment_method"] = sales_form.payment_method.data
             session["sales_discount"] = discount
             session["shop_id"] = shop.id
+            session["user_id"] = current_user.id
             return redirect(url_for("debt_registration"))
         sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
-                    shop_id=shop.id)
+                    shop_id=shop.id, user_id=current_user.id)
         sale.sales_value = total_amount - discount
         sale.amount_paid = sale.sales_value
         sale.transaction_id = sales_form.transaction_id.data if sales_form.transaction_id.data else None
@@ -793,12 +794,13 @@ def debt_registration():
         shop_id = session.get("shop_id")
         discount = session.get("sales_discount")
         payment_method = session.get("payment_method")
+        user_id = session.get("user_id")
         total_amount = 0
-        cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id).all()
+        cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id, user_id=user_id).all()
         for item in cart_items:
             total_amount += item.item_value
         sale = Sale(sales_discount=discount, payment_method=payment_method,
-                    shop_id=shop_id)
+                    shop_id=shop_id, user_id=user_id)
         sale.sales_value = total_amount - discount
         db.session.add(sale)
         db.session.commit()
@@ -1027,8 +1029,8 @@ def account_transfer():
     accounts = Account.query.all()
     if request.method == 'POST':
         amount = float(request.form['amount'])
-        transfer_from_id = int(request.form['transfer_from'])
-        transfer_to_id = int(request.form['transfer_to'])
+        transfer_from_id = float(request.form['transfer_from'])
+        transfer_to_id = float(request.form['transfer_to'])
         rate = float(request.form['rate'])
 
         transfer_from = Account.query.get_or_404(transfer_from_id)

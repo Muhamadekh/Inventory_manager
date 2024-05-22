@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, \
-    SearchField, FloatField, TextAreaField
+    SearchField, FloatField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional
 from inventory.models import User, Shop, Account, Sale
 from flask import session
@@ -47,6 +47,7 @@ payment_methods_list = ['Cash', 'Orange Money', 'Bank']
 
 
 class ShopStockSoldForm(FlaskForm):
+    user_id = HiddenField('User ID')
     item_name = SearchField('Search Item Name', validators=[DataRequired()])
     item_quantity = IntegerField('Quantity Sold', validators=[DataRequired()])
     item_discount = IntegerField('Discount', validators=[Optional()])
@@ -54,6 +55,7 @@ class ShopStockSoldForm(FlaskForm):
 
 
 class SaleForm(FlaskForm):
+    user_id = HiddenField('User ID')
     sale_discount = IntegerField('Sale Discount', validators=[Optional()])
     payment_method = SelectField('Payment Method', choices=payment_methods_list, default=None)
     transaction_id = StringField('Transaction ID', validators=[Optional()])
