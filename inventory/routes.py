@@ -97,6 +97,7 @@ def home():
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
+@login_required
 def register_user():
     form = UserRegistrationForm()
     user = User.query.filter_by(username=form.username.data).first()
@@ -114,12 +115,14 @@ def register_user():
 
 
 @app.route('/view_users', methods=['GET'])
+@login_required
 def view_users():
     users = User.query.all()
     return render_template('view_users.html', users=users)
 
 
 @app.route('/register_shop', methods=['GET', 'POST'])
+@login_required
 def register_shop():
     form = ShopRegistrationForm()
     shop = Shop.query.filter_by(shop_name=form.shop_name.data).first()
@@ -137,6 +140,7 @@ def register_shop():
 
 
 @app.route('/view_shops', methods=['GET', 'POST'])
+@login_required
 def view_shops():
     shops = Shop.query.all()
     users = User.query.all()
@@ -152,6 +156,7 @@ def view_shops():
 
 
 @app.route('/view_shops/<int:shop_id>', methods=['GET'])
+@login_required
 def view_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     date = today_date()
@@ -195,6 +200,7 @@ def logout():
 
 # Get items to be received in a store
 @app.route('/get_items', methods=['GET', 'POST'])
+@login_required
 def get_items():
     item_name = request.json["item_name"]
     items = Item.query.all()
@@ -203,6 +209,7 @@ def get_items():
 
 
 @app.route('/<int:shop_id>/stock_received', methods=['GET', 'POST'])
+@login_required
 def stock_received(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     form = ShopStockReceivedForm()
@@ -257,6 +264,7 @@ def stock_received(shop_id):
 
 # Get items in a shop to be sold
 @app.route('/get_item_name', methods=['GET', 'POST'])
+@login_required
 def get_item_name():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
@@ -266,6 +274,7 @@ def get_item_name():
 
 
 @app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
+@login_required
 def stock_sold(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     selection_form = ShopStockSoldForm()
@@ -350,6 +359,7 @@ def stock_sold(shop_id):
 
 
 @app.route('/<int:shop_id>/transfer_stock', methods=['GET', 'POST'])
+@login_required
 def transfer_stock(shop_id):
     shop_from = Shop.query.get_or_404(shop_id)
     form = TransferStockForm()
@@ -394,6 +404,7 @@ def transfer_stock(shop_id):
 
 
 @app.route('/<int:shop_id>/stock_from_shop', methods=['GET', 'POST'])
+@login_required
 def stock_from_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     form = StockFromShopForm()
@@ -448,6 +459,7 @@ def stock_from_shop(shop_id):
 
 
 @app.route('/history', methods=['GET'])
+@login_required
 def history():
     start_date = datetime.now() - timedelta(days=3)
     sales_entries = StockSold.query.filter(StockSold.date_sold >= start_date,
@@ -469,6 +481,7 @@ def history():
 
 # Search debtor
 @app.route('/search_debtor', methods=['GET', 'POST'])
+@login_required
 def search_debtor():
     phone_number = request.json["phone_number"]
 
@@ -486,12 +499,14 @@ def search_debtor():
 
 
 @app.route('/view_debtors', methods=['GET'])
+@login_required
 def view_debtors():
     debtors = Debtor.query.all()
     return render_template('view_debtors.html', debtors=debtors)
 
 
 @app.route('/register_store', methods=['GET', 'POST'])
+@login_required
 def register_store():
     form = StoreRegistrationForm()
     if form.validate_on_submit():
@@ -504,6 +519,7 @@ def register_store():
 
 
 @app.route('/view_stores', methods=['GET', 'POST'])
+@login_required
 def view_stores():
     stores = Store.query.all()
     date = today_date()
@@ -521,6 +537,7 @@ def view_stores():
 
 
 @app.route('/view_stores/<int:store_id>', methods=['GET'])
+@login_required
 def view_store(store_id):
     store = Store.query.get_or_404(store_id)
     date = today_date()
@@ -556,12 +573,14 @@ def add_items():
 
 
 @app.route('/view_items', methods=['GET', 'POST'])
+@login_required
 def view_items():
     items = Item.query.all()
     return render_template('view_items.html', items=items)
 
 
 @app.route('/view_stores/<int:store_id>/stock_in', methods=['GET', 'POST'])
+@login_required
 def stock_in(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreStockInForm()
@@ -679,6 +698,7 @@ def stock_in(store_id):
 
 
 @app.route('/view_stores/<int:store_id>/stock_out', methods=['GET', 'POST'])
+@login_required
 def stock_out(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreStockOutForm()
@@ -719,6 +739,7 @@ def stock_out(store_id):
 
 
 @app.route('/monthly_sales_data')
+@login_required
 def monthly_sales_data():
     today = datetime.now().date()
     start_date = today - timedelta(days=31 * 6 + 30 * 5 + 29)
@@ -743,6 +764,7 @@ def monthly_sales_data():
 
 
 @app.route('/<int:stock_id>/edit_store_stock', methods=['GET', 'POST'])
+@login_required
 def edit_store_stock(stock_id):
     stock = StoreItem.query.get_or_404(stock_id)
     item = Item.query.get_or_404(stock.item_id)
@@ -761,6 +783,7 @@ def edit_store_stock(stock_id):
 
 
 @app.route('/<int:stock_id>/edit_shop_stock', methods=['GET', 'POST'])
+@login_required
 def edit_shop_stock(stock_id):
     stock = ShopItem.query.get_or_404(stock_id)
     item = Item.query.get_or_404(stock.item_id)
@@ -780,6 +803,7 @@ def edit_shop_stock(stock_id):
 
 
 @app.route('/<int:shop_id>/shop/daily_count', methods=['GET', 'POST'])
+@login_required
 def daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     session["shop_id"] = shop.id
@@ -788,6 +812,7 @@ def daily_count(shop_id):
 
 
 @app.route('/debt_registration/', methods=['GET', 'POST'])
+@login_required
 def debt_registration():
     form = DebtorRegistrationForm()
     if form.validate_on_submit():
@@ -840,6 +865,7 @@ def debt_registration():
 
 
 @app.route('/get_shops_stock', methods=['GET', 'POST'])
+@login_required
 def get_shops_stock():
     searched_term = request.json["searched_term"]
     all_stock = ShopItem.query.all()
@@ -853,6 +879,7 @@ def get_shops_stock():
 
 # Saving daily count of all items in the shop as submitted by the shopkeeper
 @app.route('/save_daily_count', methods=['POST'])
+@login_required
 def save_daily_count():
     shop_id = session.get("shop_id")
     daily_count_data = request.json
@@ -869,6 +896,7 @@ def save_daily_count():
 
 # View total discounts, total sales value, total item cost, net profit per shop for the last 7 days
 @app.route('/shop_daily_report', methods=['GET', 'POST'])
+@login_required
 def shop_daily_report():
     shops = Shop.query.all()
     all_sales = Sale.query.order_by(Sale.date_sold.desc()).all()  # Grab all sale objects
@@ -931,6 +959,7 @@ def shop_daily_report():
 
 # Assign shopkeeper to a shop
 @app.route('/<int:shop_id>/assign_shopkeeper', methods=['GET', 'POST'])
+@login_required
 def assign_shopkeeper(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     form = ShopKeeperRegistrationForm()
@@ -953,6 +982,7 @@ def assign_shopkeeper(shop_id):
 
 # Getting items in stores
 @app.route('/get_store_items', methods=['GET', 'POST'])
+@login_required
 def get_store_items():
     item_name = request.json["item_name"]
     store_id = request.json["store_id"]
@@ -964,6 +994,7 @@ def get_store_items():
 
 # Getting item in stock sent from a store to a shop (Stockout)
 @app.route('/get_stock_sent_items', methods=['GET', 'POST'])
+@login_required
 def get_stock_sent_items():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
@@ -976,6 +1007,7 @@ def get_stock_sent_items():
 
 # Remove unwanted item s from cart items list
 @app.route('/<int:shop_id>/remove_cart_item/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def remove_cart_item(shop_id, item_id):
     item = StockSold.query.filter_by(sale_id=None, id=item_id, shop_id=shop_id).first()
     db.session.delete(item)
@@ -985,6 +1017,7 @@ def remove_cart_item(shop_id, item_id):
 
 # Register accounts
 @app.route('/add_account', methods=['GET', 'POST'])
+@login_required
 def add_account():
     form = AccountRegistrationForm()
     if form.validate_on_submit():
@@ -997,6 +1030,7 @@ def add_account():
 
 
 @app.route('/view_accounts', methods=['GET', 'POST'])
+@login_required
 def view_accounts():
     date = today_date()
     accounts = Account.query.all()
@@ -1025,6 +1059,7 @@ def view_accounts():
 
 # Transfer money between account
 @app.route('/account_transfer', methods=['GET', 'POST'])
+@login_required
 def account_transfer():
     accounts = Account.query.all()
     if request.method == 'POST':
@@ -1080,6 +1115,7 @@ def account_transfer():
 
 
 @app.route('/search_payee', methods=['GET', 'POST'])
+@login_required
 def search_payee():
     phone_number = request.json["phone_number"]
     payee = Payment.query.filter_by(phone_number=phone_number).first()
@@ -1094,6 +1130,7 @@ def search_payee():
 
 
 @app.route('/make_payment', methods=['GET', 'POST'])
+@login_required
 def make_payment():
     form = PaymentForm()
     form.populate_account_choices()
@@ -1117,6 +1154,7 @@ def make_payment():
 
 # View list of people you made payments to in the last 30 days
 @app.route('/view_payments', methods=['GET', 'POST'])
+@login_required
 def view_payments():
     date_today = datetime.now().date()
     start_date = date_today - timedelta(days=365)
@@ -1134,6 +1172,7 @@ def view_payments():
 
 # Update debtor balance or any other debtor details
 @app.route('/update_debtor/<int:debtor_id>', methods=['GET', 'POST'])
+@login_required
 def update_debtor(debtor_id):
     debtor = Debtor.query.get_or_404(debtor_id)
     form = UpdateDebtorForm()
@@ -1188,6 +1227,7 @@ def get_daily_count(shop_id):
 
 # Show daily count from each shop 7 days
 @app.route('/<int:shop_id>/view_daily_count', methods=['GET'])
+@login_required
 def view_daily_count(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     count_comparison_lookup = get_daily_count(shop_id)  # Call the get_daily_count function
@@ -1196,6 +1236,7 @@ def view_daily_count(shop_id):
 
 # Download reports of shops over a certain period of time
 @app.route('/download_reports', methods=['GET', 'POST'])
+@login_required
 def download_reports():
     shops = Shop.query.all()
 
@@ -1324,6 +1365,7 @@ def download_reports():
 
 # Get items transfered from another shop
 @app.route('/get_transferred_items', methods=['GET', 'POST'])
+@login_required
 def get_transfered_items():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
@@ -1336,6 +1378,7 @@ def get_transfered_items():
 
 # Remove a shopkeeper from a shop
 @app.route('/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
+@login_required
 def remove_shopkeeper(shopkeeper_id):
     shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id)
     if shopkeeper:
@@ -1348,6 +1391,7 @@ def remove_shopkeeper(shopkeeper_id):
 
 # Harmonize differences in daily count submitted by shopkeepers and item quantity in the system
 @app.route('/<int:shop_id>/<int:item_id>/void_count_differences', methods=['GET', 'POST'])
+@login_required
 def void_count_differences(shop_id, item_id):
     count_comparison_lookup = get_daily_count(shop_id)
 
@@ -1384,6 +1428,7 @@ def void_count_differences(shop_id, item_id):
 
 # List lost items for every shop for the last 30 days
 @app.route('/view_lost_items', methods=['GET'])
+@login_required
 def view_lost_items():
     lost_items_lookup = dict()
     total_value_lookup = dict()
@@ -1420,6 +1465,7 @@ def view_lost_items():
 
 # Debtors lent by manager
 @app.route('/borrowers', methods=['GET', 'POST'])
+@login_required
 def borrowers():
     form = PaymentForm()
     form.populate_account_choices()
@@ -1445,6 +1491,7 @@ def borrowers():
 
 
 @app.route('/update_account/<int:account_id>', methods=['GET', 'POST'])
+@login_required
 def update_account(account_id):
     account = Account.query.get_or_404(account_id)
     form = UpdateAccountForm()
@@ -1462,6 +1509,7 @@ def update_account(account_id):
 
 
 @app.route('/edit_stock_from_store/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def edit_stock_from_store(item_id):
     item = StockOut.query.get_or_404(item_id)
     form = UpdateStoreStockOutForm()
@@ -1482,6 +1530,7 @@ def edit_stock_from_store(item_id):
 
 
 @app.route('/edit_stock_from_shop/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def edit_stock_from_shop(item_id):
     item = TransferStock.query.get_or_404(item_id)
     form = UpdateTransferStockForm()
@@ -1502,6 +1551,7 @@ def edit_stock_from_shop(item_id):
 
 
 @app.route('/edit_item/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def edit_item(item_id):
     item = Item.query.get_or_404(item_id)
     form = StoreNewItemForm()
@@ -1535,6 +1585,7 @@ def edit_item(item_id):
 
 
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
 def edit_user(user_id):
     user = User.query.get_or_404(user_id)
     form = UserRegistrationForm()
@@ -1552,6 +1603,7 @@ def edit_user(user_id):
 
 
 @app.route('/edit_store/<int:store_id>', methods=['GET', 'POST'])
+@login_required
 def edit_store(store_id):
     store = Store.query.get_or_404(store_id)
     form = StoreRegistrationForm()
@@ -1568,6 +1620,7 @@ def edit_store(store_id):
 
 
 @app.route('/edit_shop/<int:shop_id>', methods=['GET', 'POST'])
+@login_required
 def edit_shop(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     form = ShopRegistrationForm()
@@ -1584,6 +1637,7 @@ def edit_shop(shop_id):
 
 
 @app.route('/<int:store_id>/delete_store_stock/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def delete_store_stock(store_id, item_id):
     store_item = StoreItem.query.get_or_404(item_id)
     item = Item.query.filter_by(id=store_item.item_id).first()
@@ -1596,6 +1650,7 @@ def delete_store_stock(store_id, item_id):
 
 
 @app.route('/<int:shop_id>/delete_shop_stock/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def delete_shop_stock(shop_id, item_id):
     shop_item = ShopItem.query.get_or_404(item_id)
     db.session.delete(shop_item)
@@ -1604,6 +1659,7 @@ def delete_shop_stock(shop_id, item_id):
 
 
 @app.route('/update_lost_items/<int:item_id>', methods=['GET', 'POST'])
+@login_required
 def update_lost_items(item_id):
     form = StockFromShopForm()
     item = Item.query.get_or_404(item_id)
@@ -1632,6 +1688,7 @@ def update_lost_items(item_id):
 
 # View items in a sale
 @app.route('/<sale_id>/view_sale_items', methods=['GET'])
+@login_required
 def view_sale_items(sale_id):
     sale = Sale.query.get_or_404(sale_id)
     return render_template('view_sale_items.html', sale=sale)
@@ -1639,6 +1696,7 @@ def view_sale_items(sale_id):
 
 # Edit items in a sale
 @app.route('/<int:item_id>/edit_sale_item/<int:shop_id>', methods=['GET', 'POST'])
+@login_required
 def edit_sale_item(item_id, shop_id):
     item_sold = StockSold.query.get_or_404(item_id)
     # get item sold cost price by getting the item
@@ -1685,6 +1743,7 @@ def edit_sale_item(item_id, shop_id):
 
 # Edit daily count from shops
 @app.route('/<int:item_id>/edit_daily_count/<int:shop_id>', methods=['GET', 'POST'])
+@login_required
 def edit_daily_count(item_id, shop_id):
     shop = Shop.query.get_or_404(shop_id)
     item = Item.query.get_or_404(item_id)
@@ -1706,6 +1765,7 @@ def edit_daily_count(item_id, shop_id):
 
 
 @app.route('/price_change_log', methods=['GET'])
+@login_required
 def price_change_log():
     current_date = datetime.now()
     start_time = current_date - timedelta(days=60)
@@ -1714,6 +1774,7 @@ def price_change_log():
 
 
 @app.route('/trash', methods=['GET'])
+@login_required
 def trash():
     current_date = datetime.now()
     start_time = current_date - timedelta(days=60)
@@ -1722,6 +1783,7 @@ def trash():
 
 
 @app.route('/<int:shop_id>/view_sales', methods=['GET'])
+@login_required
 def view_sales(shop_id):
     current_date = datetime.now()
     start_time = current_date - timedelta(days=7)
@@ -1730,6 +1792,7 @@ def view_sales(shop_id):
 
 
 @app.route('/expenses', methods=['GET', 'POST'])
+@login_required
 def record_expense():
     form = ExpenseForm()
     form.populate_account_choices()
@@ -1761,6 +1824,7 @@ def record_expense():
 
 
 @app.route('/<int:expense_id>/edit_expense', methods=['GET', 'POST'])
+@login_required
 def edit_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
     form = ExpenseForm()
