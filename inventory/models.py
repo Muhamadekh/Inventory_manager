@@ -6,7 +6,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(itn(user_id))
+    return User.query.get(int(user_id))
 
 
 # Users Model
