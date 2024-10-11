@@ -200,7 +200,6 @@ def logout():
 
 # Get items to be received in a store
 @app.route('/get_items', methods=['GET', 'POST'])
-@login_required
 def get_items():
     item_name = request.json["item_name"]
     items = Item.query.all()
@@ -264,7 +263,6 @@ def stock_received(shop_id):
 
 # Get items in a shop to be sold
 @app.route('/get_item_name', methods=['GET', 'POST'])
-@login_required
 def get_item_name():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
@@ -274,88 +272,88 @@ def get_item_name():
 
 
 @app.route('/<int:shop_id>/shop', methods=['GET', 'POST'])
+@login_required
 def stock_sold(shop_id):
-    if current_user.is_authenticated:
-        shop = Shop.query.get(shop_id)
-        selection_form = ShopStockSoldForm()
-        sales_form = SaleForm()
-        # Form to add items to cart
-        if selection_form.validate_on_submit() and selection_form.submit.data:
-            item_name = selection_form.item_name.data
-            item = Item.query.filter_by(item_name=item_name).first()  # query the item class using the item name selected
-            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
-            discount = selection_form.item_discount.data if selection_form.item_discount.data else 0  # get the item discount
-            if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
-                item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
-                                      item_discount=discount, item_cost_price=item.item_cost_price,
-                                      item_selling_price=item.item_selling_price, shop_id=shop_id, user_id=current_user.id)
-                item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
-                db.session.add(item_sold)
-                db.session.commit()
-                return redirect(url_for('stock_sold', shop_id=shop.id))
-            else:
-                flash("No enough quantity is stock", "warning")
-        cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id, user_id=current_user.id).all()  # Grab cart items
-        total_amount = 0
-        for item in cart_items:
-            total_amount += item.item_value
-        if sales_form.validate_on_submit() and sales_form.submit.data:
-            discount = sales_form.sale_discount.data if sales_form.sale_discount.data else 0
-            if sales_form.credit_option.data is True:
-                session["payment_method"] = sales_form.payment_method.data
-                session["sales_discount"] = discount
-                session["shop_id"] = shop.id
-                session["user_id"] = current_user.id
-                return redirect(url_for("debt_registration"))
-            sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
-                        shop_id=shop.id, user_id=current_user.id)
-            sale.sales_value = total_amount - discount
-            sale.amount_paid = sale.sales_value
-            sale.transaction_id = sales_form.transaction_id.data if sales_form.transaction_id.data else None
-            for account in Account.query.all():
-                if sale.payment_method.lower() == account.account_name.lower():
-                    account.balance += sale.amount_paid
-                    balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
-                    db.session.add(balance_log)
-            db.session.add(sale)
+    shop = Shop.query.get(shop_id)
+    selection_form = ShopStockSoldForm()
+    sales_form = SaleForm()
+    # Form to add items to cart
+    if selection_form.validate_on_submit() and selection_form.submit.data:
+        item_name = selection_form.item_name.data
+        item = Item.query.filter_by(item_name=item_name).first()  # query the item class using the item name selected
+        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
+        discount = selection_form.item_discount.data if selection_form.item_discount.data else 0  # get the item discount
+        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
+            item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
+                                  item_discount=discount, item_cost_price=item.item_cost_price,
+                                  item_selling_price=item.item_selling_price, shop_id=shop_id, user_id=current_user.id)
+            item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - discount)
+            db.session.add(item_sold)
             db.session.commit()
-            for cart_item in cart_items:
-                cart_item.sale_id = sale.id
-                item = Item.query.filter_by(item_name=cart_item.item_name).first()
-                shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
-                shop_item.item_quantity -= cart_item.item_quantity  # Deduct the quantity if item is sold/assigned sale id
-                shop_item.item_value = shop_item.item_quantity * item.item_cost_price
-                db.session.commit()
             return redirect(url_for('stock_sold', shop_id=shop.id))
-        sales_lookup = {}
-        total_discount = {}
-        Date = today_date()
-        current_date = datetime.now()
-        sales_entries = Sale.query.filter(Sale.date_sold <= current_date, Sale.shop_id == shop.id
-                                          ).order_by(Sale.date_sold.desc()).all()
-        for entry in sales_entries:
-            entry_id = entry.id
-            total_discount[entry_id] = sum(
-                [(item.item_discount * item.item_quantity) for item in entry.sale_items]) + entry.sales_discount
-            date = entry.date_sold.date()
-            if date in sales_lookup:
-                sales_lookup[date].append(entry)
-            else:
-                sales_lookup[date] = [entry]
+        else:
+            flash("No enough quantity is stock", "warning")
+    cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id, user_id=current_user.id).all()  # Grab cart items
+    total_amount = 0
+    for item in cart_items:
+        total_amount += item.item_value
+    if sales_form.validate_on_submit() and sales_form.submit.data:
+        discount = sales_form.sale_discount.data if sales_form.sale_discount.data else 0
+        if sales_form.credit_option.data is True:
+            session["payment_method"] = sales_form.payment_method.data
+            session["sales_discount"] = discount
+            session["shop_id"] = shop.id
+            session["user_id"] = current_user.id
+            return redirect(url_for("debt_registration"))
+        sale = Sale(sales_discount=discount, payment_method=sales_form.payment_method.data,
+                    shop_id=shop.id, user_id=current_user.id)
+        sale.sales_value = total_amount - discount
+        sale.amount_paid = sale.sales_value
+        sale.transaction_id = sales_form.transaction_id.data if sales_form.transaction_id.data else None
+        for account in Account.query.all():
+            if sale.payment_method.lower() == account.account_name.lower():
+                account.balance += sale.amount_paid
+                balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+                db.session.add(balance_log)
+        db.session.add(sale)
+        db.session.commit()
+        for cart_item in cart_items:
+            cart_item.sale_id = sale.id
+            item = Item.query.filter_by(item_name=cart_item.item_name).first()
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
+            shop_item.item_quantity -= cart_item.item_quantity  # Deduct the quantity if item is sold/assigned sale id
+            shop_item.item_value = shop_item.item_quantity * item.item_cost_price
+            db.session.commit()
+        return redirect(url_for('stock_sold', shop_id=shop.id))
+    sales_lookup = {}
+    total_discount = {}
+    Date = today_date()
+    current_date = datetime.now()
+    sales_entries = Sale.query.filter(Sale.date_sold <= current_date, Sale.shop_id == shop.id
+                                      ).order_by(Sale.date_sold.desc()).all()
+    for entry in sales_entries:
+        entry_id = entry.id
+        total_discount[entry_id] = sum(
+            [(item.item_discount * item.item_quantity) for item in entry.sale_items]) + entry.sales_discount
+        date = entry.date_sold.date()
+        if date in sales_lookup:
+            sales_lookup[date].append(entry)
+        else:
+            sales_lookup[date] = [entry]
 
-        # Getting today's total sales
-        today_sales = []
-        sales = Sale.query.filter_by(shop_id=shop.id).all()
-        for sale in sales:
-            today = today_date()
-            if sale.date_sold.strftime("%Y-%m-%d") == today:
-                today_sales.append(sale.sales_value)
-        today_total_sales = sum(today_sales)
+    # Getting today's total sales
+    today_sales = []
+    sales = Sale.query.filter_by(shop_id=shop.id).all()
+    for sale in sales:
+        today = today_date()
+        if sale.date_sold.strftime("%Y-%m-%d") == today:
+            today_sales.append(sale.sales_value)
+    today_total_sales = sum(today_sales)
 
-        return render_template('stock_sold.html', selection_form=selection_form, sales_lookup=sales_lookup, Date=Date,
-                               shop=shop,
-                               sales_form=sales_form, cart_items=cart_items, total_amount=total_amount,
-                               sales_entries=sales_entries, total_discount=total_discount, today_total_sales=today_total_sales)
+    return render_template('stock_sold.html', selection_form=selection_form, sales_lookup=sales_lookup, Date=Date,
+                           shop=shop,
+                           sales_form=sales_form, cart_items=cart_items, total_amount=total_amount,
+                           sales_entries=sales_entries, total_discount=total_discount, today_total_sales=today_total_sales)
 
 
 @app.route('/<int:shop_id>/transfer_stock', methods=['GET', 'POST'])
@@ -738,7 +736,6 @@ def stock_out(store_id):
 
 
 @app.route('/monthly_sales_data')
-@login_required
 def monthly_sales_data():
     today = datetime.now().date()
     start_date = today - timedelta(days=31 * 6 + 30 * 5 + 29)
@@ -864,7 +861,6 @@ def debt_registration():
 
 
 @app.route('/get_shops_stock', methods=['GET', 'POST'])
-@login_required
 def get_shops_stock():
     searched_term = request.json["searched_term"]
     all_stock = ShopItem.query.all()
@@ -878,7 +874,6 @@ def get_shops_stock():
 
 # Saving daily count of all items in the shop as submitted by the shopkeeper
 @app.route('/save_daily_count', methods=['POST'])
-@login_required
 def save_daily_count():
     shop_id = session.get("shop_id")
     daily_count_data = request.json
@@ -981,7 +976,6 @@ def assign_shopkeeper(shop_id):
 
 # Getting items in stores
 @app.route('/get_store_items', methods=['GET', 'POST'])
-@login_required
 def get_store_items():
     item_name = request.json["item_name"]
     store_id = request.json["store_id"]
@@ -993,7 +987,6 @@ def get_store_items():
 
 # Getting item in stock sent from a store to a shop (Stockout)
 @app.route('/get_stock_sent_items', methods=['GET', 'POST'])
-@login_required
 def get_stock_sent_items():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
@@ -1114,7 +1107,6 @@ def account_transfer():
 
 
 @app.route('/search_payee', methods=['GET', 'POST'])
-@login_required
 def search_payee():
     phone_number = request.json["phone_number"]
     payee = Payment.query.filter_by(phone_number=phone_number).first()
@@ -1364,7 +1356,6 @@ def download_reports():
 
 # Get items transfered from another shop
 @app.route('/get_transferred_items', methods=['GET', 'POST'])
-@login_required
 def get_transfered_items():
     item_name = request.json["item_name"]
     shop_id = request.json["shop_id"]
