@@ -1,33 +1,61 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-    <!-- Table with spreadsheet-like design -->
-    <table class="table table-hover table-condensed">
-      <thead>
-        <tr>
-          <th>Item Name</th>
-          <th>Item Cost Price</th>
-          <th>Item Selling Price</th>
-          <th>Quantity</th>
-          <th>Discount</th>
-          <th>Sale ID</th>
-          <th>Sale Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for sale in sales %}
-            {% for item in sale.sale_items %}
+    <div class="container mt-4">
+
+        <!-- Seller Summary Section -->
+        <h2 class="mb-3">Weekly Sales Summary by Seller</h2>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Seller Name</th>
+              <th>Sales Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for seller, total_sales in seller_sales.items() %}
               <tr>
-                  <td>{{ item.item_name }}</td>
-                  <td>{{ "{:,.2f}".format(item.item_cost_price) }}</td>
-                  <td>{{ "{:,}".format(item.item_selling_price) }}</td>
-                  <td>{{ item.item_quantity }}</td>
-                  <td>{{ item.item_discount }}</td>
-                  <td>{{ sale.id }}</td>
-                  <td>{{ sale.date_sold.strftime("%Y-%m-%d") }}</td>
+                <td>{{ seller }}</td>
+                <td>{{ "{:,.2f}".format(total_sales) }}</td>
               </tr>
             {% endfor %}
-        {% endfor %}
-      </tbody>
-    </table>
-{% endblock content%}
+            <tr>
+              <td class="font-weight-bold">Total Weekly Sales</td>
+              <td>{{ "{:,.2f}".format(total_weekly_sales) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Individual Sales Table -->
+        <h3 class="mt-5">Detailed Sales Data</h3>
+        <table class="table table-hover table-condensed table-striped">
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th>Item Cost Price</th>
+              <th>Item Selling Price</th>
+              <th>Quantity</th>
+              <th>Discount</th>
+              <th>Sale ID</th>
+              <th>Sale Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sale in sales %}
+              {% for item in sale.sale_items %}
+                <tr>
+                  <td>{{ item.item_name }}</td>
+                  <td>{{ "{:,.2f}".format(item.item_cost_price) }}</td>
+                  <td>{{ "{:,.2f}".format(item.item_selling_price) }}</td>
+                  <td>{{ item.item_quantity }}</td>
+                  <td>{{ "{:,.2f}".format(item.item_discount) }}</td>
+                  <td>{{ sale.id }}</td>
+                  <td>{{ sale.date_sold.strftime("%Y-%m-%d") }}</td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+
+{% endblock content %}

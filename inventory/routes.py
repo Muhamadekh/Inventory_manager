@@ -1690,7 +1690,7 @@ def update_lost_items(item_id):
 @app.route('/<sale_id>/view_sale_items', methods=['GET'])
 @login_required
 def view_sale_items(sale_id):
-    sale = Sale.query.get_or_404(sale_id)
+    sale = Sale.query.get(sale_id)
     return render_template('view_sale_items.html', sale=sale)
 
 
@@ -1788,7 +1788,18 @@ def view_sales(shop_id):
     current_date = datetime.now()
     start_time = current_date - timedelta(days=7)
     sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).order_by(Sale.date_sold.desc()).all()
-    return render_template('view_sales.html', sales=sales)
+    seller_sales = {}
+    total_weekly_sales = 0
+    for sale in sales:
+        seller_name = sale.seller_details.username
+        if seller_name in seller_sales:
+            seller_sales[seller_name] += sale.sales_value
+        else:
+            seller_sales[seller_name] = sale.sales_value
+        total_weekly_sales += sale.sales_value
+
+    return render_template('view_sales.html', sales=sales, seller_sales=seller_sales,
+                           total_weekly_sales=total_weekly_sales)
 
 
 @app.route('/expenses', methods=['GET', 'POST'])
