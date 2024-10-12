@@ -20,14 +20,12 @@
       </tbody>
     </table>
 
-    <!-- Sales by Seller (Daily Sales for Current Month and Monthly Sales for the Year) -->
-    <h2 class="mb-3 mt-5">Sales Summary by Seller</h2>
+    <!-- Monthly Sales Summary by Seller -->
+    <h2 class="mb-3 mt-5">Monthly Sales Summary by Seller (Yearly)</h2>
     <table class="table table-bordered">
       <thead>
         <tr>
           <th>Seller Name</th>
-          <th>Date</th>
-          <th>Daily Sales (Current Month)</th>
           <th>January</th>
           <th>February</th>
           <th>March</th>
@@ -43,24 +41,43 @@
         </tr>
       </thead>
       <tbody>
+        {% for seller, months_sales in yearly_sales.items() %}
+          <tr>
+            <td>{{ seller }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('January', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('February', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('March', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('April', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('May', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('June', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('July', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('August', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('September', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('October', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('November', 0)) }}</td>
+            <td>{{ "{:,.2f}".format(months_sales.get('December', 0)) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Daily Sales by Seller for Current Month -->
+    <h2 class="mb-3 mt-5">Daily Sales by Seller (Current Month)</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Seller Name</th>
+          <th>Date</th>
+          <th>Sales Value</th>
+        </tr>
+      </thead>
+      <tbody>
         {% for seller, sales_by_date in daily_sales.items() %}
           {% for date, sales_value in sales_by_date.items() %}
             <tr>
               <td>{{ seller }}</td>
               <td>{{ date }}</td>
               <td>{{ "{:,.2f}".format(sales_value) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('January', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('February', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('March', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('April', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('May', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('June', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('July', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('August', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('September', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('October', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('November', 0)) }}</td>
-              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('December', 0)) }}</td>
             </tr>
           {% endfor %}
         {% endfor %}
