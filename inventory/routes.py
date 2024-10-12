@@ -1819,7 +1819,7 @@ def view_sales(shop_id):
 
         # Iterate through sales and organize them by seller and date/month
         for sale in sales:
-            seller_name = sale.seller_details.username
+            seller_name = sale.seller_details.username if sale.seller_details.username else 'Unknown'
             sale_date = sale.date_sold.strftime('%Y-%m-%d')  # Format as 'YYYY-MM-DD'
             sale_month = sale.date_sold.strftime('%B')  # Get month name (e.g., 'January')
 
