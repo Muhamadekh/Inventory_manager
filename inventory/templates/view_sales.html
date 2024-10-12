@@ -1,61 +1,72 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-    <div class="container mt-4">
+<div class="container mt-4">
 
-        <!-- Seller Summary Section -->
-        <h2 class="mb-3">Weekly Sales Summary by Seller</h2>
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Seller Name</th>
-              <th>Sales Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for seller, total_sales in seller_sales.items() %}
-              <tr>
-                <td>{{ seller }}</td>
-                <td>{{ "{:,.2f}".format(total_sales) }}</td>
-              </tr>
-            {% endfor %}
-            <tr>
-              <td class="font-weight-bold">Total Weekly Sales</td>
-              <td>{{ "{:,.2f}".format(total_weekly_sales) }}</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Total Yearly Sales for the Shop -->
+    <h2 class="mb-3 mt-5">Total Sales for the Shop (Yearly)</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Total Sales</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ current_year }}</td>
+          <td>{{ "{:,.2f}".format(total_yearly_sales) }}</td>
+        </tr>
+      </tbody>
+    </table>
 
-        <!-- Individual Sales Table -->
-        <h3 class="mt-5">Detailed Sales Data</h3>
-        <table class="table table-hover table-condensed table-striped">
-          <thead>
+    <!-- Sales by Seller (Daily Sales for Current Month and Monthly Sales for the Year) -->
+    <h2 class="mb-3 mt-5">Sales Summary by Seller</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Seller Name</th>
+          <th>Date</th>
+          <th>Daily Sales (Current Month)</th>
+          <th>January</th>
+          <th>February</th>
+          <th>March</th>
+          <th>April</th>
+          <th>May</th>
+          <th>June</th>
+          <th>July</th>
+          <th>August</th>
+          <th>September</th>
+          <th>October</th>
+          <th>November</th>
+          <th>December</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for seller, sales_by_date in daily_sales.items() %}
+          {% for date, sales_value in sales_by_date.items() %}
             <tr>
-              <th>Item Name</th>
-              <th>Item Cost Price</th>
-              <th>Item Selling Price</th>
-              <th>Quantity</th>
-              <th>Discount</th>
-              <th>Sale ID</th>
-              <th>Sale Date</th>
+              <td>{{ seller }}</td>
+              <td>{{ date }}</td>
+              <td>{{ "{:,.2f}".format(sales_value) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('January', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('February', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('March', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('April', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('May', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('June', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('July', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('August', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('September', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('October', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('November', 0)) }}</td>
+              <td>{{ "{:,.2f}".format(yearly_sales[seller].get('December', 0)) }}</td>
             </tr>
-          </thead>
-          <tbody>
-            {% for sale in sales %}
-              {% for item in sale.sale_items %}
-                <tr>
-                  <td>{{ item.item_name }}</td>
-                  <td>{{ "{:,.2f}".format(item.item_cost_price) }}</td>
-                  <td>{{ "{:,.2f}".format(item.item_selling_price) }}</td>
-                  <td>{{ item.item_quantity }}</td>
-                  <td>{{ "{:,.2f}".format(item.item_discount) }}</td>
-                  <td>{{ sale.id }}</td>
-                  <td>{{ sale.date_sold.strftime("%Y-%m-%d") }}</td>
-                </tr>
-              {% endfor %}
-            {% endfor %}
-          </tbody>
-        </table>
-    </div>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+</div>
 
 {% endblock content %}

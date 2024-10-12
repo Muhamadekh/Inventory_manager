@@ -27,132 +27,137 @@ def today_date():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
-    current_date = datetime.now().date()
-    # Finding total shops stck value
-    shops = Shop.query.all()
-    stock_value_list = []
-    for shop in shops:
-        shop_stock_value_list = []
-        for item in ShopItem.query.filter_by(shop_id=shop.id).all():
-            shop_stock_value_list.append(item.item_value)
-        stock_value_list.append(sum(shop_stock_value_list))
-    total_stock_value = sum(stock_value_list)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        current_date = datetime.now().date()
+        # Finding total shops stck value
+        shops = Shop.query.all()
+        stock_value_list = []
+        for shop in shops:
+            shop_stock_value_list = []
+            for item in ShopItem.query.filter_by(shop_id=shop.id).all():
+                shop_stock_value_list.append(item.item_value)
+            stock_value_list.append(sum(shop_stock_value_list))
+        total_stock_value = sum(stock_value_list)
 
-    # Finding total store stck value
-    store_stock = []
-    stores = Store.query.all()
-    for store in stores:
-        for item in StoreItem.query.filter_by(store_id=store.id).all():
-            store_stock.append(item.item_value)
-    total_store_stock = sum(store_stock)
+        # Finding total store stck value
+        store_stock = []
+        stores = Store.query.all()
+        for store in stores:
+            for item in StoreItem.query.filter_by(store_id=store.id).all():
+                store_stock.append(item.item_value)
+        total_store_stock = sum(store_stock)
 
-    # Finding total net sales and discount
-    sales_value_list = []
-    discount_list = []
-    sales = Sale.query.order_by(Sale.date_sold.desc()).all()
-    for sale in sales:
-        today = today_date()
-        if sale.date_sold.strftime("%Y-%m-%d") == today:
-            sales_value_list.append(sale.sales_value)
-            discount_list.append(sale.sales_discount)
-            for item in sale.sale_items:
-                if item.item_discount > 0:
-                    discount_list.append(item.item_discount * item.item_quantity)
-    total_sales_value = sum(sales_value_list)
-    total_discount = sum(discount_list)
+        # Finding total net sales and discount
+        sales_value_list = []
+        discount_list = []
+        sales = Sale.query.order_by(Sale.date_sold.desc()).all()
+        for sale in sales:
+            today = today_date()
+            if sale.date_sold.strftime("%Y-%m-%d") == today:
+                sales_value_list.append(sale.sales_value)
+                discount_list.append(sale.sales_discount)
+                for item in sale.sale_items:
+                    if item.item_discount > 0:
+                        discount_list.append(item.item_discount * item.item_quantity)
+        total_sales_value = sum(sales_value_list)
+        total_discount = sum(discount_list)
 
-    # Finding total top 5 most sold items
-    top_items_sold = StockSold.query.order_by(StockSold.item_quantity.desc(), StockSold.item_name).all()
-    top_items_sold_lookup = {}
-    for item in top_items_sold:
-        if item.item_name not in top_items_sold_lookup:
-            top_items_sold_lookup[item.item_name] = item.item_quantity
-        else:
-            new_quantity = top_items_sold_lookup[item.item_name] + item.item_quantity
-            top_items_sold_lookup[item.item_name] = new_quantity
-    sorted_top_items_sold_lookup = dict(sorted(top_items_sold_lookup.items(), key=lambda x: x[1], reverse=True))
-    top_5_items_sold = dict(itertools.islice(sorted_top_items_sold_lookup.items(), 5))
+        # Finding total top 5 most sold items
+        top_items_sold = StockSold.query.order_by(StockSold.item_quantity.desc(), StockSold.item_name).all()
+        top_items_sold_lookup = {}
+        for item in top_items_sold:
+            if item.item_name not in top_items_sold_lookup:
+                top_items_sold_lookup[item.item_name] = item.item_quantity
+            else:
+                new_quantity = top_items_sold_lookup[item.item_name] + item.item_quantity
+                top_items_sold_lookup[item.item_name] = new_quantity
+        sorted_top_items_sold_lookup = dict(sorted(top_items_sold_lookup.items(), key=lambda x: x[1], reverse=True))
+        top_5_items_sold = dict(itertools.islice(sorted_top_items_sold_lookup.items(), 5))
 
-    # Listing shop-based weekly sales
-    shop_sales_lookup = {}
-    time_range = datetime.now() - timedelta(days=7)
+        # Listing shop-based weekly sales
+        shop_sales_lookup = {}
+        time_range = datetime.now() - timedelta(days=7)
 
-    for shop in shops:
-        shop_sales_lookup[shop.shop_name] = 0  # Initialize the list for each shop
-        weekly_sales = Sale.query.filter(Sale.date_sold >= time_range).all()
-        if weekly_sales:
-            for sale in weekly_sales:
-                if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
-                    if shop.shop_name in shop_sales_lookup:
-                        shop_sales_lookup[shop.shop_name] += sum(item.item_quantity for item in sale.sale_items)
-                    else:
-                        shop_sales_lookup[shop.shop_name] = sum(item.item_quantity for item in sale.sale_items)
-    sorted_total_shop_sales_lookup = dict(sorted(shop_sales_lookup.items(), key=lambda x: x[1], reverse=True))
+        for shop in shops:
+            shop_sales_lookup[shop.shop_name] = 0  # Initialize the list for each shop
+            weekly_sales = Sale.query.filter(Sale.date_sold >= time_range).all()
+            if weekly_sales:
+                for sale in weekly_sales:
+                    if sale.shop_id == shop.id:  # Check if the sale belongs to the current shop
+                        if shop.shop_name in shop_sales_lookup:
+                            shop_sales_lookup[shop.shop_name] += sum(item.item_quantity for item in sale.sale_items)
+                        else:
+                            shop_sales_lookup[shop.shop_name] = sum(item.item_quantity for item in sale.sale_items)
+        sorted_total_shop_sales_lookup = dict(sorted(shop_sales_lookup.items(), key=lambda x: x[1], reverse=True))
 
-    return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value,
-                           total_store_stock=total_store_stock,
-                           total_sales_value=total_sales_value, total_discount=total_discount,
-                           top_5_items_sold=top_5_items_sold,
-                           sorted_total_shop_sales_lookup=sorted_total_shop_sales_lookup)
+        return render_template('home.html', current_date=current_date, total_stock_value=total_stock_value,
+                               total_store_stock=total_store_stock,
+                               total_sales_value=total_sales_value, total_discount=total_discount,
+                               top_5_items_sold=top_5_items_sold,
+                               sorted_total_shop_sales_lookup=sorted_total_shop_sales_lookup)
 
 
 @app.route('/register_user', methods=['GET', 'POST'])
 @login_required
 def register_user():
-    form = UserRegistrationForm()
-    user = User.query.filter_by(username=form.username.data).first()
-    if user:
-        flash("A user with this username exist. Try another name", "warning")
-    else:
-        if form.validate_on_submit():
-            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-            user = User(username=form.username.data, password=hashed_password, user_role=form.user_role.data)
-            db.session.add(user)
-            db.session.commit()
-            flash(f"{user.username} was registered successfully", "success")
-            return redirect(url_for('login'))
-    return render_template('register_user.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        form = UserRegistrationForm()
+        user = User.query.filter_by(username=form.username.data).first()
+        if user:
+            flash("A user with this username exist. Try another name", "warning")
+        else:
+            if form.validate_on_submit():
+                hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+                user = User(username=form.username.data, password=hashed_password, user_role=form.user_role.data)
+                db.session.add(user)
+                db.session.commit()
+                flash(f"{user.username} was registered successfully", "success")
+                return redirect(url_for('login'))
+        return render_template('register_user.html', form=form)
 
 
 @app.route('/view_users', methods=['GET'])
 @login_required
 def view_users():
-    users = User.query.all()
-    return render_template('view_users.html', users=users)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        users = User.query.all()
+        return render_template('view_users.html', users=users)
 
 
 @app.route('/register_shop', methods=['GET', 'POST'])
 @login_required
 def register_shop():
-    form = ShopRegistrationForm()
-    shop = Shop.query.filter_by(shop_name=form.shop_name.data).first()
-    if shop:
-        flash("This already exist. Try another name", "warning")
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        form = ShopRegistrationForm()
+        shop = Shop.query.filter_by(shop_name=form.shop_name.data).first()
+        if shop:
+            flash("This already exist. Try another name", "warning")
 
-    if form.validate_on_submit():
-        shop = Shop(shop_name=form.shop_name.data, location=form.location.data, user_id=current_user.id)
-        db.session.add(shop)
-        db.session.commit()
-        flash(f"{shop.shop_name} at {shop.location} was successfully registered.", "success")
-        return redirect(url_for('view_shops'))
+        if form.validate_on_submit():
+            shop = Shop(shop_name=form.shop_name.data, location=form.location.data, user_id=current_user.id)
+            db.session.add(shop)
+            db.session.commit()
+            flash(f"{shop.shop_name} at {shop.location} was successfully registered.", "success")
+            return redirect(url_for('view_shops'))
 
-    return render_template('register_shop.html', form=form, shop=shop)
+        return render_template('register_shop.html', form=form, shop=shop)
 
 
 @app.route('/view_shops', methods=['GET', 'POST'])
 @login_required
 def view_shops():
-    shops = Shop.query.all()
-    users = User.query.all()
-    date = today_date()
-    shop_stock_lookup = {}
-    for shop in shops:
-        stock_value_list = []
-        for product in ShopItem.query.filter_by(shop_id=shop.id).all():
-            stock_value_list.append(product.item_value)
-        total_stock_value = sum(stock_value_list)
-        shop_stock_lookup[shop.id] = total_stock_value
-    return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date, users=users)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        shops = Shop.query.all()
+        users = User.query.all()
+        date = today_date()
+        shop_stock_lookup = {}
+        for shop in shops:
+            stock_value_list = []
+            for product in ShopItem.query.filter_by(shop_id=shop.id).all():
+                stock_value_list.append(product.item_value)
+            total_stock_value = sum(stock_value_list)
+            shop_stock_lookup[shop.id] = total_stock_value
+        return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date, users=users)
 
 
 @app.route('/view_shops/<int:shop_id>', methods=['GET'])
@@ -505,68 +510,72 @@ def view_debtors():
 @app.route('/register_store', methods=['GET', 'POST'])
 @login_required
 def register_store():
-    form = StoreRegistrationForm()
-    if form.validate_on_submit():
-        store = Store(store_name=form.store_name.data, location=form.location.data, user_id=current_user.id)
-        db.session.add(store)
-        db.session.commit()
-        flash(f"{store.store_name} at {store.location} was successfully registered.", "success")
-        return redirect(url_for('view_stores'))
-    return render_template('register_store.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        form = StoreRegistrationForm()
+        if form.validate_on_submit():
+            store = Store(store_name=form.store_name.data, location=form.location.data, user_id=current_user.id)
+            db.session.add(store)
+            db.session.commit()
+            flash(f"{store.store_name} at {store.location} was successfully registered.", "success")
+            return redirect(url_for('view_stores'))
+        return render_template('register_store.html', form=form)
 
 
 @app.route('/view_stores', methods=['GET', 'POST'])
 @login_required
 def view_stores():
-    stores = Store.query.all()
-    date = today_date()
-    store_stock_lookup = {}
-    total_stock_value = []
-    for store in stores:
-        store_items = StoreItem.query.filter_by(store_id=store.id).all()
-        stock_value_list = []
-        for product in store_items:
-            stock_value_list.append(product.item_value)
-        total_stock_value = sum(stock_value_list)
-        store_stock_lookup[store.id] = total_stock_value
-    return render_template('view_stores.html', store_stock_lookup=store_stock_lookup, stores=stores, date=date,
-                           total_stock_value=total_stock_value)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        stores = Store.query.all()
+        date = today_date()
+        store_stock_lookup = {}
+        total_stock_value = []
+        for store in stores:
+            store_items = StoreItem.query.filter_by(store_id=store.id).all()
+            stock_value_list = []
+            for product in store_items:
+                stock_value_list.append(product.item_value)
+            total_stock_value = sum(stock_value_list)
+            store_stock_lookup[store.id] = total_stock_value
+        return render_template('view_stores.html', store_stock_lookup=store_stock_lookup, stores=stores, date=date,
+                               total_stock_value=total_stock_value)
 
 
 @app.route('/view_stores/<int:store_id>', methods=['GET'])
 @login_required
 def view_store(store_id):
-    store = Store.query.get_or_404(store_id)
-    date = today_date()
-    store_items = StoreItem.query.filter_by(store_id=store.id).all()
-    stock_value_list = []
-    for product in store_items:
-        stock_value_list.append(product.item_value)
-    total_stock_value = sum(stock_value_list)
-    return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date,
-                           store_items=store_items)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        store = Store.query.get_or_404(store_id)
+        date = today_date()
+        store_items = StoreItem.query.filter_by(store_id=store.id).all()
+        stock_value_list = []
+        for product in store_items:
+            stock_value_list.append(product.item_value)
+        total_stock_value = sum(stock_value_list)
+        return render_template('view_store.html', store=store, total_stock_value=total_stock_value, date=date,
+                               store_items=store_items)
 
 
 @app.route('/add_items', methods=['GET', 'POST'])
 @login_required
 def add_items():
-    form = StoreNewItemForm()
-    if form.validate_on_submit():
-        item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
-                    item_selling_price=form.item_selling_price.data)
-        try:
-            db.session.add(item)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            flash('An error occurred while adding the item.', 'danger')
-        if form.item_selling_price.data < form.item_cost_price.data:
-            flash('Item Added successfully', 'success')
-            flash('NOTE: Selling Price is less than Cost Price', 'danger')
-        else:
-            flash('Item added successfully.', 'success')
-        return redirect(url_for('add_items'))
-    return render_template('add_items.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        form = StoreNewItemForm()
+        if form.validate_on_submit():
+            item = Item(item_name=form.item_name.data, item_cost_price=form.item_cost_price.data,
+                        item_selling_price=form.item_selling_price.data)
+            try:
+                db.session.add(item)
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash('An error occurred while adding the item.', 'danger')
+            if form.item_selling_price.data < form.item_cost_price.data:
+                flash('Item Added successfully', 'success')
+                flash('NOTE: Selling Price is less than Cost Price', 'danger')
+            else:
+                flash('Item added successfully.', 'success')
+            return redirect(url_for('add_items'))
+        return render_template('add_items.html', form=form)
 
 
 @app.route('/view_items', methods=['GET', 'POST'])
@@ -955,23 +964,24 @@ def shop_daily_report():
 @app.route('/<int:shop_id>/assign_shopkeeper', methods=['GET', 'POST'])
 @login_required
 def assign_shopkeeper(shop_id):
-    shop = Shop.query.get_or_404(shop_id)
-    form = ShopKeeperRegistrationForm()
-    form.populate_shopkeeper_choices()
-    selected_staff_id = form.get_selected_shopkeeper_id()
-    user = User.query.filter_by(id=selected_staff_id).first()
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        shop = Shop.query.get_or_404(shop_id)
+        form = ShopKeeperRegistrationForm()
+        form.populate_shopkeeper_choices()
+        selected_staff_id = form.get_selected_shopkeeper_id()
+        user = User.query.filter_by(id=selected_staff_id).first()
 
-    if form.validate_on_submit():
-        shopkeeper = Shopkeeper.query.filter_by(user_id=user.id, shop_id=shop.id).first()
-        if shopkeeper:
-            flash("This staff is already attached to this shop.", "danger")
-        else:
-            shopkeeper = Shopkeeper(user_id=user.id, shop_id=shop.id)
-            db.session.add(shopkeeper)
-            db.session.commit()
-            return redirect(url_for('view_shops'))
+        if form.validate_on_submit():
+            shopkeeper = Shopkeeper.query.filter_by(user_id=user.id, shop_id=shop.id).first()
+            if shopkeeper:
+                flash("This staff is already attached to this shop.", "danger")
+            else:
+                shopkeeper = Shopkeeper(user_id=user.id, shop_id=shop.id)
+                db.session.add(shopkeeper)
+                db.session.commit()
+                return redirect(url_for('view_shops'))
 
-    return render_template('assign_shopkeeper.html', shop=shop, form=form)
+        return render_template('assign_shopkeeper.html', shop=shop, form=form)
 
 
 # Getting items in stores
@@ -1011,99 +1021,102 @@ def remove_cart_item(shop_id, item_id):
 @app.route('/add_account', methods=['GET', 'POST'])
 @login_required
 def add_account():
-    form = AccountRegistrationForm()
-    if form.validate_on_submit():
-        account = Account(account_name=form.account_name.data)
-        db.session.add(account)
-        db.session.commit()
-        flash(f"{account.account_name} was successfully registered.", "success")
-        return redirect(url_for('view_accounts'))
-    return render_template('add_account.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        form = AccountRegistrationForm()
+        if form.validate_on_submit():
+            account = Account(account_name=form.account_name.data)
+            db.session.add(account)
+            db.session.commit()
+            flash(f"{account.account_name} was successfully registered.", "success")
+            return redirect(url_for('view_accounts'))
+        return render_template('add_account.html', form=form)
 
 
 @app.route('/view_accounts', methods=['GET', 'POST'])
 @login_required
 def view_accounts():
-    date = today_date()
-    accounts = Account.query.all()
-    # Store the date as the key and nest other dicts of account names as the keys and a list of all balance logs
-    # for that account as the values
-    balance_log_lookup = {}
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        date = today_date()
+        accounts = Account.query.all()
+        # Store the date as the key and nest other dicts of account names as the keys and a list of all balance logs
+        # for that account as the values
+        balance_log_lookup = {}
 
-    for account in accounts:
-        account_name = account.account_name
-        balance_logs = AccountBalanceLog.query.filter(AccountBalanceLog.account_id == account.id).order_by(
-            AccountBalanceLog.timestamp.desc()).all()  # Grab the balance logs of every account
-        if balance_logs:
-            for balance_log in balance_logs:
-                date = balance_log.timestamp.date()
+        for account in accounts:
+            account_name = account.account_name
+            balance_logs = AccountBalanceLog.query.filter(AccountBalanceLog.account_id == account.id).order_by(
+                AccountBalanceLog.timestamp.desc()).all()  # Grab the balance logs of every account
+            if balance_logs:
+                for balance_log in balance_logs:
+                    date = balance_log.timestamp.date()
 
-                if date in balance_log_lookup:
-                    if account_name in balance_log_lookup[date]:
-                        balance_log_lookup[date][account_name].append(balance_log.balance)
+                    if date in balance_log_lookup:
+                        if account_name in balance_log_lookup[date]:
+                            balance_log_lookup[date][account_name].append(balance_log.balance)
+                        else:
+                            balance_log_lookup[date][account_name] = [balance_log.balance]
                     else:
-                        balance_log_lookup[date][account_name] = [balance_log.balance]
-                else:
-                    balance_log_lookup[date] = {account_name: [balance_log.balance]}
+                        balance_log_lookup[date] = {account_name: [balance_log.balance]}
 
-    return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup)
+        return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup)
 
 
 # Transfer money between account
 @app.route('/account_transfer', methods=['GET', 'POST'])
 @login_required
 def account_transfer():
-    accounts = Account.query.all()
-    if request.method == 'POST':
-        amount = float(request.form['amount'])
-        transfer_from_id = float(request.form['transfer_from'])
-        transfer_to_id = float(request.form['transfer_to'])
-        rate = float(request.form['rate'])
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        accounts = Account.query.all()
+        if request.method == 'POST':
+            amount = float(request.form['amount'])
+            transfer_from_id = float(request.form['transfer_from'])
+            transfer_to_id = float(request.form['transfer_to'])
+            rate = float(request.form['rate'])
 
-        transfer_from = Account.query.get_or_404(transfer_from_id)
-        transfer_to = Account.query.get_or_404(transfer_to_id)
+            transfer_from = Account.query.get_or_404(transfer_from_id)
+            transfer_to = Account.query.get_or_404(transfer_to_id)
 
-        if transfer_from.balance >= amount:
-            # Deduct amount from transfer_from account
-            transfer_from.balance -= amount
-            balance_log = AccountBalanceLog(account_id=transfer_from.id, balance=transfer_from.balance)
-            db.session.add(balance_log)
-            db.session.commit()
-            # Add amount to transfer_to account
-            if "Dollar" not in transfer_from.account_name and "Dollar" in transfer_to.account_name:
-                transfer_to.balance += amount / rate
-            elif "Dollar" in transfer_from.account_name and "Dollar" not in transfer_to.account_name:
-                transfer_to.balance += amount * rate
+            if transfer_from.balance >= amount:
+                # Deduct amount from transfer_from account
+                transfer_from.balance -= amount
+                balance_log = AccountBalanceLog(account_id=transfer_from.id, balance=transfer_from.balance)
+                db.session.add(balance_log)
+                db.session.commit()
+                # Add amount to transfer_to account
+                if "Dollar" not in transfer_from.account_name and "Dollar" in transfer_to.account_name:
+                    transfer_to.balance += amount / rate
+                elif "Dollar" in transfer_from.account_name and "Dollar" not in transfer_to.account_name:
+                    transfer_to.balance += amount * rate
+                else:
+                    transfer_to.balance += amount
+                balance_log = AccountBalanceLog(account_id=transfer_to.id, balance=transfer_to.balance)
+                db.session.add(balance_log)
+                db.session.commit()
+                # Create an account movement record
+                payment_movement = AccountMovement(amount=amount, transfer_from_id=transfer_from_id,
+                                                   transfer_to_id=transfer_to_id)
+                db.session.add(payment_movement)
+                db.session.commit()
+
+                return redirect(url_for('view_accounts'))
             else:
-                transfer_to.balance += amount
-            balance_log = AccountBalanceLog(account_id=transfer_to.id, balance=transfer_to.balance)
-            db.session.add(balance_log)
-            db.session.commit()
-            # Create an account movement record
-            payment_movement = AccountMovement(amount=amount, transfer_from_id=transfer_from_id,
-                                               transfer_to_id=transfer_to_id)
-            db.session.add(payment_movement)
-            db.session.commit()
+                flash('Insufficient funds in the transfer_from account.', 'error')
 
-            return redirect(url_for('view_accounts'))
-        else:
-            flash('Insufficient funds in the transfer_from account.', 'error')
+        # Retrieve all account movements
+        date_today = datetime.now().date()
+        start_date = date_today - timedelta(days=60)
 
-    # Retrieve all account movements
-    date_today = datetime.now().date()
-    start_date = date_today - timedelta(days=60)
+        account_movement_lookup = {}
+        account_movements = AccountMovement.query.filter(AccountMovement.timestamp >= start_date)\
+            .order_by(AccountMovement.timestamp.desc()).all()
+        for movement in account_movements:
+            date = movement.timestamp.strftime("%Y-%m-%d")  # date of account movement
+            if date in account_movement_lookup:
+                account_movement_lookup[date].append(movement)
+            else:
+                account_movement_lookup[date] = [movement]
 
-    account_movement_lookup = {}
-    account_movements = AccountMovement.query.filter(AccountMovement.timestamp >= start_date)\
-        .order_by(AccountMovement.timestamp.desc()).all()
-    for movement in account_movements:
-        date = movement.timestamp.strftime("%Y-%m-%d")  # date of account movement
-        if date in account_movement_lookup:
-            account_movement_lookup[date].append(movement)
-        else:
-            account_movement_lookup[date] = [movement]
-
-    return render_template('account_transfer.html', accounts=accounts, account_movement_lookup=account_movement_lookup)
+        return render_template('account_transfer.html', accounts=accounts, account_movement_lookup=account_movement_lookup)
 
 
 @app.route('/search_payee', methods=['GET', 'POST'])
@@ -1370,87 +1383,90 @@ def get_transfered_items():
 @app.route('/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
 @login_required
 def remove_shopkeeper(shopkeeper_id):
-    shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id)
-    if shopkeeper:
-        db.session.delete(shopkeeper)
-        db.session.commit()
-    else:
-        flash("Shopkeeper does not exist")
-    return redirect(url_for('view_shops'))
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        shopkeeper = Shopkeeper.query.get_or_404(shopkeeper_id)
+        if shopkeeper:
+            db.session.delete(shopkeeper)
+            db.session.commit()
+        else:
+            flash("Shopkeeper does not exist")
+        return redirect(url_for('view_shops'))
 
 
 # Harmonize differences in daily count submitted by shopkeepers and item quantity in the system
 @app.route('/<int:shop_id>/<int:item_id>/void_count_differences', methods=['GET', 'POST'])
 @login_required
 def void_count_differences(shop_id, item_id):
-    count_comparison_lookup = get_daily_count(shop_id)
+        if current_user.is_authenticated and current_user.user_role == 'Admin':
+            count_comparison_lookup = get_daily_count(shop_id)
 
-    for date, items in count_comparison_lookup.items():
-        if date == datetime.now().strftime("%Y-%m-%d"):  # Only make changes for the current date
-            for item_name, values in items.items():
-                if values[2] == item_id:  # Check if the item ID matches the clicked item
-                    shop_item = ShopItem.query.filter_by(shop_id=shop_id, item_id=item_id).first()
-                    base_count = values[0]
-                    item_daily_count = values[1]
+            for date, items in count_comparison_lookup.items():
+                if date == datetime.now().strftime("%Y-%m-%d"):  # Only make changes for the current date
+                    for item_name, values in items.items():
+                        if values[2] == item_id:  # Check if the item ID matches the clicked item
+                            shop_item = ShopItem.query.filter_by(shop_id=shop_id, item_id=item_id).first()
+                            base_count = values[0]
+                            item_daily_count = values[1]
 
-                    if base_count != item_daily_count:
-                        difference = item_daily_count - base_count
-                        item = CountDifference.query.filter_by(shop_id=shop_id,
-                                                               shop_item_id=shop_item.id).first()
-                        if item:
-                            item.quantity += difference
-                        else:
-                            count_difference = CountDifference(quantity=difference, shop_id=shop_id,
-                                                               shop_item_id=shop_item.id)
-                            db.session.add(count_difference)
+                            if base_count != item_daily_count:
+                                difference = item_daily_count - base_count
+                                item = CountDifference.query.filter_by(shop_id=shop_id,
+                                                                       shop_item_id=shop_item.id).first()
+                                if item:
+                                    item.quantity += difference
+                                else:
+                                    count_difference = CountDifference(quantity=difference, shop_id=shop_id,
+                                                                       shop_item_id=shop_item.id)
+                                    db.session.add(count_difference)
 
-                        shop_item.item_quantity = item_daily_count
-                        # Update the item quantity in the dictionary
-                        daily_counts = DailyCount.query.filter(DailyCount.shop_item_id == shop_item.id,
-                                                              DailyCount.shop_id == shop_id)\
-                            .order_by(DailyCount.date.desc()).all()
-                        for item in daily_counts:
-                            if item.date.strftime("%Y-%m-%d") == date:
-                                item.base_count = item.count
-                        db.session.commit()
-    return redirect(url_for('view_daily_count', shop_id=shop_id))
+                                shop_item.item_quantity = item_daily_count
+                                # Update the item quantity in the dictionary
+                                daily_counts = DailyCount.query.filter(DailyCount.shop_item_id == shop_item.id,
+                                                                      DailyCount.shop_id == shop_id)\
+                                    .order_by(DailyCount.date.desc()).all()
+                                for item in daily_counts:
+                                    if item.date.strftime("%Y-%m-%d") == date:
+                                        item.base_count = item.count
+                                db.session.commit()
+            return redirect(url_for('view_daily_count', shop_id=shop_id))
 
 
 # List lost items for every shop for the last 30 days
 @app.route('/view_lost_items', methods=['GET'])
 @login_required
 def view_lost_items():
-    lost_items_lookup = dict()
-    total_value_lookup = dict()
-    current_date = datetime.now()
-    start_time = current_date - timedelta(days=30)
-    lost_items = CountDifference.query.filter(CountDifference.date >= start_time) \
-        .order_by(CountDifference.date.desc()).all()
-    for item in lost_items:
-        shop_name = item.difference_item.shop_name
-        date = item.date.strftime("%Y-%m-%d")
-        item_name = item.shop_item.item.item_name
-        product = Item.query.filter_by(item_name=item_name).first()
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        lost_items_lookup = dict()
+        total_value_lookup = dict()
+        current_date = datetime.now()
+        start_time = current_date - timedelta(days=30)
+        lost_items = CountDifference.query.filter(CountDifference.date >= start_time) \
+            .order_by(CountDifference.date.desc()).all()
+        for item in lost_items:
+            shop_name = item.difference_item.shop_name
+            date = item.date.strftime("%Y-%m-%d")
+            item_name = item.shop_item.item.item_name
+            product = Item.query.filter_by(item_name=item_name).first()
 
-        # Calculate the value of the lost item for this specific entry
-        lost_item_value = item.quantity * product.item_cost_price
+            # Calculate the value of the lost item for this specific entry
+            lost_item_value = item.quantity * product.item_cost_price
 
-        # Update the total value for the shop in the total_value_lookup dictionary
-        if shop_name in total_value_lookup:
-            total_value_lookup[shop_name] += lost_item_value
-        else:
-            total_value_lookup[shop_name] = lost_item_value
-
-        # Update the lost_items_lookup dictionary
-        if shop_name in lost_items_lookup:
-            if date in lost_items_lookup[shop_name]:
-                lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price, product.id]
+            # Update the total value for the shop in the total_value_lookup dictionary
+            if shop_name in total_value_lookup:
+                total_value_lookup[shop_name] += lost_item_value
             else:
-                lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price, product.id]}
-        else:
-            lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price, product.id]}}
-    return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup,
-                           total_value_lookup=total_value_lookup)
+                total_value_lookup[shop_name] = lost_item_value
+
+            # Update the lost_items_lookup dictionary
+            if shop_name in lost_items_lookup:
+                if date in lost_items_lookup[shop_name]:
+                    lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price, product.id]
+                else:
+                    lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price, product.id]}
+            else:
+                lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price, product.id]}}
+        return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup,
+                               total_value_lookup=total_value_lookup)
 
 
 # Debtors lent by manager
@@ -1483,25 +1499,26 @@ def borrowers():
 @app.route('/update_account/<int:account_id>', methods=['GET', 'POST'])
 @login_required
 def update_account(account_id):
-    account = Account.query.get_or_404(account_id)
-    form = UpdateAccountForm()
-    if request.method == 'GET':
-        form.account_name.data = account.account_name
-        form.balance.data = account.balance
-    if request.method == 'POST':
-        account.account_name = form.account_name.data
-        account.balance = form.balance.data
-        balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
-        db.session.add(balance_log)
-        db.session.commit()
-        return redirect(url_for('view_accounts'))
-    return render_template('update_account.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        account = Account.query.get(account_id)
+        form = UpdateAccountForm()
+        if request.method == 'GET':
+            form.account_name.data = account.account_name
+            form.balance.data = account.balance
+        if request.method == 'POST':
+            account.account_name = form.account_name.data
+            account.balance = form.balance.data
+            balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+            db.session.add(balance_log)
+            db.session.commit()
+            return redirect(url_for('view_accounts'))
+        return render_template('update_account.html', form=form)
 
 
 @app.route('/edit_stock_from_store/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_stock_from_store(item_id):
-    item = StockOut.query.get_or_404(item_id)
+    item = StockOut.query.get(item_id)
     form = UpdateStoreStockOutForm()
     form.populate_shop_choices()  # Populate the shop choices
 
@@ -1522,7 +1539,7 @@ def edit_stock_from_store(item_id):
 @app.route('/edit_stock_from_shop/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_stock_from_shop(item_id):
-    item = TransferStock.query.get_or_404(item_id)
+    item = TransferStock.query.get(item_id)
     form = UpdateTransferStockForm()
     form.populate_shop_choices()
 
@@ -1543,7 +1560,7 @@ def edit_stock_from_shop(item_id):
 @app.route('/edit_item/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_item(item_id):
-    item = Item.query.get_or_404(item_id)
+    item = Item.query.get(item_id)
     form = StoreNewItemForm()
     if request.method == 'GET':
         form.item_name.data = item.item_name
@@ -1577,53 +1594,56 @@ def edit_item(item_id):
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def edit_user(user_id):
-    user = User.query.get_or_404(user_id)
-    form = UserRegistrationForm()
-    if request.method == 'GET':
-        form.username.data = user.username
-        form.user_role.data = user.user_role
-    if request.method == 'POST':
-        user.username = form.username.data
-        user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user.user_role = form.user_role.data
-        db.session.commit()
-        return redirect(url_for('view_users'))
-    form.submit.label.text = 'Update Changes'
-    return render_template('register_user.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        user = User.query.get(user_id)
+        form = UserRegistrationForm()
+        if request.method == 'GET':
+            form.username.data = user.username
+            form.user_role.data = user.user_role
+        if request.method == 'POST':
+            user.username = form.username.data
+            user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            user.user_role = form.user_role.data
+            db.session.commit()
+            return redirect(url_for('view_users'))
+        form.submit.label.text = 'Update Changes'
+        return render_template('register_user.html', form=form)
 
 
 @app.route('/edit_store/<int:store_id>', methods=['GET', 'POST'])
 @login_required
 def edit_store(store_id):
-    store = Store.query.get_or_404(store_id)
-    form = StoreRegistrationForm()
-    if request.method == 'GET':
-        form.store_name.data = store.store_name
-        form.location.data = store.location
-    if request.method == 'POST':
-        store.store_name = form.store_name.data
-        store.location = form.location.data
-        db.session.commit()
-        return redirect(url_for('view_stores'))
-    form.submit.label.text = 'Update Changes'
-    return render_template('register_store.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        store = Store.query.get(store_id)
+        form = StoreRegistrationForm()
+        if request.method == 'GET':
+            form.store_name.data = store.store_name
+            form.location.data = store.location
+        if request.method == 'POST':
+            store.store_name = form.store_name.data
+            store.location = form.location.data
+            db.session.commit()
+            return redirect(url_for('view_stores'))
+        form.submit.label.text = 'Update Changes'
+        return render_template('register_store.html', form=form)
 
 
 @app.route('/edit_shop/<int:shop_id>', methods=['GET', 'POST'])
 @login_required
 def edit_shop(shop_id):
-    shop = Shop.query.get_or_404(shop_id)
-    form = ShopRegistrationForm()
-    if request.method == 'GET':
-        form.shop_name.data = shop.shop_name
-        form.location.data = shop.location
-    if request.method == 'POST':
-        shop.shop_name = form.shop_name.data
-        shop.location = form.location.data
-        db.session.commit()
-        return redirect(url_for('view_shops'))
-    form.submit.label.text = 'Update Changes'
-    return render_template('register_shop.html', form=form)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        shop = Shop.query.get(shop_id)
+        form = ShopRegistrationForm()
+        if request.method == 'GET':
+            form.shop_name.data = shop.shop_name
+            form.location.data = shop.location
+        if request.method == 'POST':
+            shop.shop_name = form.shop_name.data
+            shop.location = form.location.data
+            db.session.commit()
+            return redirect(url_for('view_shops'))
+        form.submit.label.text = 'Update Changes'
+        return render_template('register_shop.html', form=form)
 
 
 @app.route('/<int:store_id>/delete_store_stock/<int:item_id>', methods=['GET', 'POST'])
@@ -1680,55 +1700,57 @@ def update_lost_items(item_id):
 @app.route('/<sale_id>/view_sale_items', methods=['GET'])
 @login_required
 def view_sale_items(sale_id):
-    sale = Sale.query.get(sale_id)
-    return render_template('view_sale_items.html', sale=sale)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        sale = Sale.query.get(sale_id)
+        return render_template('view_sale_items.html', sale=sale)
 
 
 # Edit items in a sale
 @app.route('/<int:item_id>/edit_sale_item/<int:shop_id>', methods=['GET', 'POST'])
 @login_required
 def edit_sale_item(item_id, shop_id):
-    item_sold = StockSold.query.get_or_404(item_id)
-    # get item sold cost price by getting the item
-    item = Item.query.filter_by(item_name=item_sold.item_name).first()
-    shop = Shop.query.get_or_404(shop_id)
-    form = ShopStockSoldForm()
-    if request.method == 'GET':
-        form.item_name.data = item_sold.item_name
-        form.item_quantity.data = item_sold.item_quantity
-        form.item_discount.data = item_sold.item_discount
-
-    if request.method == 'POST':
-        # First remove the item from sale, shop item quantity, account balance and account balance log
-        sale = Sale.query.get_or_404(item_sold.sale_id)
-        sale.sales_value -= item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
-
-        # Update shop item quantity
-        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
-        shop_item.item_quantity += item_sold.item_quantity
-
-        # Update account and balance log
-        account = Account.query.filter_by(account_name=sale.payment_method).first()
-        account.balance -= item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
-
-        item_sold.item_name = form.item_name.data
-        item_sold.item_quantity = form.item_quantity.data
-        item_sold.item_discount = form.item_discount.data
-        item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
-        db.session.commit()
-
-        # Then update sale, shop item quantity, account balance and account balance log
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        item_sold = StockSold.query.get(item_id)
+        # get item sold cost price by getting the item
         item = Item.query.filter_by(item_name=item_sold.item_name).first()
-        shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+        shop = Shop.query.get_or_404(shop_id)
+        form = ShopStockSoldForm()
+        if request.method == 'GET':
+            form.item_name.data = item_sold.item_name
+            form.item_quantity.data = item_sold.item_quantity
+            form.item_discount.data = item_sold.item_discount
 
-        sale.sales_value += item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
-        shop_item.item_quantity -= item_sold.item_quantity
-        account.balance += item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
-        balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
-        db.session.add(balance_log)
-        db.session.commit()
-        return redirect(url_for('stock_sold', shop_id=shop.id))
-    return render_template('edit_sale_item.html', form=form, shop=shop)
+        if request.method == 'POST':
+            # First remove the item from sale, shop item quantity, account balance and account balance log
+            sale = Sale.query.get_or_404(item_sold.sale_id)
+            sale.sales_value -= item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+
+            # Update shop item quantity
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+            shop_item.item_quantity += item_sold.item_quantity
+
+            # Update account and balance log
+            account = Account.query.filter_by(account_name=sale.payment_method).first()
+            account.balance -= item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+
+            item_sold.item_name = form.item_name.data
+            item_sold.item_quantity = form.item_quantity.data
+            item_sold.item_discount = form.item_discount.data
+            item_sold.item_value = item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+            db.session.commit()
+
+            # Then update sale, shop item quantity, account balance and account balance log
+            item = Item.query.filter_by(item_name=item_sold.item_name).first()
+            shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop.id).first()
+
+            sale.sales_value += item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+            shop_item.item_quantity -= item_sold.item_quantity
+            account.balance += item_sold.item_quantity * (item.item_selling_price - item_sold.item_discount)
+            balance_log = AccountBalanceLog(account_id=account.id, balance=account.balance)
+            db.session.add(balance_log)
+            db.session.commit()
+            return redirect(url_for('stock_sold', shop_id=shop.id))
+        return render_template('edit_sale_item.html', form=form, shop=shop)
 
 
 # Edit daily count from shops
@@ -1775,21 +1797,60 @@ def trash():
 @app.route('/<int:shop_id>/view_sales', methods=['GET'])
 @login_required
 def view_sales(shop_id):
-    current_date = datetime.now()
-    start_time = current_date - timedelta(days=7)
-    sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).order_by(Sale.date_sold.desc()).all()
-    seller_sales = {}
-    total_weekly_sales = 0
-    for sale in sales:
-        seller_name = sale.seller_details.username
-        if seller_name in seller_sales:
-            seller_sales[seller_name] += sale.sales_value
-        else:
-            seller_sales[seller_name] = sale.sales_value
-        total_weekly_sales += sale.sales_value
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        # Get the current date and determine the start of the current month and year
+        current_date = datetime.now()
+        start_of_month = current_date.replace(day=1)
+        start_of_year = current_date.replace(month=1, day=1)
+        current_year = current_date.year
 
-    return render_template('view_sales.html', sales=sales, seller_sales=seller_sales,
-                           total_weekly_sales=total_weekly_sales)
+        # Fetch all sales for the current shop for the current year
+        sales = Sale.query.filter(Sale.date_sold >= start_of_year, Sale.shop_id == shop_id).order_by(
+            Sale.date_sold.desc()).all()
+
+        # Dictionary to store daily sales for the current month for each seller
+        daily_sales = {}
+
+        # Dictionary to store total monthly sales for the year for each seller
+        yearly_sales = {}
+
+        # Variable to store the total yearly sales for the entire shop
+        total_yearly_sales = 0
+
+        # Iterate through sales and organize them by seller and date/month
+        for sale in sales:
+            seller_name = sale.seller_details.username
+            sale_date = sale.date_sold.strftime('%Y-%m-%d')  # Format as 'YYYY-MM-DD'
+            sale_month = sale.date_sold.strftime('%B')  # Get month name (e.g., 'January')
+
+            # Calculate daily sales for the current month
+            if sale.date_sold >= start_of_month:
+                if seller_name not in daily_sales:
+                    daily_sales[seller_name] = {}
+                if sale_date in daily_sales[seller_name]:
+                    daily_sales[seller_name][sale_date] += sale.sales_value
+                else:
+                    daily_sales[seller_name][sale_date] = sale.sales_value
+
+            # Calculate monthly sales for the year
+            if seller_name not in yearly_sales:
+                yearly_sales[seller_name] = {month: 0 for month in
+                                             ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+                                              'September', 'October', 'November', 'December']}
+
+            yearly_sales[seller_name][sale_month] += sale.sales_value
+
+            # Add to the shop's total yearly sales
+            total_yearly_sales += sale.sales_value
+
+        # Pass the calculated data to the template
+        return render_template(
+            'view_sales.html',
+            daily_sales=daily_sales,
+            yearly_sales=yearly_sales,
+            total_yearly_sales=total_yearly_sales,
+            current_year=current_year
+    )
 
 
 @app.route('/expenses', methods=['GET', 'POST'])
