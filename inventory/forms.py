@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField, IntegerField, \
     SearchField, FloatField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional
-from inventory.models import User, Shop, Account, Sale
+from inventory.models import User, Shop, Account, Sale, Store
 from flask import session
 from flask_login import current_user
 
@@ -247,3 +247,20 @@ class ExpenseForm(FlaskForm):
             return selected_account
         else:
             return None
+
+
+class StoreStockTransferForm(FlaskForm):
+    item_name = SearchField('Search Item Name', validators=[DataRequired()])
+    item_quantity = IntegerField('Transfer Quantity', validators=[DataRequired()])
+    store = SelectField('Select Store', choices=[])
+    submit = SubmitField('Transfer Stock')
+
+    def populate_store_choices(self):
+        self.store.choices = [(store.id, store.store_name) for store in Store.query.all()]
+
+    def get_selected_store_id(self):
+        selected_store_id = self.store.data
+        if selected_store_id is not None:
+            return int(selected_store_id)
+        else:
+            return 0

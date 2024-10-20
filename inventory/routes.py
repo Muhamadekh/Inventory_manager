@@ -2,14 +2,16 @@ from flask import render_template, url_for, flash, redirect, session, request, j
 from inventory import app, bcrypt, db
 from inventory.models import (User, Shop, StockReceived, StockSold, Debtor, Store, Item, StockOut, Sale,
                               StockIn, ShopItem, StoreItem, Shopkeeper, DailyCount, Account, AccountMovement,
-                              AccountBalanceLog, Payment, TransferStock, CountDifference, TrashLog, PriceLog, Expense)
+                              AccountBalanceLog, Payment, TransferStock, CountDifference, TrashLog,
+                              PriceLog, Expense, StoreStockTransfer)
 from inventory.forms import (UserRegistrationForm, ShopRegistrationForm, LoginForm, ExpenseForm,
                              ShopStockReceivedForm, ShopStockSoldForm, DebtorRegistrationForm, StoreRegistrationForm,
                              StoreNewItemForm, StoreStockInForm, StoreStockOutForm, SaleForm,
                              ShopKeeperRegistrationForm,
                              AccountRegistrationForm, PaymentForm, UpdateDebtorForm, TransferStockForm,
                              StockFromShopForm, UpdateAccountForm, UpdateStoreStockOutForm,
-                             UpdateTransferStockForm, UpdateStoreStockForm, UpdateDailyCountForm)
+                             UpdateTransferStockForm, UpdateStoreStockForm, UpdateDailyCountForm,
+                             StoreStockTransferForm)
 from flask_login import current_user, login_user, logout_user, login_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -157,7 +159,8 @@ def view_shops():
                 stock_value_list.append(product.item_value)
             total_stock_value = sum(stock_value_list)
             shop_stock_lookup[shop.id] = total_stock_value
-        return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date, users=users)
+        return render_template('view_shops.html', shop_stock_lookup=shop_stock_lookup, shops=shops, date=date,
+                               users=users)
 
 
 @app.route('/view_shops/<int:shop_id>', methods=['GET'])
@@ -288,7 +291,7 @@ def stock_sold(shop_id):
         item = Item.query.filter_by(item_name=item_name).first()  # query the item class using the item name selected
         shop_item = ShopItem.query.filter_by(item_id=item.id, shop_id=shop_id).first()  # get shop item
         discount = selection_form.item_discount.data if selection_form.item_discount.data else 0  # get the item discount
-        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:   # Check whether quantity in stock
+        if shop_item and shop_item.item_quantity >= selection_form.item_quantity.data:  # Check whether quantity in stock
             item_sold = StockSold(item_name=item_name, item_quantity=selection_form.item_quantity.data,
                                   item_discount=discount, item_cost_price=item.item_cost_price,
                                   item_selling_price=item.item_selling_price, shop_id=shop_id, user_id=current_user.id)
@@ -298,7 +301,8 @@ def stock_sold(shop_id):
             return redirect(url_for('stock_sold', shop_id=shop.id))
         else:
             flash("No enough quantity is stock", "warning")
-    cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id, user_id=current_user.id).all()  # Grab cart items
+    cart_items = StockSold.query.filter_by(sale_id=None, shop_id=shop_id,
+                                           user_id=current_user.id).all()  # Grab cart items
     total_amount = 0
     for item in cart_items:
         total_amount += item.item_value
@@ -358,13 +362,14 @@ def stock_sold(shop_id):
     return render_template('stock_sold.html', selection_form=selection_form, sales_lookup=sales_lookup, Date=Date,
                            shop=shop,
                            sales_form=sales_form, cart_items=cart_items, total_amount=total_amount,
-                           sales_entries=sales_entries, total_discount=total_discount, today_total_sales=today_total_sales)
+                           sales_entries=sales_entries, total_discount=total_discount,
+                           today_total_sales=today_total_sales)
 
 
 @app.route('/<int:shop_id>/transfer_stock', methods=['GET', 'POST'])
 @login_required
 def transfer_stock(shop_id):
-    shop_from = Shop.query.get_or_404(shop_id)
+    shop_from = Shop.query.get(shop_id)
     form = TransferStockForm()
     form.populate_shop_choices()
     selected_shop_id = form.get_selected_shop_id()
@@ -588,7 +593,7 @@ def view_items():
 @app.route('/view_stores/<int:store_id>/stock_in', methods=['GET', 'POST'])
 @login_required
 def stock_in(store_id):
-    store = Store.query.get_or_404(store_id)
+    store = Store.query.get(store_id)
     form = StoreStockInForm()
     if form.validate_on_submit():
         item = Item.query.filter_by(item_name=form.item_name.data).first()
@@ -632,7 +637,7 @@ def stock_in(store_id):
             total_quantity = total_item_stock + form.item_quantity.data
             item.item_cost_price = total_cost / total_quantity  # Update item cost price in db
             store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
-            store_item.item_value = store_item.item_quantity * item.item_cost_price # Update item value
+            store_item.item_value = store_item.item_quantity * item.item_cost_price  # Update item value
 
             # Checking item quantity status
             if store_item.item_quantity < 100:
@@ -1058,7 +1063,8 @@ def view_accounts():
                     else:
                         balance_log_lookup[date] = {account_name: [balance_log.balance]}
 
-        return render_template('view_accounts.html', accounts=accounts, date=date, balance_log_lookup=balance_log_lookup)
+        return render_template('view_accounts.html', accounts=accounts, date=date,
+                               balance_log_lookup=balance_log_lookup)
 
 
 # Transfer money between account
@@ -1107,7 +1113,7 @@ def account_transfer():
         start_date = date_today - timedelta(days=60)
 
         account_movement_lookup = {}
-        account_movements = AccountMovement.query.filter(AccountMovement.timestamp >= start_date)\
+        account_movements = AccountMovement.query.filter(AccountMovement.timestamp >= start_date) \
             .order_by(AccountMovement.timestamp.desc()).all()
         for movement in account_movements:
             date = movement.timestamp.strftime("%Y-%m-%d")  # date of account movement
@@ -1116,7 +1122,8 @@ def account_transfer():
             else:
                 account_movement_lookup[date] = [movement]
 
-        return render_template('account_transfer.html', accounts=accounts, account_movement_lookup=account_movement_lookup)
+        return render_template('account_transfer.html', accounts=accounts,
+                               account_movement_lookup=account_movement_lookup)
 
 
 @app.route('/search_payee', methods=['GET', 'POST'])
@@ -1379,6 +1386,18 @@ def get_transfered_items():
     return jsonify(response)
 
 
+# Get items transfered from another store
+@app.route('/get_store_transferred_items', methods=['GET', 'POST'])
+def get_store_transferred_items():
+    item_name = request.json["item_name"]
+    store_id = request.json["store_id"]
+    store = Store.query.get(store_id)
+    stock_sent = StoreStockTransfer.query.filter_by(is_received=False, transfer_to_id=store.id).all()
+    response = [{"name": f"{item.item_name} ({item.item_quantity})"} for item in stock_sent if
+                item_name.lower() in item.item_name.lower()]
+    return jsonify(response)
+
+
 # Remove a shopkeeper from a shop
 @app.route('/remove_shopkeeper/<int:shopkeeper_id>', methods=['GET', 'POST'])
 @login_required
@@ -1397,38 +1416,38 @@ def remove_shopkeeper(shopkeeper_id):
 @app.route('/<int:shop_id>/<int:item_id>/void_count_differences', methods=['GET', 'POST'])
 @login_required
 def void_count_differences(shop_id, item_id):
-        if current_user.is_authenticated and current_user.user_role == 'Admin':
-            count_comparison_lookup = get_daily_count(shop_id)
+    if current_user.is_authenticated and current_user.user_role == 'Admin':
+        count_comparison_lookup = get_daily_count(shop_id)
 
-            for date, items in count_comparison_lookup.items():
-                if date == datetime.now().strftime("%Y-%m-%d"):  # Only make changes for the current date
-                    for item_name, values in items.items():
-                        if values[2] == item_id:  # Check if the item ID matches the clicked item
-                            shop_item = ShopItem.query.filter_by(shop_id=shop_id, item_id=item_id).first()
-                            base_count = values[0]
-                            item_daily_count = values[1]
+        for date, items in count_comparison_lookup.items():
+            if date == datetime.now().strftime("%Y-%m-%d"):  # Only make changes for the current date
+                for item_name, values in items.items():
+                    if values[2] == item_id:  # Check if the item ID matches the clicked item
+                        shop_item = ShopItem.query.filter_by(shop_id=shop_id, item_id=item_id).first()
+                        base_count = values[0]
+                        item_daily_count = values[1]
 
-                            if base_count != item_daily_count:
-                                difference = item_daily_count - base_count
-                                item = CountDifference.query.filter_by(shop_id=shop_id,
-                                                                       shop_item_id=shop_item.id).first()
-                                if item:
-                                    item.quantity += difference
-                                else:
-                                    count_difference = CountDifference(quantity=difference, shop_id=shop_id,
-                                                                       shop_item_id=shop_item.id)
-                                    db.session.add(count_difference)
+                        if base_count != item_daily_count:
+                            difference = item_daily_count - base_count
+                            item = CountDifference.query.filter_by(shop_id=shop_id,
+                                                                   shop_item_id=shop_item.id).first()
+                            if item:
+                                item.quantity += difference
+                            else:
+                                count_difference = CountDifference(quantity=difference, shop_id=shop_id,
+                                                                   shop_item_id=shop_item.id)
+                                db.session.add(count_difference)
 
-                                shop_item.item_quantity = item_daily_count
-                                # Update the item quantity in the dictionary
-                                daily_counts = DailyCount.query.filter(DailyCount.shop_item_id == shop_item.id,
-                                                                      DailyCount.shop_id == shop_id)\
-                                    .order_by(DailyCount.date.desc()).all()
-                                for item in daily_counts:
-                                    if item.date.strftime("%Y-%m-%d") == date:
-                                        item.base_count = item.count
-                                db.session.commit()
-            return redirect(url_for('view_daily_count', shop_id=shop_id))
+                            shop_item.item_quantity = item_daily_count
+                            # Update the item quantity in the dictionary
+                            daily_counts = DailyCount.query.filter(DailyCount.shop_item_id == shop_item.id,
+                                                                   DailyCount.shop_id == shop_id) \
+                                .order_by(DailyCount.date.desc()).all()
+                            for item in daily_counts:
+                                if item.date.strftime("%Y-%m-%d") == date:
+                                    item.base_count = item.count
+                            db.session.commit()
+        return redirect(url_for('view_daily_count', shop_id=shop_id))
 
 
 # List lost items for every shop for the last 30 days
@@ -1462,7 +1481,8 @@ def view_lost_items():
                 if date in lost_items_lookup[shop_name]:
                     lost_items_lookup[shop_name][date][item_name] = [item.quantity, product.item_cost_price, product.id]
                 else:
-                    lost_items_lookup[shop_name][date] = {item_name: [item.quantity, product.item_cost_price, product.id]}
+                    lost_items_lookup[shop_name][date] = {
+                        item_name: [item.quantity, product.item_cost_price, product.id]}
             else:
                 lost_items_lookup[shop_name] = {date: {item_name: [item.quantity, product.item_cost_price, product.id]}}
         return render_template('view_lost_items.html', lost_items_lookup=lost_items_lookup,
@@ -1760,7 +1780,7 @@ def edit_daily_count(item_id, shop_id):
     shop = Shop.query.get_or_404(shop_id)
     item = Item.query.get_or_404(item_id)
     shop_item = ShopItem.query.filter_by(item_id=item.id).first()
-    daily_count = DailyCount.query.filter_by(shop_item_id=shop_item.id, shop_id=shop.id)\
+    daily_count = DailyCount.query.filter_by(shop_item_id=shop_item.id, shop_id=shop.id) \
         .order_by(DailyCount.date.desc()).first()
 
     form = UpdateDailyCountForm()
@@ -1852,7 +1872,7 @@ def view_sales(shop_id):
             yearly_sales=yearly_sales,
             total_yearly_sales=total_yearly_sales,
             current_year=current_year
-    )
+        )
 
 
 @app.route('/expenses', methods=['GET', 'POST'])
@@ -1918,3 +1938,105 @@ def edit_expense(expense_id):
         return redirect(url_for('record_expense'))
     form.submit.label.text = 'Save Changes'
     return render_template('edit_expenses.html', form=form)
+
+
+@app.route('/<int:store_id>/transfer-store-stock', methods=['GET', 'POST'])
+@login_required
+def transfer_store_stock(store_id):
+    store_from = Store.query.get(store_id)
+    form = StoreStockTransferForm()
+    form.populate_store_choices()
+    selected_store_id = form.get_selected_store_id()
+    store_to = Store.query.get(selected_store_id)
+    if form.validate_on_submit():
+        selected_name = form.item_name.data.split(" (")
+        item_name = selected_name[0]
+        item = Item.query.filter_by(item_name=item_name).first()
+        store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store_from.id).first()
+        if store_item and store_item.item_quantity >= form.item_quantity.data > 0:
+            if store_from.id != store_to.id:
+                stock_sent = StoreStockTransfer(item_name=item_name, item_quantity=form.item_quantity.data,
+                                                transfer_from_id=store_from.id, transfer_to_id=store_to.id)
+                store_item.item_quantity -= form.item_quantity.data
+                store_item.item_value = store_item.item_quantity * item.item_cost_price
+                db.session.add(stock_sent)
+                db.session.commit()
+                db.session.commit()
+                flash("Stock transferred successfully", "success")
+                return redirect(url_for('transfer_store_stock', store_id=store_from.id))
+            else:
+                flash("Please select the right store.", "warning")
+        else:
+            flash("Quantity is more than available.", "warning")
+
+    stock_transfered_lookup = {}
+
+    current_date = datetime.now()
+    stock_sent_entries = StoreStockTransfer.query.filter(StoreStockTransfer.date_sent <= current_date,
+                                                         StoreStockTransfer.transfer_from_id == store_from.id) \
+        .order_by(StoreStockTransfer.date_sent.desc()).all()
+    for entry in stock_sent_entries:
+        date = entry.date_sent.date()
+        if date in stock_transfered_lookup:
+            stock_transfered_lookup[date].append(entry)
+        else:
+            stock_transfered_lookup[date] = [entry]
+
+    return render_template('transfer_store_stock.html', form=form, stock_transfered_lookup=stock_transfered_lookup,
+                           store=store_from)
+
+
+@app.route('/<int:store_id>/stock-from-store', methods=['GET', 'POST'])
+@login_required
+def stock_from_store(store_id):
+    store = Store.query.get(store_id)
+    form = StockFromShopForm()
+    if form.validate_on_submit():
+        selected_name = form.item_name.data.split(" (")
+        item_name = selected_name[0]
+        item = Item.query.filter_by(item_name=item_name).first()
+        item_received = StockIn(item_name=item.item_name, item_quantity=form.item_quantity.data, store_id=store.id)
+        item_sent = StoreStockTransfer.query.filter_by(is_received=False, item_name=item.item_name,
+                                                       item_quantity=form.item_quantity.data,
+                                                       transfer_to_id=store.id).first()
+        if item_sent and not item_sent.is_received:
+            item_sent.is_received = True
+            db.session.add(item_received)
+            db.session.commit()
+        else:
+            flash("An error has occurred", "warning")
+        if item in store.items:
+            store_item = StoreItem.query.filter_by(item_id=item.id, store_id=store.id).first()
+            store_item.item_quantity = store_item.item_quantity + item_received.item_quantity
+            store_item.item_value = store_item.item_quantity * item.item_cost_price
+            if store_item.item_quantity < 40:
+                store_item.item_status = 'Running Out'
+            else:
+                store_item.item_status = 'In Stock'
+            db.session.commit()
+        else:
+            store_item = StoreItem(store=store, item=item, item_quantity=form.item_quantity.data)
+            store_item.item_value = form.item_quantity.data * item.item_cost_price
+            db.session.add(store_item)
+            db.session.commit()
+            if store_item.item_quantity < 40:
+                store_item.stock_status = 'Running Out'
+            else:
+                store_item.item_status = 'In Stock'
+            db.session.commit()
+        flash("Item added to stock", "success")
+        return redirect(url_for('stock_from_store', store_id=store.id))
+
+    restock_lookup = {}
+    current_date = datetime.now()
+    restock_entries = StoreStockTransfer.query.filter(StoreStockTransfer.date_sent <= current_date,
+                                                      StoreStockTransfer.transfer_to_id == store.id,
+                                                      StoreStockTransfer.is_received == True) \
+        .order_by(StoreStockTransfer.date_sent.desc()).all()
+    for entry in restock_entries:
+        date = entry.date_sent.strftime("%d-%m-%Y")
+        if date in restock_lookup:
+            restock_lookup[date].append(entry)
+        else:
+            restock_lookup[date] = [entry]
+    return render_template('stock_from_store.html', form=form, store=store, restock_lookup=restock_lookup)

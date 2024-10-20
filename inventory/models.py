@@ -122,6 +122,10 @@ class Store(db.Model):
     stock_out = db.relationship('StockOut', backref='store', lazy=True)
     item_association = db.relationship('StoreItem', back_populates='store')
     items = association_proxy("item_association", "item")
+    movements_from = db.relationship('StoreStockTransfer', foreign_keys='StoreStockTransfer.transfer_from_id',
+                                     backref='transfer_from', lazy=True)
+    movements_to = db.relationship('StoreStockTransfer', foreign_keys='StoreStockTransfer.transfer_to_id',
+                                   backref='transfer_to', lazy=True)
 
 
 # Model for items in a store
@@ -273,3 +277,14 @@ class Expense(db.Model):
     amount = db.Column(db.Float, nullable=False)
     description = db.Column(db.String(140), nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
+
+
+# Model for transferring stock from one store to another
+class StoreStockTransfer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_quantity = db.Column(db.Integer, nullable=False)
+    date_sent = db.Column(db.DateTime, default=datetime.now)
+    transfer_from_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    transfer_to_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    is_received = db.Column(db.Boolean, nullable=False, default=False)

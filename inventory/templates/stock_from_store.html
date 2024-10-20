@@ -1,17 +1,16 @@
 {% extends 'layout.html' %}
 {% block content %}
     <div class="float-left">
-        <a href="{{ url_for('view_store', store_id=store.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Home</a>
+        {% if current_user.user_role=='Admin' %}
+            <a href="{{ url_for('view_store', store_id=store.id) }}" class="btn btn-secondary ml-2 mb-2">Back to Home</a>
+        {% endif %}
     </div>
-
-
     <!-- Table-like form for adding new stock -->
     <table class="table">
       <thead>
         <tr>
           <th>Item Name</th>
           <th>Quantity</th>
-          <th>Shop</th>
           <th></th>
         </tr>
       </thead>
@@ -21,44 +20,49 @@
             {{ form.hidden_tag() }}
             <td>{{ form.item_name(class="form-control", id="searchItemName", placeholder="Search Item") }}</td>
             <td>{{ form.item_quantity(class="form-control") }}</td>
-            <td>{{ form.shop(class="form-control") }}</td>
             <td>{{ form.submit(class="form-control btn btn-primary") }}</td>
           </form>
         </tr>
       </tbody>
     </table>
-    <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0"></div>
+    <div id="searchResults" style="text-align: left; font-weight: bold; margin-left: 15px; margin-top: 0;
+    position: absolute; overflow-y: auto"></div>
 
-    {% for date in stock_out_lookup.keys() %}
-      <div class="table" id="SalesTable">
-        <table class="table mt-4">
-          <thead>
-          <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
-            <tr>
-              <th>Item Name</th>
-              <th>Quantity</th>
-              <th>Shop Name</th>
-              <th>Time Sent</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in stock_out_lookup[date] %}
-              <tr>
-                <td>{{ entry.item_name }}</td>
-                <td>{{ "{:,}".format (entry.item_quantity) }}</td>
-                <td>{{ entry.shop.shop_name }}</td>
-                <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
-                {% if current_user.user_role == 'Admin' %}
-                    {% if not entry.is_received %}
-                        <td> <a href="{{ url_for('edit_stock_from_store', item_id=entry.id)}}">Edit</a></td>
+    <!-- Restock Log -->
+    {% if not restock_lookup %}
+        <div class="text-center mt-4"><h5 class="font-italic">This store has not yet received any goods.</h5></div>
+    {% else %}
+        {% for date in restock_lookup.keys() %}
+            {% if current_user.user_role != 'Admin'%}
+            <div class="table" id="SalesTable">
+                {% else %}
+                <div class="table">
                     {% endif %}
-                {% endif %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% endfor %}
+                    <table class="table mt-4">
+                        <thead>
+                            <caption style="caption-side: top; text-align: center"><span><strong>{{date}}</strong></span></caption>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Item Quantity</th>
+                                <th>Store From</th>
+                                <th>Date Received</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in restock_lookup[date] %}
+                            <tr>
+                                <td>{{ entry.item_name }}</td>
+                                <td>{{ entry.item_quantity }}</td>
+                                <td>{{ entry.transfer_from.store_name }}</td>
+                                <td>{{ entry.date_sent.strftime('%H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -79,9 +83,9 @@
         $(document).ready(function () {
             $("#searchItemName").on("input", (e) => {
                 let item_name = $("#searchItemName").val();
-                let storeId = "{{ store.id}}";
+                let storeId = "{{ store.id }}";
 
-                fetchData(`{{config.URL}}/get_store_items`, "POST", {
+                fetchData(`{{config.URL}}/get_store_transferred_items`, "POST", {
                     "item_name": item_name,
                     "store_id": storeId
                 }, (data) => {

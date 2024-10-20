@@ -3,8 +3,10 @@
     <!-- Buttons -->
     <div class="button-container">
       <a class="button active">Stock</a>
-      <a href="{{ url_for('stock_out', store_id=store.id)}}" class="button">Transfer</a>
+      <a href="{{ url_for('stock_out', store_id=store.id)}}" class="button">Transfer to Shop</a>
+      <a href="{{ url_for('transfer_store_stock', store_id=store.id)}}" class="button">Transfer to Store</a>
       <a href="{{ url_for('stock_in', store_id=store.id)}}" class="button">Receive Stock</a>
+      <a href="{{ url_for('stock_from_store', store_id=store.id)}}" class="button">Stock From Store</a>
       <a class="ml-4">Store Name: {{store.store_name}}</a>
       <a class="ml-4">Date:{{date}}</a>
       <div class="float-right">
