@@ -2040,3 +2040,12 @@ def stock_from_store(store_id):
         else:
             restock_lookup[date] = [entry]
     return render_template('stock_from_store.html', form=form, store=store, restock_lookup=restock_lookup)
+
+
+@app.route('/<int:shop_id>/view_all_sales_items', methods=['GET'])
+@login_required
+def view_all_sales_items(shop_id):
+    current_date = datetime.now()
+    start_time = current_date - timedelta(days=7)
+    sales = Sale.query.filter(Sale.date_sold >= start_time, Sale.shop_id == shop_id).order_by(Sale.date_sold.desc()).all()
+    return render_template('view_all_sales_items.html', sales=sales)
